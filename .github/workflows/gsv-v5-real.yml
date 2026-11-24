@@ -1,0 +1,95 @@
+name: gsv-v5-real
+
+# 用官方 V5 整合包（RTX 50 系列版）里真的 GPT-SoVITS 代码和真的底模，把声音分身从头跑一遍（只有处理器，所以很慢）：
+# 准备素材 → 训练 v5dev（LoRA）+ v2ProPlus + GPT → 自动挑选 → 生成 → V5 能不能「同时生成好几个版本」。
+# 整合包里的 Windows Python（runtime/Lib）不用，换成 Linux 的 Python 3.12，各个库的版本和整合包一样（tests/constraints-gsv-v5.txt）。
+# 结果提交到 research/gsv_v4_v5/真实V5实测/结果/，详细日志在这次运行的 Artifacts 里。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - ".github/workflows/gsv-v5-real.yml"
+      - "research/gsv_v4_v5/真实V5实测/run_real_v5.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gsv-v5-real-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      PKG: GPT-SoVITS-v5-20261005nvidia50x0.7z
+      SHA: 27b269fc1c53823dc9d404ada83f4444b300e455011db9861ec72e01b6fc5d5e
+      OUT: research/gsv_v4_v5/真实V5实测/结果
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+          sudo mkdir -p /mnt/w && sudo chown $USER /mnt/w
+          df -h / /mnt
+      - name: Download and unpack the official V5 package (code + models; no Windows runtime)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full espeak-ng ffmpeg >/dev/null
+          cd /mnt/w
+          curl -fL --retry 5 -o "$PKG" "https://huggingface.co/lj1995/GPT-SoVITS-windows-package/resolve/main/$PKG?download=true"
+          echo "$SHA  $PKG" | sha256sum -c
+          7z x -y -o/mnt/w/g "$PKG" -xr!Lib -xr!uvr5 -xr!AP_BWE_main >/dev/null
+          rm -f "$PKG"
+          G=$(ls -d /mnt/w/g/GPT-SoVITS-*)
+          ls "$G" "$G/runtime" | head -40
+          rm -rf "$G/tools/asr/models" || true
+          echo "GSV=$G" >> $GITHUB_ENV
+          echo "NLTK_DATA=$G/runtime/nltk_data" >> $GITHUB_ENV
+          du -sh "$G"; df -h /mnt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (Linux, CPU; versions as in the V5 package)
+        run: |
+          python -m pip install -U pip wheel
+          python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          # 整合包的 requirements.txt，去掉日文 / 韩文 / 粤语 / 语音识别 / 网页这些这次用不到、又要现场编译的；显卡版 onnxruntime 换成普通版
+          grep -viE '^(--no-binary|pyopenjtalk|python_mecab_ko|g2pk2|ko_pron|opencc|ToJyutping|funasr|modelscope|gradio|onnxruntime)' \
+            "$GSV/requirements.txt" > /tmp/req.txt
+          echo onnxruntime >> /tmp/req.txt
+          cat /tmp/req.txt
+          python -m pip install -c tests/constraints-gsv-v5.txt -r /tmp/req.txt
+          python -m pip install -c tests/constraints-gsv-v5.txt -e ".[sv]" webrtcvad-wheels zhconv
+          python -m pip install --no-deps resemblyzer noisereduce
+          python -c "import torch, transformers, peft; print(torch.__version__, transformers.__version__, peft.__version__)"
+      - name: Run the whole pipeline with the real V5 code and models
+        run: |
+          python research/gsv_v4_v5/真实V5实测/run_real_v5.py --gsv "$GSV" --out "$OUT" --work /mnt/w/vt
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p /tmp/logs
+          cp -r /mnt/w/vt/workspace/*/logs /tmp/logs/voicetwin 2>/dev/null || true
+          find "$GSV/logs" -maxdepth 3 \( -name '*.log' -o -name '*.json' -o -name '*.yaml' \) -exec cp --parents {} /tmp/logs \; 2>/dev/null || true
+          ls -R /tmp/logs | head -50
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-v5-logs
+          path: |
+            /tmp/logs
+            ${{ env.OUT }}
+      - name: Commit results
+        if: always()
+        run: |
+          [ -d "$OUT" ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$OUT"
+          git commit -m "记录：真实 V5 实测结果（GitHub 自动运行）" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && break
+            sleep $((i * 5))
+          done
