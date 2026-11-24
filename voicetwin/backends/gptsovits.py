@@ -1627,6 +1627,18 @@ def _report_lines(params: Dict[str, Any], previous: bool = False) -> List[str]:
         parts.append(f"{name}训练" + "，".join(bits))
     if parts:
         lines.append("显卡（实测）：" + "；".join(parts) + "。" + ("这一步主要卡在处理器或读文件上，显卡没法再更忙。" if low else ""))
+    lp = params.get("lora") or {}
+    if lp.get("grad_ckpt"):   # V4 / V5 的 LoRA 每批减到最少还是显存不够：打开了官方的梯度检查点（_train_lora）
+        key = f"lora_{lp.get('version')}"
+        got = []
+        if (params.get("timing") or {}).get(f"{key}_s_per_epoch") is not None:
+            got.append(f"每轮 {params['timing'][f'{key}_s_per_epoch']:.0f} 秒")
+        if ((params.get("gpu") or {}).get(key) or {}).get("peak_gb") is not None:
+            got.append(f"显存最高 {params['gpu'][key]['peak_gb']:.1f} GB")
+        lines.append(f"音色（{lp.get('version')}）：显存不够，每批 {lp.get('batch_size_used') or lp.get('batch_size')} 条也练不下，"
+                     f"{'' if previous else '这次'}打开了官方的「梯度检查点」才练成：每轮会慢一些，练法不变"
+                     f"（只是把一部分中间结果重新算一遍来省显存）"
+                     + (f"；实测{'、'.join(got)}" if got else "") + "。")
     t = params.get("timing") or {}
     bits = []
     if t.get("features_s") is not None:
@@ -2867,7 +2879,9 @@ class GPTSoVITSBackend(Backend):
 
     # ---------------------------------------------------------------- 写训练设置
     def _write_s2_config(self, path: Path, bs: int, epochs: int, save_every: int, exp_dir: Path, *,
-                         probe: bool = False) -> None:
+                         probe: bool = False, grad_ckpt: bool = False) -> None:
+        """grad_ckpt：官方的梯度检查点（webui「v3是否开启梯度检查点节省显存占用」，只有 V3 / V4 / V5 的 LoRA 脚本用它）。
+        默认和官方一样不开；V4 / V5 的 LoRA 每批减到最少还是显存不够时才打开（_train_lora）。"""
         tcfg = self._tcfg()
         pre_g = str(self.p(PRETRAINED_SOVITS[self.version]))
         with open(self.p(self._s2_config_template()), "r", encoding="utf-8") as f:
@@ -2880,7 +2894,7 @@ class GPTSoVITSBackend(Backend):
             "pretrained_s2G": pre_g, "pretrained_s2D": "" if is_lora_version(self.version) else pre_g.replace("s2G", "s2D"),
             "if_save_latest": not probe, "if_save_every_weights": not probe,
             "save_every_epoch": 9999 if probe else int(save_every), "gpu_numbers": self._gpu(),
-            "grad_ckpt": False, "lora_rank": self._lora_rank(),
+            "grad_ckpt": bool(grad_ckpt), "lora_rank": self._lora_rank(),
             # 日志里多久记一次进度（官方模板是 100 步）：训练时 20 步，看得到进度；实测时 2 步，几十步就能算出速度
             "log_interval": 2 if probe else 20,
         })
@@ -3117,7 +3131,7 @@ class GPTSoVITSBackend(Backend):
             save = int(params[save_key])
             if kind == "sovits":
                 cfg = self.work_dir / "tmp_s2.json"
-                self._write_s2_config(cfg, bs, total, save, opt_dir)
+                self._write_s2_config(cfg, bs, total, save, opt_dir, grad_ckpt=bool(params.get("grad_ckpt")))
                 cmd = [self.python, "-s", self._s2_script(), "--config", str(cfg)]
                 env = self.env()
                 parser = self._sovits_progress(total, counts, params)
@@ -3188,14 +3202,33 @@ class GPTSoVITSBackend(Backend):
                    sovits_save_every=int(lp["save_every"]))
         what = f"训练音色（{self.version}，LoRA 微调）"
         self.step(progress, pos["sovits"], f"{what}，共 {int(lp['epochs'])} 轮……")
+        last = {"bs": int(lp["batch_size"])}
+
+        def run(bs: int) -> None:
+            last["bs"] = bs
+            self._run_stage("sovits", opt_dir, sub, progress, (pos["sovits"], pos["gpt"]), counts, bs)
+
+        def grad_ckpt() -> None:
+            # 每批减到最少还是显存不够（8 GB 显卡每批本来就是 1 条）：打开官方的梯度检查点再练一次。
+            # 它只是把一部分中间结果重新算一遍来省显存，练法不变；每步会慢一些（慢多少要看老师电脑上的实测）。
+            sub["grad_ckpt"] = True
+            msg = (f"{what}：每批 {last['bs']} 条显存也不够：打开官方的「梯度检查点」再练一次"
+                   f"（更省显存，但每轮会慢一些；已经练好的部分会接着用）")
+            log.warning(msg)
+            if progress:
+                try:
+                    progress(pos["sovits"], msg)
+                except Exception:
+                    pass
+
         try:
-            return self._oom_ladder(what, int(lp["batch_size"]),
-                                    lambda bs: self._run_stage("sovits", opt_dir, sub, progress, (pos["sovits"], pos["gpt"]),
-                                                               counts, bs), progress, pos["sovits"])
-        finally:  # 硬盘不够时保存间隔会加倍：记下实际用的
+            return self._oom_ladder(what, int(lp["batch_size"]), run, progress, pos["sovits"], last_resort=grad_ckpt)
+        finally:  # 硬盘不够时保存间隔会加倍：记下实际用的；打开了梯度检查点也记下（训练报告里告诉老师）
             lp["save_every"] = int(sub["sovits_save_every"])
             if "disk_guard" in sub:
                 lp["disk_guard"] = sub["disk_guard"]
+            if sub.get("grad_ckpt"):
+                lp["grad_ckpt"] = True
 
     def _train_gpt(self, opt_dir: Path, params: Dict[str, Any], progress: Optional[ProgressFn],
                    pos: Optional[Dict[str, float]] = None, counts: Optional[Dict[str, Any]] = None) -> int:

@@ -180,3 +180,72 @@ def test_v5_does_not_use_aux_refs(prepared, tmp_path, monkeypatch):
     refs = [{"id": "r1"}, {"id": "r2"}]
     arms = S.plan_arms("mid", refs, {"r1": [], "r2": []}, n_presets=2, aux_options=(3, 0))  # 不支持：一条都不给
     assert len(arms) == len(set((a.ref_id, a.preset_idx, a.aux_n) for a in arms)) and all(a.aux_n == 0 for a in arms)
+
+
+# ---------------------------------------------------------------------------- 8 GB 显卡：每批 1 条也不够时打开梯度检查点
+def _lora_oom_setup(prepared, tmp_path, monkeypatch, name, port):
+    """只练 V5、8 GB 显卡（空闲 6.8 GB，和老师的 RTX 5070 Laptop 一样）：官方公式算出来 LoRA 每批 1 条。"""
+    from voicetwin.backends.gptsovits import GPTSoVITSBackend
+
+    monkeypatch.setenv("EXPECT_VERSION", "v5dev")
+    monkeypatch.setattr(GPTSoVITSBackend, "_gpu_memory", lambda self, quick=False: (7.96, 6.8, "test"))
+    project = _own_project(prepared[1], tmp_path)
+    root = build_fake_root(tmp_path / name)
+    gcfg = _v5cfg(project, root, port, lora_epochs=2, gpt_epochs=2)
+    confirm_material(gcfg, project.voice)
+    return gcfg, project, root
+
+
+def _s2_cfg(project):
+    import json
+
+    return json.loads((project.models_dir / "gptsovits" / "tmp_s2.json").read_text(encoding="utf-8"))
+
+
+@needs_fake_python
+def test_v5_lora_oom_at_batch_one_retries_with_gradient_checkpointing(prepared, tmp_path, monkeypatch, no_users_pth):
+    """每批 1 条显存也不够（不开梯度检查点就练不下）：打开官方的「梯度检查点」再练一次，练完；训练报告里告诉老师。"""
+    gcfg, project, root = _lora_oom_setup(prepared, tmp_path, monkeypatch, "GSV-ckpt", 19898)
+    monkeypatch.setenv("FAKE_GSV_LORA_NEED_CKPT", "1")
+    rec = Rec()
+    info = wf.run_train(gcfg, project.voice, "gptsovits", select=False, progress=rec, mode="standard")
+    lora = info["params"]["lora"]
+    assert (lora["batch_size"], lora["batch_size_used"], lora["grad_ckpt"]) == (1, 1, True)
+    assert _s2_cfg(project)["train"]["grad_ckpt"] is True
+    assert [int(p.rsplit("_e", 1)[1].split("_")[0]) for p in info["sovits"]] == [1, 2]   # 2 轮都练完、存下
+    msgs = [m for _, m in rec.train_part()]
+    assert msgs.count("训练音色（v5dev，LoRA 微调）：每批 1 条显存也不够：打开官方的「梯度检查点」再练一次"
+                      "（更省显存，但每轮会慢一些；已经练好的部分会接着用）") == 1
+    report = [ln for ln in info["params"]["report"] if "梯度检查点" in ln]
+    assert len(report) == 1 and report[0].startswith(
+        "音色（v5dev）：显存不够，每批 1 条也练不下，这次打开了官方的「梯度检查点」才练成：每轮会慢一些")
+    assert "实测每轮" in report[0]              # 用时是这次量出来的（这台电脑量不出显存，就不写显存）
+    assert project.load_models()["gptsovits"]["params"]["lora"]["grad_ckpt"] is True
+    assert msgs[-1] == "GPT-SoVITS 训练完成"
+
+
+@needs_fake_python
+def test_v5_lora_normal_training_keeps_gradient_checkpointing_off(prepared, tmp_path, monkeypatch, no_users_pth):
+    """显存够的时候和官方默认一样不开梯度检查点，报告里也不提。"""
+    gcfg, project, root = _lora_oom_setup(prepared, tmp_path, monkeypatch, "GSV-ckpt-off", 19899)
+    info = wf.run_train(gcfg, project.voice, "gptsovits", select=False, mode="standard")
+    assert "grad_ckpt" not in info["params"]["lora"] and _s2_cfg(project)["train"]["grad_ckpt"] is False
+    assert not [ln for ln in info["params"]["report"] if "梯度检查点" in ln]
+
+
+@needs_fake_python
+def test_v5_lora_still_oom_with_gradient_checkpointing_gives_the_clear_error(prepared, tmp_path, monkeypatch,
+                                                                           no_users_pth):
+    """开了梯度检查点还是不够：只多试这一次，然后和以前一样报「显存不够」，告诉老师怎么办。"""
+    from voicetwin.backends.base import TrainStepError
+    from voicetwin.errors import explain
+
+    gcfg, project, root = _lora_oom_setup(prepared, tmp_path, monkeypatch, "GSV-ckpt-oom", 19900)
+    monkeypatch.setenv("FAKE_GSV_OOM_ABOVE", "0")
+    rec = Rec()
+    with pytest.raises(TrainStepError) as ei:
+        wf.run_train(gcfg, project.voice, "gptsovits", select=False, progress=rec, mode="standard")
+    assert _s2_cfg(project)["train"]["grad_ckpt"] is True       # 最后一次是开着梯度检查点试的
+    assert sum("梯度检查点" in m for m in rec.msgs) == 1          # 只多试一次
+    assert explain(ei.value).key == "gpu_oom"
+    assert str(ei.value).startswith("「训练音色（v5dev）」这一步出错了：显卡内存（显存）不够")

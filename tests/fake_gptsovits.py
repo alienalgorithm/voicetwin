@@ -22,6 +22,8 @@
 
 测试用的开关（环境变量）：
 - FAKE_GSV_OOM_ABOVE=N：每批数量大于 N 时，s2/s1 训练报显存不够。
+- FAKE_GSV_LORA_NEED_CKPT=1：V4 / V5 的 LoRA（s2_train_v3_lora.py）不开梯度检查点（s2 设置里 grad_ckpt 不是 true）时，
+  每批 1 条也报显存不够；开了就够（模拟 8 GB 显卡）。FAKE_GSV_OOM_ABOVE 照样管用（开了也不够）。
 - FAKE_GSV_CLIP_SLEEP=秒：1B / 声纹每条素材睡多久（默认 0.01），用来观察「数文件」的进度。
 - FAKE_GSV_HANG=1：s2 训练一直不结束（并开一个子进程），用来测试「停止」会结束整个进程树。
 - FAKE_GSV_API_DELAY=秒：推理服务启动前先等一会儿（模拟加载模型）。
@@ -147,9 +149,9 @@ open(semantic_path, "w", encoding="utf8").write("\\n".join(f"{n}\\t1 2 {mark}" f
 '''
 
 OOM = '''
-def maybe_oom(bs):
+def maybe_oom(bs, need_ckpt=False):
     limit = os.environ.get("FAKE_GSV_OOM_ABOVE")
-    if limit and bs > int(limit):
+    if (limit and bs > int(limit)) or need_ckpt:
         print("Traceback (most recent call last):", flush=True)
         print('  File "GPT_SoVITS/train.py", line 1, in <module>', flush=True)
         print(f"torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 2.00 GiB (GPU 0; 11.99 GiB total "
@@ -257,8 +259,12 @@ S2_TRAIN_LORA = (S2_TRAIN
     .replace("ckpt_dir = f\"{exp_dir}/logs_s2_{cfg['model']['version']}\"",
              "ckpt_dir = f\"{exp_dir}/logs_s2_{cfg['model']['version']}_lora_{t['lora_rank']}\"")
     .replace('ck = f"{name}_e{e}_s{global_step}"', 'ck = f"{name}_e{e}_s{global_step}_l{t[\'lora_rank\']}"')
-    .replace('{"v3": b"03", "v4": b"04", "v2Pro": b"05", "v2ProPlus": b"06"}', '{"v3": b"03", "v4": b"04", "v5dev": b"07", "v5turbo": b"08"}'))
-assert S2_TRAIN_LORA.count("_lora_") == 1 and "_l{t[" in S2_TRAIN_LORA and "v5dev" in S2_TRAIN_LORA and "lora_rank" in S2_TRAIN_LORA
+    .replace('{"v3": b"03", "v4": b"04", "v2Pro": b"05", "v2ProPlus": b"06"}', '{"v3": b"03", "v4": b"04", "v5dev": b"07", "v5turbo": b"08"}')
+    # 真的 s2_train_v3_lora.py 每步都读 hps.train.grad_ckpt（use_grad_ckpt=…）：设置里一定要有、是 true / false
+    .replace('info(cfg)\nmaybe_oom(t["batch_size"])',
+             'info(cfg)\nassert isinstance(t["grad_ckpt"], bool), t.get("grad_ckpt")\n'
+             'maybe_oom(t["batch_size"], bool(os.environ.get("FAKE_GSV_LORA_NEED_CKPT")) and not t["grad_ckpt"])'))
+assert S2_TRAIN_LORA.count("_lora_") == 1 and "FAKE_GSV_LORA_NEED_CKPT" in S2_TRAIN_LORA and "_l{t[" in S2_TRAIN_LORA and "v5dev" in S2_TRAIN_LORA and "lora_rank" in S2_TRAIN_LORA
 
 S1_TRAIN = '''
 import math, os, re, sys, time, yaml
