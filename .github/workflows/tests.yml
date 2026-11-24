@@ -2,6 +2,11 @@ name: tests
 
 on:
   push:
+    # 只改了记录（research 里的 .md）或者实测工作流自动提交的结果：不用重跑测试（也不会把正在跑的测试取消掉）。
+    # research 里测试要读的数据（文字校正的母本、官方资料）不在这里面
+    paths-ignore:
+      - "research/**/*.md"
+      - "research/gsv_v4_v5/*/结果/**"
   pull_request:
 
 # 同一个分支又推送了新的提交：旧提交还没跑完的测试取消，GitHub 的机器留给最新的代码
