@@ -25,6 +25,9 @@ work = Path(sys.argv[1]).resolve()
 port = int(sys.argv[2])
 make_lecture(work / "素材" / "第1课.wav")
 root = build_fake_root(work / "GPT-SoVITS")
+# 替身的 V5 底模换成带 V5 版本标记的文件：真的整合包里程序按文件内容认得出官方底模（SOVITS_HASH_VERSION），
+# 「一模一样」挑选会拿底模当候选（11-24 起），选中底模时右上角也要显示 v5dev
+(root / "GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth").write_bytes(b"07" + b"x" * 4000)
 cfg = {
     "workspace": str(work / "workspace"),
     "backend": "gptsovits",
