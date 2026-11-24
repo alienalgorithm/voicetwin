@@ -484,6 +484,24 @@ def test_v4_model_uses_single_requests(prepared, tmp_path, quick):
         b.stop()
 
 
+def test_v5_model_batches_without_the_speed_trick(prepared, tmp_path, quick, monkeypatch):
+    """V5 模型：同时生成（官方对 V5 每个版本本来就单独合成），语速 1.0 照发 1.0、不做「1.0001」自检，切开以后正好 n 个。"""
+    monkeypatch.setenv("FAKE_GSV_SPEED_TRICK_BROKEN", "1")  # 就算 1.0001 和 1.0 不一样，V5 也用不着它
+    b, root, ref = _backend(prepared, tmp_path, REAL_API_V2)
+    v5 = tmp_path / "v5_e4_s100_l32.pth"
+    v5.write_bytes(b"07" + b"x" * 4000)  # 模型文件开头的版本标记 07 = v5dev LoRA
+    try:
+        b.start()
+        b.use_checkpoint({"id": "v5", "gpt": str(root / "GPT_SoVITS/pretrained_models/s1v3.ckpt"), "sovits": str(v5)})
+        assert b._batch_version() == "v5dev"
+        out = b.synthesize_many(_req(ref), 3, tmp_path / "out")
+        assert len(out) == 3 and [k for _, k in out] == [0, 1, 2]
+        assert [(r["batch_size"], r["speed_factor"]) for r in _runs(root)] == [(3, 1.0)]
+        assert b.batch_stats["speed_trick"] is None and not b.batch_stats["single_reasons"]
+    finally:
+        b.stop()
+
+
 def test_simple_fake_api_batches_and_halves(prepared, tmp_path, quick, monkeypatch):
     """模拟版的 api（tests/fake_gptsovits.API_V2）也认同时生成和显存不够。"""
     monkeypatch.setenv("FAKE_GSV_MAX_BATCH", "2")

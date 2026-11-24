@@ -338,7 +338,11 @@ BATCH_SPEED = 1.0001
 #: 文字超过这么多个字就不同时生成（单独生成）
 BATCH_MAX_CHARS = 400
 #: 能同时生成的模型版本（V3 / V4 用另一套声码器的做法，一个一个生成）
-BATCH_VERSIONS = ("v2", "v2Pro", "v2ProPlus")
+BATCH_VERSIONS = ("v2", "v2Pro", "v2ProPlus", "v5dev", "v5turbo")
+#: 同时生成时每个版本本来就是单独合成的版本：官方 TTS.py 的 using_vocoder_synthesis_batched_infer 对 V5 逐段调用
+#: using_vocoder_synthesis（和一个一个生成一样）。这些版本不用「语速 1.0001」的办法（那是 v2 系列语速正好 1.0 时
+#: 整批一起解码、几个版本会互相影响才要的），语速 1.0 就发 1.0，也不用做自检
+BATCH_INDEPENDENT_VERSIONS = ("v5dev", "v5turbo")
 #: 切开后每个版本至少多长（秒）；切开后每个版本后面补多长的数字静音（秒，和单独生成时引擎补的 0.3 秒一样）
 BATCH_MIN_PIECE = 0.3
 BATCH_PAD = 0.3
@@ -3978,7 +3982,7 @@ class GPTSoVITSBackend(Backend):
         ver = self._batch_version()
         if ver not in BATCH_VERSIONS:
             return f"{ver} 模型只能一个一个生成"
-        if _speed_of(req) == 1.0 and not self._speed_trick_ok(req):
+        if _speed_of(req) == 1.0 and ver not in BATCH_INDEPENDENT_VERSIONS and not self._speed_trick_ok(req):
             # 按自检之后的情况说真正的原因：自检里显存不够（已经改成一次一个）、自检出错没做完、自检做完了没通过
             if self._max_batch is not None and self._max_batch <= 1:
                 return "显存不够，已经改成一次生成一个"
@@ -4075,10 +4079,11 @@ class GPTSoVITSBackend(Backend):
         """同一句话要 n 个版本，写进 out_dir，返回 [(文件, 第几个)]。
 
         能同时生成时只发一次请求：同一句话复制 n 份、用换行隔开，batch_size = n、fragment_interval = 0.5、
-        语速 1.0 时发 1.0001（见 BATCH_SPEED），再按每个版本后面的数字静音切开，每个后面补 0.3 秒的 0。
+        v2 系列语速 1.0 时发 1.0001（见 BATCH_SPEED；V5 每个版本本来就单独合成，照发 1.0），再按每个版本后面的
+        数字静音切开，每个后面补 0.3 秒的 0。
         这些情况一个一个生成（第 k 个用随机种子 seed + k × SEED_STEP，请求和 synthesize 的完全一样）：
-        只要 1 个；按官方规则算，文字不能正好切成 n 段、每段和单独生成时一样；模型不是 v2 / v2Pro / v2ProPlus；
-        语速正好 1.0 而这次启动的引擎没通过「1.0001」自检。
+        只要 1 个；按官方规则算，文字不能正好切成 n 段、每段和单独生成时一样；模型不在 BATCH_VERSIONS 里（V3 / V4）；
+        v2 系列语速正好 1.0 而这次启动的引擎没通过「1.0001」自检。
         显存不够：同时生成的数量减半再试（记下来，以后都不超过它），所以拿到的个数可能比 n 少；减到 1 个还不够，
         先调用 release_gpu_callback 让出显存、再试一次，还不行就和 synthesize 一样报错。
         切不开（段数不对等）：说明原因，改成一个一个生成。"""
@@ -4097,7 +4102,7 @@ class GPTSoVITSBackend(Backend):
 
         b = min(n, self._max_batch or n)
         speed = _speed_of(req)
-        send = BATCH_SPEED if speed == 1.0 else speed
+        send = BATCH_SPEED if speed == 1.0 and self._batch_version() not in BATCH_INDEPENDENT_VERSIONS else speed
         lang = self._payload(req)["text_lang"]
         while b > 1:
             check_cancel()
