@@ -351,12 +351,5 @@
  ],
  "train_minutes": 148.3,
  "seconds": 310.3,
- "finished": "2026-11-24 16:37:30",
- "pack": {
-  "kind": "prep",
-  "files": 1261,
-  "bytes": 1608028160,
-  "seconds": 1.9,
-  "parts": 1
- }
+ "finished": "2026-11-24 16:37:30"
 }

@@ -139,3 +139,70 @@
 2026-11-24 16:37:30,094 | INFO | voicetwin.profile |   中文语速：6.10 音节/秒（不含停顿）
 2026-11-24 16:37:30,094 | INFO | voicetwin.profile |   中文音高：102 Hz，起伏 4.4 半音
 2026-11-24 16:37:30,094 | INFO | voicetwin.profile |   停顿习惯：逗号 0.25s / 句号 0.35s / 段落 0.60s
+2026-11-24 16:49:58,460 | INFO | voicetwin.workflow | 这次训练用校对表里保存好的文字：1198 条训练、20 条当「考试题」；其中 1198 条是你改过文字的，按改好的文字训练
+2026-11-24 16:49:58,462 | INFO | voicetwin.backend | 检查显卡、整理训练素材（大约半分钟）……
+2026-11-24 16:49:58,492 | INFO | voicetwin.gptsovits | 实验名 vt_6c65d5；GPT-SoVITS 版本 v5dev（目前公开的最新版本）
+2026-11-24 16:49:58,492 | INFO | voicetwin.backend | 训练素材 1198 条，共 148.3 分钟
+2026-11-24 16:49:59,818 | WARNING | voicetwin.gptsovits | 没有检测到可用的 NVIDIA 显卡，训练会非常慢（CPU 训练可能需要数天）
+2026-11-24 16:49:59,891 | INFO | voicetwin.backend | 训练计划：「一模一样」训练——没有检测到能用的 N 卡 → 音色（v5dev）每批 1 条（你指定的）、语气每批 4 条（你指定的）（仍然按「一模一样」训练，但用处理器会非常慢）；音色 v5dev（官方的 LoRA 练法）8 轮、每轮存一个；语气 GPT 20 轮、每轮存一个；中文和英文都参加训练（素材里有 691 句夹着英文）；训练完用你没参加训练的 20 句录音和 24 句检查用的句子，把音色第 1 轮、语气第 4 轮以后存下的每个版本，还有音色没有训练的 V5 底模都试一遍，挑最像你的；不开 DPO（官方实验功能，显存也不够；需要的话可以在高级设置里手动打开）。
+2026-11-24 16:49:59,891 | INFO | voicetwin.gptsovits |   · 显卡用全精度训练（is_half: false），每批数量减半
+2026-11-24 16:49:59,924 | INFO | voicetwin.backend | 处理文字：中文和英文都参加训练（以前英文部分会被丢掉）
+2026-11-24 16:49:59,924 | INFO | voicetwin.backend | ▶ 处理文字（详细日志：gsv_1a_text.log）
+2026-11-24 16:50:04,556 | INFO | voicetwin.backend |   处理文字 1/1198
+2026-11-24 16:50:19,568 | INFO | voicetwin.backend |   处理文字 26/1198
+2026-11-24 16:50:34,682 | INFO | voicetwin.backend |   处理文字 66/1198
+2026-11-24 16:50:49,927 | INFO | voicetwin.backend |   处理文字 109/1198
+2026-11-24 16:50:53,506 | INFO | voicetwin.backend |   处理文字 120/1198
+2026-11-24 16:51:08,666 | INFO | voicetwin.backend |   处理文字 163/1198
+2026-11-24 16:51:23,941 | INFO | voicetwin.backend |   处理文字 206/1198
+2026-11-24 16:51:36,935 | INFO | voicetwin.backend |   处理文字 240/1198
+2026-11-24 16:51:52,389 | INFO | voicetwin.backend |   处理文字 282/1198
+2026-11-24 16:52:07,426 | INFO | voicetwin.backend |   处理文字 329/1198
+2026-11-24 16:52:19,720 | INFO | voicetwin.backend |   处理文字 360/1198
+2026-11-24 16:52:34,791 | INFO | voicetwin.backend |   处理文字 399/1198
+2026-11-24 16:52:49,968 | INFO | voicetwin.backend |   处理文字 448/1198
+2026-11-24 16:53:00,843 | INFO | voicetwin.backend |   处理文字 480/1198
+2026-11-24 16:53:16,299 | INFO | voicetwin.backend |   处理文字 528/1198
+2026-11-24 16:53:31,444 | INFO | voicetwin.backend |   处理文字 574/1198
+2026-11-24 16:53:41,458 | INFO | voicetwin.backend |   处理文字 599/1198
+2026-11-24 16:53:56,887 | INFO | voicetwin.backend |   处理文字 633/1198
+2026-11-24 16:54:12,063 | INFO | voicetwin.backend |   处理文字 673/1198
+2026-11-24 16:54:26,657 | INFO | voicetwin.backend |   处理文字 719/1198
+2026-11-24 16:54:41,908 | INFO | voicetwin.backend |   处理文字 765/1198
+2026-11-24 16:54:57,112 | INFO | voicetwin.backend |   处理文字 812/1198
+2026-11-24 16:55:05,917 | INFO | voicetwin.backend |   处理文字 839/1198
+2026-11-24 16:55:21,264 | INFO | voicetwin.backend |   处理文字 880/1198
+2026-11-24 16:55:36,455 | INFO | voicetwin.backend |   处理文字 919/1198
+2026-11-24 16:55:51,529 | INFO | voicetwin.backend |   处理文字 958/1198
+2026-11-24 16:55:51,997 | INFO | voicetwin.backend |   处理文字 959/1198
+2026-11-24 16:56:07,088 | INFO | voicetwin.backend |   处理文字 1010/1198
+2026-11-24 16:56:22,299 | INFO | voicetwin.backend |   处理文字 1055/1198
+2026-11-24 16:56:32,362 | INFO | voicetwin.backend |   处理文字 1079/1198
+2026-11-24 16:56:47,657 | INFO | voicetwin.backend |   处理文字 1125/1198
+2026-11-24 16:57:02,913 | INFO | voicetwin.backend |   处理文字 1158/1198
+2026-11-24 16:57:17,967 | INFO | voicetwin.backend |   处理文字 1195/1198
+2026-11-24 16:57:19,189 | INFO | voicetwin.backend |   处理文字 1198/1198
+2026-11-24 16:57:21,041 | INFO | voicetwin.backend | 提取声音特征（比较慢，素材多时要十几分钟）
+2026-11-24 16:57:21,041 | INFO | voicetwin.backend | ▶ 提取声音特征（详细日志：gsv_1b_hubert.log）
+2026-11-24 16:57:23,042 | INFO | voicetwin.backend |   提取声音特征 0/1198
+2026-11-24 16:58:41,062 | INFO | voicetwin.backend |   提取声音特征 121/1198
+2026-11-24 16:59:43,099 | INFO | voicetwin.backend |   提取声音特征 240/1198
+2026-11-24 17:00:47,148 | INFO | voicetwin.backend |   提取声音特征 361/1198
+2026-11-24 17:01:53,215 | INFO | voicetwin.backend |   提取声音特征 482/1198
+2026-11-24 17:02:55,295 | INFO | voicetwin.backend |   提取声音特征 599/1198
+2026-11-24 17:04:01,394 | INFO | voicetwin.backend |   提取声音特征 722/1198
+2026-11-24 17:05:05,509 | INFO | voicetwin.backend |   提取声音特征 842/1198
+2026-11-24 17:06:09,640 | INFO | voicetwin.backend |   提取声音特征 962/1198
+2026-11-24 17:07:11,776 | INFO | voicetwin.backend |   提取声音特征 1079/1198
+2026-11-24 17:08:15,919 | INFO | voicetwin.backend | 提取语义（大约 1~3 分钟）
+2026-11-24 17:08:15,919 | INFO | voicetwin.backend | ▶ 提取语义（详细日志：gsv_1c_semantic.log）
+2026-11-24 17:08:28,620 | INFO | voicetwin.backend | 训练音色（v5dev，LoRA 微调），共 8 轮……
+2026-11-24 17:08:28,621 | INFO | voicetwin.backend | ▶ 训练音色（v5dev）（详细日志：gsv_s2_train_v5dev.log）
+2026-11-24 17:08:42,581 | INFO | voicetwin.backend |   训练音色：第 1/8 轮（0%）
+2026-11-24 18:23:32,798 | INFO | voicetwin.backend |   训练音色：第 1/8 轮（80%）
+2026-11-24 18:41:40,979 | WARNING | voicetwin.gptsovits | 没有检测到能用的 N 卡：仍然按「一模一样」训练，但用处理器会非常慢。按第一轮的实际速度估算，音色训练练完大约还要 10.9 小时；着急的话可以改选「标准」。
+2026-11-24 18:41:40,986 | INFO | voicetwin.backend |   训练音色：第 1/8 轮完成
+2026-11-24 18:41:58,947 | INFO | voicetwin.backend |   训练音色：第 2/8 轮（0%）
+2026-11-24 19:37:57,474 | INFO | voicetwin.backend |   训练音色：第 2/8 轮（60%）
+2026-11-24 20:15:29,473 | INFO | voicetwin.backend |   训练音色：第 2/8 轮完成
+2026-11-24 20:15:39,351 | INFO | voicetwin.backend | 正在停止「训练音色（v5dev）」……
