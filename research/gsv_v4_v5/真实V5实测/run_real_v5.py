@@ -199,6 +199,50 @@ def main() -> int:
             res.setdefault("detected", {})[Path(p).name] = g.detect_sovits_version(p).get("version")
         save()
 
+    def semantic_diff():
+        """官方 3-get-semantic.py 再用 v2ProPlus 的底模提取一遍，和训练用的（v5dev 底模提取的）逐个 token 比。"""
+        project = wf.open_project(cfg, voice, must_exist=True)
+        b = get_backend("gptsovits", cfg, project)
+        opt = b._opt_dir()
+        tmp = work / "语义_v2ProPlus"
+        tmp.mkdir(parents=True, exist_ok=True)
+        if not (tmp / "4-cnhubert").exists():
+            os.symlink(opt / "4-cnhubert", tmp / "4-cnhubert")
+        env = b.env({"inp_text": str(project.exports_dir / "gptsovits" / "train.list"), "exp_name": b.exp_name,
+                     "opt_dir": str(tmp), "i_part": "0", "all_parts": "1", "_CUDA_VISIBLE_DEVICES": "0",
+                     "is_half": "False", "version": "v2ProPlus",
+                     "pretrained_s2G": str(b.p(g.PRETRAINED_SOVITS["v2ProPlus"])),
+                     "s2config_path": "GPT_SoVITS/configs/s2v2ProPlus.json"})
+        subprocess.run([sys.executable, "-s", "GPT_SoVITS/prepare_datasets/3-get-semantic.py"], env=env,
+                       cwd=str(b.root), check=True)
+
+        def load(path):
+            out = {}
+            for line in Path(path).read_text(encoding="utf-8").splitlines():
+                name, _, toks = line.partition("\t")
+                if name and name != "item_name":
+                    out[name] = toks.split()
+            return out
+
+        a, c = load(opt / "6-name2semantic.tsv"), load(tmp / "6-name2semantic-0.tsv")
+        names = sorted(set(a) & set(c))
+        total = same = 0
+        diff_items = len_mismatch = 0
+        for n in names:
+            x, y = a[n], c[n]
+            if len(x) != len(y):
+                len_mismatch += 1
+            k = min(len(x), len(y))
+            total += k
+            eq = sum(1 for i in range(k) if x[i] == y[i])
+            same += eq
+            diff_items += int(eq != k or len(x) != len(y))
+        return {"items_v5dev": len(a), "items_v2ProPlus": len(c), "compared": len(names), "tokens": total,
+                "same_tokens": same, "same_pct": round(100.0 * same / max(1, total), 3),
+                "items_with_any_diff": diff_items, "length_mismatch": len_mismatch}
+
+    step("语义 token：v5dev 和 v2ProPlus 底模提取的差别", semantic_diff)
+
     def narrate():
         r = wf.run_narrate(cfg, voice, NARRATE, out=str(out / "生成_快速档.wav"), backend_name="gptsovits",
                            quality="fast")
