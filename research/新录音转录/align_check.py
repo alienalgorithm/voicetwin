@@ -95,7 +95,7 @@ def main() -> int:
             score = float(sum(t.score * len(t) for t in sp) / sum(len(t) for t in sp))
             t0, t1 = sp[0].start * ratio, sp[-1].end * ratio
             times.append((t0, t1))
-            per_word.append({"行": r["行"], "字词": w[0], "分数": round(score, 4), "开始": round(s0 + t0, 2)})
+            per_word.append({"行": r["行"], "字词": w[0], "读音": w[1], "分数": round(score, 4), "开始": round(s0 + t0, 2)})
         # 标点处的停顿：这个字结束到下一个字开始
         pauses = []
         for i, w in enumerate(ws[:-1]):
@@ -120,7 +120,27 @@ def main() -> int:
 
     allscores = np.array([p["分数"] for p in per_word])
     q02 = float(np.quantile(allscores, 0.02))
-    flagged = [p for p in per_word if p["分数"] <= q02]
+    # 有的音节对齐模型本来就打分很低（ci、shi、yi……），所以每个字和「同一个读音平时的分数」比：
+    # 同一个读音出现 5 次以上的，log 分数比它自己的中位数低 3 个 MAD 以上才算可疑；少于 5 次的用全部的最低 1%
+    from collections import defaultdict
+    by = defaultdict(list)
+    for p in per_word:
+        by[p["读音"]].append(np.log(p["分数"] + 1e-4))
+    stats = {k: (float(np.median(v)), float(np.median(np.abs(np.array(v) - np.median(v)))) + 1e-3) for k, v in by.items() if len(v) >= 5}
+    q01 = float(np.quantile(allscores, 0.01))
+    flagged = []
+    for p in per_word:
+        st = stats.get(p["读音"])
+        if st:
+            z = (np.log(p["分数"] + 1e-4) - st[0]) / (1.4826 * st[1])
+            if z < -3:
+                flagged.append(dict(p, 比同音平时低=round(float(z), 1)))
+        elif p["分数"] <= q01:
+            flagged.append(dict(p, 比同音平时低="（这个读音少于 5 次）"))
+    with open(out / "全部字词.csv", "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["行", "字词", "读音", "分数", "开始"])
+        w.writeheader()
+        w.writerows(per_word)
     edge = [r for r in per_row if r.get("开头没对上的人声秒", 0) > 0.3 or r.get("结尾没对上的人声秒", 0) > 0.3]
     bad = [r for r in per_row if "问题" in r]
     # 标点和停顿：句号 / 问号处的停顿 vs 逗号处 vs 没标点处
@@ -129,14 +149,26 @@ def main() -> int:
         for p in r.get("停顿", []):
             k = "句号问号" if any(c in p["后面"] for c in "。？！?!.") else ("逗号" if any(c in p["后面"] for c in "，,、；;：:") else "没标点")
             kinds[k].append(p["停顿秒"])
+    # 标点和真实停顿对不上的地方：逗号 / 句号处几乎没停（短于「没标点处」的第 90 百分位），没标点处停得比逗号的中位数还久
+    nop90 = float(np.quantile(kinds["没标点"], 0.9)) if kinds["没标点"] else 0.0
+    com50 = float(np.median(kinds["逗号"])) if kinds["逗号"] else 0.0
+    mism = []
+    for r in per_row:
+        for i, p in enumerate(r.get("停顿", [])):
+            has = p["后面"] != "（无标点）"
+            if has and p["停顿秒"] < nop90:
+                mism.append({"行": r["行"], "第几个字后": i + 1, "标点": p["后面"], "停顿秒": p["停顿秒"], "说明": "有标点，但几乎没停"})
+            elif not has and p["停顿秒"] > com50:
+                mism.append({"行": r["行"], "第几个字后": i + 1, "标点": "", "停顿秒": p["停顿秒"], "说明": "停了，但没有标点"})
+    (out / "标点和停顿对不上.json").write_text(json.dumps(mism, ensure_ascii=False, indent=1), encoding="utf-8")
     summary = {"字词": len(per_word), "分数分布": {q: round(float(np.quantile(allscores, q)), 4) for q in (0.01, 0.02, 0.05, 0.25, 0.5)},
-               "最低2%的字词": len(flagged), "开头或结尾有没对上的人声的句子": len(edge), "对不齐的句子": len(bad),
+               "比同一个读音平时低很多的字词": len(flagged), "标点和停顿对不上的地方": len(mism), "开头或结尾有没对上的人声的句子": len(edge), "对不齐的句子": len(bad),
                "停顿秒（中位数 / 第90百分位）": {k: [round(float(np.median(v)), 3), round(float(np.quantile(v, 0.9)), 3)] if v else None
                                        for k, v in kinds.items()}}
     (out / "汇总.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     (out / "每句.json").write_text(json.dumps(per_row, ensure_ascii=False, indent=1), encoding="utf-8")
     with open(out / "可疑的字词.csv", "w", encoding="utf-8-sig", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["行", "字词", "分数", "开始"])
+        w = csv.DictWriter(f, fieldnames=["行", "字词", "读音", "分数", "开始", "比同音平时低"])
         w.writeheader()
         w.writerows(sorted(flagged, key=lambda p: p["分数"]))
     print(json.dumps(summary, ensure_ascii=False, indent=1))
