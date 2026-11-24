@@ -1,0 +1,62 @@
+name: transcribe
+
+# 老师新录的课：用声音分身自己的方法转录（faster-whisper large-v3 + FunASR 查错字 + 按母本一键校正），
+# 每一句两个引擎各自的结果、查错字、校正以后的字存到 research/新录音转录/结果/，再逐句人工核对。
+# 要转录哪些录音：research/新录音转录/要转录.txt（老师传到 Release 的下载地址）。只有处理器，所以慢一些。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "research/新录音转录/要转录.txt"
+      - "research/新录音转录/transcribe.py"
+      - ".github/workflows/transcribe.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: transcribe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  asr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      OUT: research/新录音转录/结果
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo mkdir -p /mnt/w && sudo chown $USER /mnt/w
+          df -h / /mnt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (CPU)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          python -m pip install -U pip wheel
+          python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[asr,funasr,dev,sv,denoise]" webrtcvad-wheels
+          python -m pip install --no-deps resemblyzer
+          python -c "import faster_whisper, funasr; print('faster-whisper', faster_whisper.__version__, 'funasr', funasr.__version__)"
+      - name: Transcribe
+        run: python research/新录音转录/transcribe.py --list research/新录音转录/要转录.txt --work /mnt/w/tr --out "$OUT"
+      - name: Commit results
+        if: always()
+        run: |
+          [ -d "$OUT" ] || exit 0
+          mkdir -p "$OUT/日志"
+          for d in /mnt/w/tr/workspace/*/logs; do cp -r "$d/." "$OUT/日志/" 2>/dev/null || true; done
+          find "$OUT/日志" -type f -size +2M -delete || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$OUT"
+          git commit -m "记录：新录音转录结果（GitHub 自动运行）" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && break
+            sleep $((i * 5))
+          done
