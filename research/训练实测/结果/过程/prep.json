@@ -1,11 +1,11 @@
 {
  "kind": "prep",
  "variant_independent": true,
- "started": "2026-11-24 16:32:19",
+ "started": "2026-11-24 22:41:45",
  "timing_s": {
-  "下载录音": 35.8,
-  "准备素材（不识别文字）": 136.0,
-  "确认训练素材（重新统计、声纹检查、留考试题）": 138.3
+  "下载录音": 23.6,
+  "准备素材（不识别文字）": 116.6,
+  "确认训练素材（重新统计、声纹检查、留考试题）": 95.5
  },
  "recordings": [
   {
@@ -101,7 +101,7 @@
   "minutes_kept": 0.0,
   "val_clips": 0,
   "transcripts_csv": "/mnt/w/vt/workspace/老师/transcripts.csv",
-  "elapsed_min": 2.2,
+  "elapsed_min": 1.9,
   "files_total": 17,
   "files_new": 17
  },
@@ -350,6 +350,13 @@
   }
  ],
  "train_minutes": 148.3,
- "seconds": 310.3,
- "finished": "2026-11-24 16:37:30"
+ "seconds": 235.7,
+ "finished": "2026-11-24 22:45:40",
+ "pack": {
+  "kind": "prep",
+  "files": 1261,
+  "bytes": 1608028160,
+  "seconds": 1.7,
+  "parts": 1
+ }
 }
