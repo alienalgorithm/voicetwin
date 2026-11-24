@@ -1,0 +1,106 @@
+{
+ "started": "2026-11-24 12:32:37",
+ "files": [
+  {
+   "name": "001.1.1.1.-.wav",
+   "bytes": 182890574,
+   "sha256": "553a679b2ed7f0ee68ff77304a7155102e12513e104c275ec3ff61a617683d95"
+  },
+  {
+   "name": "1.wav",
+   "bytes": 118399054,
+   "sha256": "52b5e5fa1081d46866e3f7912b90630231b42053498408b12056494b3214928a"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 2610,
+  "SenseVoice 再听一遍": 254,
+  "一键全部文字校正": 1
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 204,
+  "clips_kept": 204,
+  "minutes_kept": 25.9,
+  "val_clips": 20,
+  "references": [
+   {
+    "no": 1,
+    "id": "1_f5b385_0019",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "在这个场景中，Watt所代替的对象就是Bear,并且Bear它符合一个条件，那就是我想要的东西。"
+   },
+   {
+    "no": 2,
+    "id": "1_f5b385_0005",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "有一天开party,Jason走向吧台打算要瓶啤酒，然后酒保看见是Jason过来了，就直接说了这么一句话，我知道你想要啤酒，I know you want beer。"
+   },
+   {
+    "no": 3,
+    "id": "001_1_1_1_-_8ae47d_0123",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "当然，这种给从具命名的方式本身没有绝对的对错，大家按照自己喜欢的方式来即可。"
+   },
+   {
+    "no": 4,
+    "id": "001_1_1_1_-_8ae47d_0072",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "如果我们把这个句子里面的名词形从句给去掉，那这个句子就会被简化成the news is not true。"
+   },
+   {
+    "no": 5,
+    "id": "1_f5b385_0074",
+    "lang": "zh",
+    "kind": "question",
+    "text": "这个名词应从句所对应的中文就是他买了什么。那我们只需要按部就班的把这个句子直接翻译出来，he bought what?"
+   }
+  ],
+  "warnings": [
+   "素材里有 146 句夹着英文（共 520 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 94 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 39.9,
+  "files_total": 2,
+  "files_new": 2,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 204,
+  "flagged": 94,
+  "fixed_rows": 12,
+  "fixes": 15,
+  "found": 9,
+  "aligned": 7,
+  "cleared": 0,
+  "kept_auto": 73,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 72,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 0,
+  "mother_fixes": 0,
+  "truncated": false,
+  "seconds": 1.4
+ },
+ "finished": "2026-11-24 13:20:26",
+ "counts": {
+  "句子": 204,
+  "用来训练": 204,
+  "第二个引擎听过": 204,
+  "查错字标红": 94,
+  "一键校正改过": 14
+ }
+}

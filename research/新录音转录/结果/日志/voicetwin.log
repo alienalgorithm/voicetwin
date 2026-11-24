@@ -1,11 +1,49 @@
-2026-11-24 12:22:33,948 | INFO | voicetwin.prepare | 找到 1 个视频/录音
-2026-11-24 12:22:33,948 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：001.1.1.1.-.wav（174 MB）
-2026-11-24 12:22:34,555 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
-2026-11-24 12:22:36,938 | INFO | voicetwin.enhance |   估计信噪比 23.7 dB，进行轻度降噪（强度 0.6）
-2026-11-24 12:22:48,328 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
-2026-11-24 12:22:49,900 | INFO | voicetwin.prepare |   切出 126 段
-2026-11-24 12:22:49,907 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
-2026-11-24 12:22:49,958 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
-2026-11-24 12:23:12,822 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 126 段）
-2026-11-24 12:23:30,318 | INFO | voicetwin.prepare | 识别 1/126：名词性冲剧是三大冲剧里面最难最复杂的一个
-2026-11-24 12:28:52,781 | INFO | voicetwin.prepare | 识别 21/126：但是如果我们现在能有这么一个方法，用这个
+2026-11-24 12:32:42,053 | INFO | voicetwin.prepare | 找到 2 个视频/录音
+2026-11-24 12:32:42,053 | INFO | voicetwin.prepare | [第 1/2 个文件] 从视频里提取声音：001.1.1.1.-.wav（174 MB）
+2026-11-24 12:32:42,479 | INFO | voicetwin.prepare | [第 1/2 个文件] 降噪、统一音量
+2026-11-24 12:32:44,050 | INFO | voicetwin.enhance |   估计信噪比 23.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:32:51,848 | INFO | voicetwin.prepare | [第 1/2 个文件] 切成小段……
+2026-11-24 12:32:52,835 | INFO | voicetwin.prepare |   切出 126 段
+2026-11-24 12:32:52,841 | INFO | voicetwin.prepare | [第 2/2 个文件] 从视频里提取声音：1.wav（113 MB）
+2026-11-24 12:32:53,130 | INFO | voicetwin.prepare | [第 2/2 个文件] 降噪、统一音量
+2026-11-24 12:32:54,977 | INFO | voicetwin.prepare | [第 2/2 个文件] 切成小段……
+2026-11-24 12:32:56,214 | INFO | voicetwin.prepare |   切出 78 段
+2026-11-24 12:32:56,221 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:32:56,266 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 12:33:19,791 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 204 段）
+2026-11-24 12:33:32,210 | INFO | voicetwin.prepare | 识别 1/204：名词性冲剧是三大冲剧里面最难最复杂的一个
+2026-11-24 12:37:25,959 | INFO | voicetwin.prepare | 识别 21/204：但是如果我们现在能有这么一个方法，用这个
+2026-11-24 12:41:15,187 | INFO | voicetwin.prepare | 识别 41/204：也就是说Net所引导的名词性从句只能跟带
+2026-11-24 12:44:54,413 | INFO | voicetwin.prepare | 识别 61/204：在句子里面所做的句子成分都是主语，它们有
+2026-11-24 12:48:38,938 | INFO | voicetwin.prepare | 识别 81/204：那就是that这个名词型从句引导词，它在
+2026-11-24 12:52:36,879 | INFO | voicetwin.prepare | 识别 101/204：通过以上这些步骤，我们就完美的把这个一般
+2026-11-24 12:56:26,271 | INFO | voicetwin.prepare | 识别 121/204：而在下面这个句子里面，when they
+2026-11-24 13:00:21,368 | INFO | voicetwin.prepare | 识别 141/204：那假如说Jason想要的东西并不是啤酒，
+2026-11-24 13:04:13,270 | INFO | voicetwin.prepare | 识别 161/204：所以说只要是我想买的东西都可以被包含在W
+2026-11-24 13:07:59,818 | INFO | voicetwin.prepare | 识别 181/204：what在这个地方的作用同样也是提问，只
+2026-11-24 13:11:51,140 | INFO | voicetwin.prepare | 识别 201/204：这个名词应从句所对应的中文就是他买了什么
+2026-11-24 13:12:24,938 | INFO | voicetwin.prepare | 识别 204/204：好，以上就是关于what所有的知识点和使
+2026-11-24 13:12:24,941 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 204 段）……
+2026-11-24 13:12:25,904 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 13:12:26,250 | INFO | voicetwin.prepare | 计算声纹 1/204
+2026-11-24 13:12:28,774 | INFO | voicetwin.prepare | 计算声纹 51/204
+2026-11-24 13:12:31,359 | INFO | voicetwin.prepare | 计算声纹 101/204
+2026-11-24 13:12:33,962 | INFO | voicetwin.prepare | 计算声纹 151/204
+2026-11-24 13:12:36,608 | INFO | voicetwin.prepare | 计算声纹 201/204
+2026-11-24 13:12:36,740 | INFO | voicetwin.prepare | 计算声纹 204/204
+2026-11-24 13:12:36,758 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 13:12:36,801 | INFO | voicetwin.references |   主参考（zh）：在这个场景中，Watt所代替的对象就是Bear,并且Bear它符合一个条件，那就是我想要的东西。（7.02 秒）
+2026-11-24 13:12:36,806 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 13:12:36,831 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 13:12:40,369 | INFO | voicetwin.profile |   中文语速：6.10 音节/秒（不含停顿）
+2026-11-24 13:12:40,369 | INFO | voicetwin.profile |   中文音高：100 Hz，起伏 4.3 半音
+2026-11-24 13:12:40,369 | INFO | voicetwin.profile |   停顿习惯：逗号 0.25s / 句号 0.34s / 段落 0.59s
+2026-11-24 13:12:47,341 | INFO | voicetwin.workflow | 查找可能的错字（用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红）……
+2026-11-24 13:12:50,212 | INFO | voicetwin.proofcheck | 查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……
+2026-11-24 13:14:41,219 | INFO | voicetwin.proofcheck | 查错字：已加载 FunASR（cpu）paraformer-zh
+2026-11-24 13:16:11,142 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 204 条，母本里找到了差不多的句子 0 条（母本优先）；直接改好 0 处（0 条，存成没保存的修改，其中按母本 0 处），另外 21 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 73 条；用时 1.8 秒。
+2026-11-24 13:16:11,165 | INFO | voicetwin.proofcheck | 查错字完成：检查了 204 条，其中 94 条可能有错。用 FunASR（阿里的中文识别模型）把 204 条再听了一遍，做了对比。用时 203.8 秒。
+2026-11-24 13:16:11,167 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 13:20:26,447 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 204 条，母本里找到了差不多的句子 0 条（母本优先）；直接改好 15 处（12 条，存成没保存的修改，其中按母本 0 处），另外 9 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 73 条；用时 1.4 秒。
+2026-11-24 13:20:26,459 | INFO | voicetwin.workflow | 把有把握的修改建议一次全部采用……
+2026-11-24 13:20:26,486 | INFO | voicetwin.workflow | 校正完了：一共改了 17 处
