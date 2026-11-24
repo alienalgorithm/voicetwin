@@ -1,0 +1,5 @@
+
+===== 2026-11-24 10:32:09 提取语义 =====
+命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/prepare_datasets/3-get-semantic.py
+目录：/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0
+_IncompatibleKeys(missing_keys=['cfm.estimator.d_embed.time_mlp.0.weight', 'cfm.estimator.d_embed.time_mlp.0.bias', 'cfm.estimator.d_embed.time_mlp.2.weight', 'cfm.estimator.d_embed.time_mlp.2.bias'], unexpected_keys=[])

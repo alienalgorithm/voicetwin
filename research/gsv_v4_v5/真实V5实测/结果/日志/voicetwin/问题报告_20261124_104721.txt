@@ -1,0 +1,152 @@
+﻿============================================================
+声音分身 VoiceTwin 问题报告
+============================================================
+生成时间：2026-11-24 10:47:21
+声音分身版本：18.6
+做的事：训练后自动挑选最像你的模型（声音：实测声音）
+原因：缺少「resampy」组件
+怎么办：请重新双击 install_windows.bat 安装一次（你的数据不会丢）。
+
+【自动诊断出的线索】
+- 引擎记录显示：合成引擎已经加载完模型并打开了（http://127.0.0.1:9880）。
+- 引擎对程序的请求回答了 1 次「内部错误」（HTTP 500）。
+- 引擎报错：SystemExit: 0
+- prepare.log 里的报错：RuntimeError: GPT-SoVITS 合成失败：No module named 'resampy'
+
+【技术细节】
+Traceback (most recent call last):
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py", line 913, in run_train
+    selection = run_select(cfg, voice, backend.name, progress=_sub(progress, split, 1.0),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py", line 1091, in run_select
+    res = select_and_calibrate(cfg, project, backend, max_items=n_items, use_asr=use_asr,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/synth/select.py", line 223, in select_and_calibrate
+    backend.synthesize(SynthRequest(text=it["text"], lang=it["lang"], ref_audio=project.abspath(ref["path"]),
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py", line 3909, in synthesize
+    data = self._tts_answer(self._payload(req))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py", line 3945, in _tts_answer
+    raise _answer_error(text, reason)
+RuntimeError: GPT-SoVITS 合成失败：No module named 'resampy'
+
+【合成引擎的记录 gptsovits_api.log（最后一次启动的部分，重复的报错已合并）】
+===== 声音分身 18.6 启动推理服务 2026-11-24 10:47:03（端口 9880，模型 s2-g2）=====
+Warning: CUDA is not available, set device to CPU.
+---------------------------------------------TTS Config---------------------------------------------
+device              : cpu
+is_half             : False
+version             : v5dev
+t2s_weights_path    : /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt
+vits_weights_path   : /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s192_l32.pth
+bert_base_path      : /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+cnhuhbert_base_path : /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/chinese-hubert-base
+----------------------------------------------------------------------------------------------------
+
+Loading Text2Semantic weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt
+Removing weight norm...
+loading vocoder <All keys matched successfully>
+Loading VITS pretrained weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s192_l32.pth. <All keys matched successfully>
+Loading LoRA weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s192_l32.pth. _IncompatibleKeys(missing_keys=['enc_p.ssl_proj.weight', 'enc_p.ssl_proj.bias', 'enc_p.encoder_ssl.attn_layers.0.emb_rel_k', 'enc_p.encoder_ssl.attn_layers.0.emb_rel_v', 'enc_p.encoder……（这一行太长，后面省略 38557 字）
+Loading BERT weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
+Loading CNHuBERT weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/chinese-hubert-base
+INFO:     Started server process [6951]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9880 (Press CTRL+C to quit)
+INFO:     127.0.0.1:42648 - "GET /control HTTP/1.1" 400 Bad Request
+……（上面这一行又重复了 1 次，已省略）
+Loading Text2Semantic weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt
+INFO:     127.0.0.1:42686 - "GET /set_gpt_weights?weights_path=%2Fmnt%2Fw%2Fg%2FGPT-SoVITS-v5-20261006nvidia50x0%2FGPT_weights_v5dev%2Fvt_419cd8-e1.ckpt HTTP/1.1" 200 OK
+Loading VITS pretrained weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s96_l32.pth. <All keys matched successfully>
+Loading LoRA weights from /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s96_l32.pth. _IncompatibleKeys(missing_keys=['enc_p.ssl_proj.weight', 'enc_p.ssl_proj.bias', 'enc_p.encoder_ssl.attn_layers.0.emb_rel_k', 'enc_p.encoder_ssl.attn_layers.0.emb_rel_v', 'enc_p.encoder_……（这一行太长，后面省略 38556 字）
+INFO:     127.0.0.1:42686 - "GET /set_sovits_weights?weights_path=%2Fmnt%2Fw%2Fg%2FGPT-SoVITS-v5-20261006nvidia50x0%2FSoVITS_weights_v5dev%2Fvt_419cd8_e1_s96_l32.pth HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42686 - "GET /control HTTP/1.1" 400 Bad Request
+False False False
+Set seed to 1234
+Parallel Inference Mode Enabled
+When parallel inference mode is enabled, SoVITS V3/4 models do not support bucket processing; bucket processing has been automatically disabled.
+INFO:     127.0.0.1:42708 - "POST /tts HTTP/1.1" 400 Bad Request
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  ……（15 层 Python 库内部的调用，省略）
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py", line 458, in control
+    handle_control(command)
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py", line 308, in handle_control
+    exit(0)
+  File "<frozen _sitebuiltins>", line 26, in __call__
+SystemExit: 0
+INFO:     127.0.0.1:42708 - "GET /control?command=exit HTTP/1.1" 500 Internal Server Error
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [6951]
+
+【记录文件 prepare.log（最后的部分，重复的已合并）】
+2026-11-24 10:30:05,117 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 10:30:05,118 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：第1课.wav（19 MB）
+2026-11-24 10:30:05,803 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 10:30:07,658 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 10:30:07,717 | INFO | voicetwin.prepare |   使用字幕 第1课.srt（72 条）切分
+2026-11-24 10:30:23,079 | INFO | voicetwin.prepare |   切出 72 段
+2026-11-24 10:30:23,088 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 72 段）……
+2026-11-24 10:30:23,508 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 10:30:39,255 | INFO | voicetwin.prepare | 计算声纹 1/72
+2026-11-24 10:30:41,956 | INFO | voicetwin.prepare | 计算声纹 51/72
+……（中间省略 66 行）
+2026-11-24 10:32:09,270 | INFO | voicetwin.backend | 提取语义（大约 1~3 分钟）
+2026-11-24 10:32:09,270 | INFO | voicetwin.backend | ▶ 提取语义（详细日志：gsv_1c_semantic.log）
+2026-11-24 10:32:17,751 | INFO | voicetwin.backend | 训练音色（v5dev，LoRA 微调），共 2 轮……
+2026-11-24 10:32:17,752 | INFO | voicetwin.backend | ▶ 训练音色（v5dev）（详细日志：gsv_s2_train_v5dev.log）
+2026-11-24 10:32:33,990 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（0%）
+2026-11-24 10:33:38,764 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（21%）
+2026-11-24 10:34:39,794 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（42%）
+2026-11-24 10:35:40,229 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（62%）
+2026-11-24 10:36:40,512 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（83%）
+2026-11-24 10:37:26,095 | INFO | voicetwin.backend |   训练音色：第 1/2 轮完成
+2026-11-24 10:37:42,239 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（4%）
+2026-11-24 10:38:43,335 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（25%）
+2026-11-24 10:39:44,274 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（46%）
+2026-11-24 10:40:44,376 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（67%）
+2026-11-24 10:41:45,006 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（88%）
+2026-11-24 10:42:23,650 | INFO | voicetwin.backend |   训练音色：第 2/2 轮完成
+2026-11-24 10:42:25,006 | INFO | voicetwin.backend | 训练语气和节奏（GPT），共 2 轮……
+2026-11-24 10:42:25,011 | INFO | voicetwin.backend | ▶ 训练语气和节奏（详细日志：gsv_s1_train.log）
+2026-11-24 10:45:19,967 | INFO | voicetwin.backend | 保存模型……
+2026-11-24 10:45:19,968 | INFO | voicetwin.backend | 实际参加训练：音色 48 条、语气 16 条（一共 63 条）。
+2026-11-24 10:45:19,968 | INFO | voicetwin.backend | 有 47 条没参加训练（原因：文字处理的结果里没有这条 47 条），一般是文字和声音对不上或者太短；不影响使用，训练程序没有记下是哪几条。
+2026-11-24 10:45:19,968 | INFO | voicetwin.backend | 用时（实测）：处理文字和提取特征 1.4 分钟、语气每轮 88 秒。
+2026-11-24 10:45:19,969 | INFO | voicetwin.backend | GPT-SoVITS 训练完成
+2026-11-24 10:45:19,972 | INFO | voicetwin.workflow | 训练完成，开始自动挑选最像你的模型
+2026-11-24 10:45:20,017 | INFO | voicetwin.workflow | 挑选方式：标准——从早到晚均匀挑几个版本比（大约 5~15 分钟，估计）
+2026-11-24 10:45:20,019 | INFO | voicetwin.select | 加载声纹和识别模型（第一次使用会先下载）……
+2026-11-24 10:45:20,019 | INFO | voicetwin.speaker | 精准声纹模型还没下载，先用旧的打分方式（redimnet2-b6：声纹模型 ReDimNet2-B6（2026 年最新，中英文 10 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/redimnet2_b6_vb2_vox2_cnc2_lm.onnx）；eres2netv2-zh：声纹模型 ERes2NetV2（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin……（这一行太长，后面省略 249 字）
+2026-11-24 10:46:51,494 | WARNING | voicetwin.metrics | 识别校验不可用（未安装 faster-whisper：请执行 pip install "voicetwin[asr]"），将只用声纹和节奏打分
+2026-11-24 10:47:03,169 | INFO | voicetwin.select | 启动合成引擎（要先加载模型）……
+2026-11-24 10:47:03,173 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9880，模型 s2-g2）……
+2026-11-24 10:47:17,181 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 14 秒）
+2026-11-24 10:47:17,182 | INFO | voicetwin.select | 共 4 个模型 × 9 句验证集，逐个试听（声纹模型：ERes2NetV2（GPT-SoVITS 自带）、Resemblyzer）
+2026-11-24 10:47:17,182 | INFO | voicetwin.select | 切换到模型 s1-g1（第 1/4 个）
+2026-11-24 10:47:21,487 | WARNING | voicetwin.workflow | ⚠️ 训练已经成功完成并保存了，只是「自动挑选最像你的模型」这一步没成功（缺少「resampy」组件）。现在先用最后一轮的模型；可以稍后在「② 训练模型」页点「重新挑选最佳模型」再试。
+Traceback (most recent call last):
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py", line 913, in run_train
+    selection = run_select(cfg, voice, backend.name, progress=_sub(progress, split, 1.0),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py", line 1091, in run_select
+    res = select_and_calibrate(cfg, project, backend, max_items=n_items, use_asr=use_asr,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/synth/select.py", line 223, in select_and_calibrate
+    backend.synthesize(SynthRequest(text=it["text"], lang=it["lang"], ref_audio=project.abspath(ref["path"]),
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py", line 3909, in synthesize
+    data = self._tts_answer(self._payload(req))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py", line 3945, in _tts_answer
+    raise _answer_error(text, reason)
+RuntimeError: GPT-SoVITS 合成失败：No module named 'resampy'
+
+【电脑情况】
+系统：Linux-7.0.0-1020-azure-x86_64-with-glibc2.43
+Python：3.12.16（/opt/hostedtoolcache/Python/3.12.16/x64/bin/python）
+显卡：❌ 显卡没有正常工作：没有找到 NVIDIA 显卡（或者显卡驱动没装）
+硬盘（/）剩余：92.3 GB
+============================================================

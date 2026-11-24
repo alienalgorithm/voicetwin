@@ -1,0 +1,333 @@
+
+===== 2026-11-24 10:42:25 训练语气和节奏 =====
+命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/s1_train.py --config_file /mnt/w/vt/workspace/实测声音/models/gptsovits/tmp_s1.yaml
+目录：/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0
+Seed set to 1234
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+<All keys matched successfully>
+ckpt_path: None
+semantic_data_len: 63
+phoneme_data_len: 16
+              item_name                                     semantic_audio
+0   第1课_8a31f3_0001.wav  520 53 53 53 536 105 105 53 749 788 175 886 86...
+1   第1课_8a31f3_0002.wav  520 53 105 536 280 280 280 280 991 1002 403 51...
+2   第1课_8a31f3_0003.wav  520 53 53 536 520 280 280 53 72 269 924 960 79...
+3   第1课_8a31f3_0004.wav  520 53 53 53 536 53 53 53 536 738 184 477 795 ...
+4   第1课_8a31f3_0005.wav  520 53 53 53 53 105 105 53 72 269 924 803 803 ...
+..                  ...                                                ...
+58  第1课_8a31f3_0066.wav  520 53 280 280 280 280 280 53 283 877 1016 973...
+59  第1课_8a31f3_0067.wav  520 53 53 536 258 53 53 234 283 136 201 717 63...
+60  第1课_8a31f3_0068.wav  520 53 53 536 520 105 271 72 617 825 62 727 60...
+61  第1课_8a31f3_0069.wav  520 53 105 536 280 280 53 234 578 449 653 498 ...
+62  第1课_8a31f3_0071.wav  520 53 105 536 258 280 105 271 283 136 172 468...
+[63 rows x 2 columns]
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0001.wav'
+Warning: File "第1课_8a31f3_0001.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0002.wav'
+Warning: File "第1课_8a31f3_0002.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0003.wav'
+Warning: File "第1课_8a31f3_0003.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0004.wav'
+Warning: File "第1课_8a31f3_0004.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0005.wav'
+Warning: File "第1课_8a31f3_0005.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0006.wav'
+Warning: File "第1课_8a31f3_0006.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0007.wav'
+Warning: File "第1课_8a31f3_0007.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0008.wav'
+Warning: File "第1课_8a31f3_0008.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0010.wav'
+Warning: File "第1课_8a31f3_0010.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0011.wav'
+Warning: File "第1课_8a31f3_0011.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0012.wav'
+Warning: File "第1课_8a31f3_0012.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0013.wav'
+Warning: File "第1课_8a31f3_0013.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0014.wav'
+Warning: File "第1课_8a31f3_0014.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0015.wav'
+Warning: File "第1课_8a31f3_0015.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0016.wav'
+Warning: File "第1课_8a31f3_0016.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0017.wav'
+Warning: File "第1课_8a31f3_0017.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0025.wav'
+Warning: File "第1课_8a31f3_0025.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0026.wav'
+Warning: File "第1课_8a31f3_0026.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0027.wav'
+Warning: File "第1课_8a31f3_0027.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0028.wav'
+Warning: File "第1课_8a31f3_0028.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0029.wav'
+Warning: File "第1课_8a31f3_0029.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0030.wav'
+Warning: File "第1课_8a31f3_0030.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0031.wav'
+Warning: File "第1课_8a31f3_0031.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0033.wav'
+Warning: File "第1课_8a31f3_0033.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0034.wav'
+Warning: File "第1课_8a31f3_0034.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0035.wav'
+Warning: File "第1课_8a31f3_0035.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0036.wav'
+Warning: File "第1课_8a31f3_0036.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0037.wav'
+Warning: File "第1课_8a31f3_0037.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0038.wav'
+Warning: File "第1课_8a31f3_0038.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0039.wav'
+Warning: File "第1课_8a31f3_0039.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0040.wav'
+Warning: File "第1课_8a31f3_0040.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0048.wav'
+Warning: File "第1课_8a31f3_0048.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0049.wav'
+Warning: File "第1课_8a31f3_0049.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0050.wav'
+Warning: File "第1课_8a31f3_0050.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0051.wav'
+Warning: File "第1课_8a31f3_0051.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0052.wav'
+Warning: File "第1课_8a31f3_0052.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0053.wav'
+Warning: File "第1课_8a31f3_0053.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0054.wav'
+Warning: File "第1课_8a31f3_0054.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0055.wav'
+Warning: File "第1课_8a31f3_0055.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0057.wav'
+Warning: File "第1课_8a31f3_0057.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0058.wav'
+Warning: File "第1课_8a31f3_0058.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0059.wav'
+Warning: File "第1课_8a31f3_0059.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0060.wav'
+Warning: File "第1课_8a31f3_0060.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0061.wav'
+Warning: File "第1课_8a31f3_0061.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0062.wav'
+Warning: File "第1课_8a31f3_0062.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0063.wav'
+Warning: File "第1课_8a31f3_0063.wav" not in self.phoneme_data! Skipped.
+Traceback (most recent call last):
+  File "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/data/dataset.py", line 133, in init_batch
+    phoneme, word2ph, text = self.phoneme_data[item_name]
+                             ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: '第1课_8a31f3_0064.wav'
+Warning: File "第1课_8a31f3_0064.wav" not in self.phoneme_data! Skipped.
+there are 47 semantic datas not in phoneme datas
+dataset.__len__(): 96
+┏━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name  ┃ Type                 ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ model │ Text2SemanticDecoder │ 77.6 M │ train │     0 │
+└───┴───────┴──────────────────────┴────────┴───────┴───────┘
+Trainable params: 77.6 M
+Non-trainable params: 0
+Total params: 77.6 M
+Total estimated model params size (MB): 310.426
+Modules in train mode: 257
+Modules in eval mode: 0
+Total FLOPs: 0
+`Trainer.fit` stopped: `max_epochs=2` reached.
+Epoch 1/1  ━━━━━━━━━━━━━━━━━ 96/96 0:01:21 • 0:00:00 1.20it/s v_num: 0.000
+                                                              total_loss_step:
+                                                              67.775 lr_step:
+                                                              0.002
+                                                              top_3_acc_step:
+                                                              0.940
+                                                              total_loss_epoch:
+                                                              86.791 lr_epoch:
+                                                              0.002
+                                                              top_3_acc_epoch:
+                                                              0.917
