@@ -44,6 +44,7 @@ prepare:
     speaker_min_similarity: auto
   validation_count: 20        # 留出多少条不参与训练、专门用来自动挑选最佳模型和校准"像你本人（%）"（素材少时自动减少）
   proofcheck: auto            # 素材准备最后自动"查找可能的错字"：auto（装了第二个识别引擎时才做）| on | off
+  proofcheck_vote: auto       # 查错字时再用 SenseVoice 听一遍，三个识别引擎投票（两个引擎听到的一样就是有把握的建议）：auto | off
   references:
     count: 8                  # 挑选多少条最具代表性的参考音频
     min_duration: 3.5         # GPT-SoVITS 要求参考音频 3~10 秒

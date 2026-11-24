@@ -522,6 +522,40 @@ def test_one_click_adopts_vetted_auto_suggestion_english_written_as_chinese(tmp_
 
 
 @need_both
+def test_one_click_adopts_what_two_other_engines_agree_on(tmp_path):
+    """三个识别引擎投票（查错字时 FunASR、SenseVoice 都听成一样的）：有把握，一键全部文字校正直接采用；
+    只有一个引擎这么听的照旧没把握，留着红色和建议。"""
+    from voicetwin.data import asr_vote
+    from voicetwin.data import proofcheck as pc
+
+    rows = [  # (现在的文字 = faster-whisper, FunASR, SenseVoice)
+        ("我们先翻译西安有害健康这个句子", "我 们 先 翻 译 吸 烟 有 害 健 康 这 个 句 子", "我们先翻译吸烟有害健康这个句子。"),
+        # 标准库也说「逐语 → 主语」但没把握：另外两个引擎也都这么听 → 有把握
+        ("所以说它可以名正言顺的去做逐语这个句子成分", "所 以 说 它 可 以 名 正 言 顺 的 去 做 主 语 这 个 句 子 成 分",
+         "所以说它可以名正言顺的去做主语这个句子成分。"),
+        # 标准库只改「剧 → 句」（没把握），投票改「冲剧 → 从句」包含了它：按投票的改
+        ("也就是我们所说的在一个名词性冲剧中", "也 就 是 我 们 所 说 的 在 一 个 名 词 性 从 句 中",
+         "也就是我们所说的在一个名词性从句中。"),
+        ("我们先翻译西安有害健康这个句子", "我 们 先 翻 译 吸 烟 有 害 健 康 这 个 句 子", "我们先翻译西安有害健康这个句子。"),
+    ]
+    cfg, project = _voice(tmp_path, [w for w, _f, _s in rows])
+    recs = project.load_manifest()
+    for rec, (w, f, sv) in zip(recs, rows):
+        votes = asr_vote.vote(w, {"funasr": f, "sensevoice": sv})
+        rec["suspect"] = pc.build_suspect(w, f, None, engine="funasr", votes=votes)
+    project.save_manifest(recs)
+    res = wf.run_transcript_fix(cfg, "校正声音")
+    draft = review.load_draft(project)
+    assert draft["c000"]["text"] == "我们先翻译吸烟有害健康这个句子"
+    assert draft["c001"]["text"] == "所以说它可以名正言顺的去做主语这个句子成分"
+    assert draft["c002"]["text"] == "也就是我们所说的在一个名词性从句中"
+    assert "c003" not in draft and res["adopted"]["unsure"] == 1  # 只有 FunASR 听成「吸烟」：老师听录音决定
+    rec, cur = _cur(project, "c003")
+    info = review.analyze(rec, cur)
+    assert info["edits"] and not info["sure"] and [cur[s:e] for s, e in info["red"]] == ["西安"]
+
+
+@need_both
 def test_whole_sentence_auto_suggestion_is_not_adopted(tmp_path):
     cfg, project = _voice(tmp_path, ["今天天气很好我们去公园"])
     recs = project.load_manifest()

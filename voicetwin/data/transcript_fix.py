@@ -1478,6 +1478,34 @@ def _auto_edit_sure(cur: str, s: int, e: int, rep: str, lex: Any = None) -> bool
     return sounds_like_english([t.tone for t in ot], [t.key for t in nt]) and not lex.has_common_word(old)
 
 
+def _vote_sure_edits(auto: Optional[Dict[str, Any]], rec: Dict[str, Any], cur: str) -> Set[Tuple[int, int, str]]:
+    """自动查错字时三个识别引擎投票有把握的那几处（proofcheck.VOTE_ALT 里的整句），位置换算成现在的文字里的
+    （和别的建议一样算法）。一处建议正好是其中之一，才算有把握。"""
+    va = str((auto or {}).get(pc.VOTE_ALT) or "")
+    if not auto or not va:
+        return set()
+    from voicetwin.data import review as _review
+
+    try:
+        return set(_review.analyze(dict(rec, suspect=dict(auto, alt=va)), cur)["edits"])
+    except Exception as exc:  # noqa: BLE001 - 换算不过来：都算没把握（老师听录音自己点「采用」）
+        log.debug(f"换算投票的建议时出错（已忽略）：{exc}")
+        return set()
+
+
+def _vote_covers(cur: str, f: Any, voted: Iterable[Tuple[int, int, str]]) -> str:
+    """标准库的一处改法 f 和投票有把握的改法比：「same」= 改出来一模一样；「inside」= f 在投票的那一处里面，
+    投票改出来的也包含 f 的改法（「冲剧 → 从句」和「剧 → 句」）；都不是返回 ""。"""
+    mine = _apply(cur, [(f.start, f.end, f.rep)])
+    want = str(f.rep).strip()
+    for vs, ve, vrep in voted:
+        if _apply(cur, [(vs, ve, vrep)]) == mine:
+            return "same"
+        if vs <= f.start and f.end <= ve and (vs, ve) != (f.start, f.end) and want and want in vrep:
+            return "inside"
+    return ""
+
+
 def _core_fix(cur: str, f: Any) -> Any:
     """一处改法去掉前后没变的字（「关键代词 → 关系代词」只算「键 → 系」），免得把旁边别的标记也盖住。"""
     a, b = cur[f.start:f.end], str(f.rep)
@@ -1596,8 +1624,9 @@ def merge_with_auto(cur: str, fixes: Sequence[Any], confirmed: Set[int], auto: O
     返回 (新的 suspect 或 None, 发生了什么, 要直接改的地方 [(开始, 结束, 改成)])。
     发生了什么：fixed = 有直接改好的；found = 只有建议；cleared = 原来标红、母本证明没错，去掉了；
     kept_auto = 只剩自动检查的标红（去掉了一部分）；unchanged_auto = 原样保留；none = 没有标红。
-    没把握的建议（分量不够、整句换掉的、标准库证明不了的自动查错字建议）：suspect["sure_alt"] 是只用有把握的改出来的
-    那一句；这一行的「采用」照样全部能用，但「一键全部文字校正」只按 sure_alt 改，没把握的留着红色让老师听录音决定。
+    没把握的建议（分量不够、整句换掉的、标准库证明不了、三个识别引擎投票也定不了的自动查错字建议）：
+    suspect["sure_alt"] 是只用有把握的改出来的那一句；这一行的「采用」照样全部能用，但「一键全部文字校正」只按 sure_alt 改，
+    没把握的留着红色让老师听录音决定。
     allow_unchanged=True：自动检查的结果原样保留时直接返回 auto（默认重新写一份，位置按现在的文字算，
     这样每一处建议有没有把握都记下了）。
     covered：母本里对上的部分（母本优先，[开始, 结束)）：那里母本就是标准答案——自动查错字（另一个识别引擎、规则）在那里的
@@ -1623,6 +1652,10 @@ def merge_with_auto(cur: str, fixes: Sequence[Any], confirmed: Set[int], auto: O
             a_score = float(auto.get("score") or 0.6)
         except (TypeError, ValueError):
             a_score = 0.6
+    voted = _vote_sure_edits(auto, rec, cur)  # 三个识别引擎投票有把握的（另外两个引擎听到的一样）
+    if voted:  # 投票有把握的改法包含了标准库这一处没把握的建议（「冲剧 → 从句」包含「剧 → 句」）：按投票的改
+        fixes = [f for f in fixes
+                 if f.direct or f.kind.startswith("mother") or _vote_covers(cur, f, voted) != "inside"]
     tokchars = _token_chars(cur)
     if covered:  # 母本里对上的字：母本证明没错（要改的那几个字下面单独算）
         confirmed = set(confirmed) | {k for a, b in covered for k in range(a, b) if k in tokchars}
@@ -1650,6 +1683,9 @@ def merge_with_auto(cur: str, fixes: Sequence[Any], confirmed: Set[int], auto: O
                [x.key for x in pc.tokenize(f.rep)] for es, ee, er in heard):
             w = min(0.95, w + AGREE_BONUS)
             reason += "（另一个识别引擎也听成这样）"
+        if voted and _vote_covers(cur, f, voted) == "same":  # 标准库和另外两个识别引擎都这么说：有把握
+            w = max(w, SURE_WEIGHT)
+            reason = reason.replace("（另一个识别引擎也听成这样）", "") + "（另外两个识别引擎也都听成这样）"
         t_edits.append((f.start, f.end, f.rep))
         if f.direct:
             direct.append((f.start, f.end, f.rep))
@@ -1684,7 +1720,7 @@ def merge_with_auto(cur: str, fixes: Sequence[Any], confirmed: Set[int], auto: O
         reasons += [(AUTO_PREFIX + r) if fixes else r for r in a_reasons]  # 只有自动检查的结果时不加前缀（和原来一样）
         weights.append(a_score)
         for ed in edits_keep:  # 另一个引擎整句听得都不一样、或者标准库证明不了：不知道哪个对，不自动采用
-            if a_total or not _auto_edit_sure(cur, ed[0], ed[1], ed[2], lex):
+            if a_total or not (ed in voted or _auto_edit_sure(cur, ed[0], ed[1], ed[2], lex)):
                 unsure.append([ed[0], ed[1]])
     edits = t_edits + edits_keep
     alt = _apply(cur, edits) if edits else ""

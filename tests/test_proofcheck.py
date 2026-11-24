@@ -685,3 +685,123 @@ def test_no_heavy_imports_at_module_level():
     src = open(pc.__file__, encoding="utf-8").read()
     head = src.split("# ============================================================================ 小工具")[0]
     assert not re.search(r"^\s*(import|from)\s+(funasr|faster_whisper|torch|gradio|modelscope)", head, re.M)
+
+
+# ---------------------------------------------------------------------------- 第三个引擎 SenseVoice：三个引擎投票
+def test_vote_chain_only_with_whisper_as_main_engine_and_can_be_turned_off(installed):
+    installed.update({"funasr", "modelscope", "torch", "faster_whisper"})
+    fw = {"asr": {"engine": "faster-whisper"}}
+    assert pc._vote_chain({"prepare": fw}) == [pc.ENGINE_SENSEVOICE]
+    assert pc._vote_chain({"prepare": dict(fw, proofcheck_engine="funasr")}) == [pc.ENGINE_SENSEVOICE]
+    assert pc._vote_chain({"prepare": dict(fw, proofcheck_vote=False)}) == []  # YAML 里写 off 读出来是 False
+    assert pc._vote_chain({"prepare": dict(fw, proofcheck_vote="off")}) == []
+    assert pc._vote_chain({"prepare": dict(fw, proofcheck_engine="rules")}) == []
+    assert pc._vote_chain({"prepare": {"asr": {"engine": "none"}}}) == []  # 字幕的文字（可能是人工做的）不投票
+    assert pc._vote_chain({"prepare": {"asr": {"engine": "funasr"}}}) == []
+    assert "三个引擎投票" in pc.available_checker({"prepare": fw})[1]
+    installed.clear()
+    installed.add("faster_whisper")
+    assert pc._vote_chain({"prepare": fw}) == []
+    assert "三个引擎投票" not in pc.available_checker({"prepare": fw})[1]
+
+
+def test_sensevoice_checker_loads_lazily_and_strips_tags(tmp_path, monkeypatch):
+    calls = {}
+
+    class AutoModel:
+        def __init__(self, **kw):
+            calls["kw"] = kw
+
+        def generate(self, input, **kw):
+            calls["gen"] = kw
+            return [{"key": "x", "text": "<|zh|><|NEUTRAL|><|Speech|><|withitn|>我们先来看smoking kills。"}]
+
+    post = types.SimpleNamespace(rich_transcription_postprocess=lambda s: re.sub(r"<\|[^|]*\|>", "", s) + "（官方）")
+    monkeypatch.setitem(sys.modules, "funasr", types.SimpleNamespace(AutoModel=AutoModel))
+    monkeypatch.setitem(sys.modules, "funasr.utils", types.SimpleNamespace(postprocess_utils=post))
+    monkeypatch.setitem(sys.modules, "funasr.utils.postprocess_utils", post)
+    monkeypatch.setenv("MODELSCOPE_CACHE", str(tmp_path / "ms"))
+    ck = pc._make_checker(pc.ENGINE_SENSEVOICE, {"prepare": {"asr": {"device": "cpu"}}})
+    assert ck.name == "sensevoice" and ck.diff and calls == {}  # 创建时不加载
+    assert ck.applies({"lang": "zh", "text": "你好"}) and not ck.applies({"lang": "en", "text": "hello"})
+    ck.load()
+    kw = calls["kw"]
+    assert kw["model"] == "iic/SenseVoiceSmall" and kw["device"] == "cpu" and kw["disable_update"] is True
+    assert "model_revision" not in kw and "vad_model" not in kw  # 不是 paraformer 的版本号
+    text, words = ck.recognize(np.zeros(16000, dtype=np.float32), "zh")
+    assert text == "我们先来看smoking kills。（官方）" and words is None
+    assert calls["gen"]["language"] == "auto" and calls["gen"]["use_itn"] is True
+    ck.close()
+    # 旧版 funasr 没有 rich_transcription_postprocess：自己去掉标记
+    monkeypatch.setitem(sys.modules, "funasr.utils.postprocess_utils", types.SimpleNamespace())
+    assert pc._sensevoice_text("<|zh|><|HAPPY|><|Speech|><|woitn|>好的") == "好的"
+    local = tmp_path / "ms" / "iic" / "SenseVoiceSmall"
+    local.mkdir(parents=True)
+    (local / "configuration.json").write_text("{}", encoding="utf-8")
+    assert pc.sensevoice_path({}) == str(local)  # 已经下载过的直接用
+
+
+VOTE_ROWS = [
+    {"text": "我们先翻译西安有害健康这个句子。"},  # FunASR、SenseVoice 都听成「吸烟」：有把握
+    {"text": "我们来看定语从句。"},  # 只有 FunASR 听成「定于」：两票对一票，不改（照旧标红给建议）
+    {"text": "We will use VFIXED here.", "lang": "en"},
+]
+VOTE_ANSWERS = {
+    "funasr": {"c_0000": "我 们 先 翻 译 吸 烟 有 害 健 康 这 个 句 子", "c_0001": "我 们 来 看 定 于 从 句"},
+    "sensevoice": {"c_0000": "我们先翻译吸烟有害健康这个句子。", "c_0001": "我们来看定语从句。",
+                   "c_0002": "We will use the fixed here."},
+}
+
+
+def test_find_suspects_votes_with_a_third_engine(tmp_path, fake_engines):
+    fake_engines.installed.update({"funasr", "modelscope", "torch"})
+    fake_engines.specs["funasr"] = {"answers": VOTE_ANSWERS["funasr"]}
+    fake_engines.specs["sensevoice"] = {"answers": VOTE_ANSWERS["sensevoice"]}
+    cfg, project = _project(tmp_path, VOTE_ROWS, engine="faster-whisper")
+    res = pc.find_suspects(project, cfg)
+    assert res["engine"] == "funasr" and res["voted"] == 2 and res["vote_sure"] == 1
+    assert "SenseVoice" in res["note"] and "三个识别引擎投票" in res["note"] and "1 处" in res["note"]
+    from voicetwin.data import review
+    from voicetwin.data import transcript_fix as tf
+
+    recs = {r["id"]: r for r in project.load_manifest()}
+    auto = tf.auto_suspect(recs["c_0000"])  # 查错字的结果（表格上的已经和母本对照过）
+    assert auto["alt"] == auto[pc.VOTE_ALT] == "我们先翻译吸烟有害健康这个句子。"
+    assert auto["reasons"] == ["另外两个识别引擎都听成「吸烟」"]  # FunASR 同一处的说明不重复
+    info = review.analyze(recs["c_0000"])
+    assert info["sure"] and info["sure"] == info["edits"]  # 有把握：一键全部文字校正会直接采用
+    auto1 = tf.auto_suspect(recs["c_0001"])
+    assert auto1["alt"] == "我们来看定于从句。" and pc.VOTE_ALT not in auto1  # 只有一个引擎这么听
+    info1 = review.analyze(recs["c_0001"])
+    assert info1["edits"] and not info1["sure"]  # 没把握：留着红色和建议，老师听录音决定
+    assert ("load", "sensevoice") in fake_engines.log and ("close", "sensevoice") in fake_engines.log
+    heard = [e[2] for e in fake_engines.log if e[:2] == ("recognize", "sensevoice")]
+    assert heard == ["c_0000", "c_0001"]  # 英文片段 FunASR 不听，也不投票
+    # 关掉投票：和以前一样只和 FunASR 对比
+    fake_engines.log.clear()
+    cfg2, project2 = _project(tmp_path / "off", VOTE_ROWS, engine="faster-whisper")
+    cfg2["prepare"]["proofcheck_vote"] = "off"
+    res2 = pc.find_suspects(project2, cfg2)
+    assert res2["voted"] == 0 and "SenseVoice" not in res2["note"]
+    rec2 = {r["id"]: r for r in project2.load_manifest()}["c_0000"]
+    assert pc.VOTE_ALT not in tf.auto_suspect(rec2) and not review.analyze(rec2)["sure"]
+    assert not any(e[1] == "sensevoice" for e in fake_engines.log)
+
+
+def test_third_engine_failing_only_skips_the_vote(tmp_path, fake_engines):
+    fake_engines.installed.update({"funasr", "modelscope", "torch"})
+    fake_engines.specs["funasr"] = {"answers": VOTE_ANSWERS["funasr"]}
+    fake_engines.specs["sensevoice"] = {"answers": {}, "load_error": RuntimeError("Download failed")}
+    cfg, project = _project(tmp_path, VOTE_ROWS, engine="faster-whisper")
+    res = pc.find_suspects(project, cfg)
+    assert res["engine"] == "funasr" and res["voted"] == 0 and res["errors"] == 0
+    assert "sensevoice 没能用上" in res["note"] and "这次不投票，只和 FunASR 对比" in res["note"]
+    from voicetwin.data import transcript_fix as tf
+
+    sus = tf.auto_suspect({r["id"]: r for r in project.load_manifest()}["c_0000"])
+    assert sus["alt"] == "我们先翻译吸烟有害健康这个句子。" and pc.VOTE_ALT not in sus  # 照常和 FunASR 对比
+    # 某一条听的时候出错：只是那一条不投票
+    fake_engines.specs["sensevoice"] = {"answers": VOTE_ANSWERS["sensevoice"], "fail": {"c_0001"}}
+    cfg2, project2 = _project(tmp_path / "b", VOTE_ROWS, engine="faster-whisper")
+    res2 = pc.find_suspects(project2, cfg2)
+    assert res2["voted"] == 1 and res2["errors"] == 0 and "SenseVoice 有 1 条没听成" in res2["note"]

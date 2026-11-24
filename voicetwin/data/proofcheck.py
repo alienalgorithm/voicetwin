@@ -4,6 +4,8 @@
 
 1. 第二个识别引擎再听一遍，和现在的文字逐字对比（不一样的地方就是可疑的地方）：
    - 主识别用 faster-whisper（默认）→ 用 FunASR（paraformer，阿里的中文模型）听中文片段；
+     再用第三个引擎 SenseVoiceSmall（中英文都能认）听一遍，三个引擎投票（asr_vote.py）：
+     另外两个引擎听到的一样的地方是有把握的建议（suspect["vote_alt"]），「一键全部文字校正」直接采用；
    - 主识别用 FunASR → 用 faster-whisper；
    - 只用字幕（engine: none）→ 先用 FunASR，没有就用 faster-whisper。
 2. faster-whisper 的逐词把握程度（word_timestamps=True 时每个词的 probability）：把握很低的字。
@@ -61,25 +63,30 @@ ProgressFn = Callable[[float, str], None]
 ENGINE_FUNASR = "funasr"
 ENGINE_WHISPER = "faster-whisper"
 ENGINE_WHISPER_WORDS = "faster-whisper-words"
+ENGINE_SENSEVOICE = "sensevoice"
 ENGINE_LABELS = {
     ENGINE_FUNASR: "FunASR（阿里的中文识别模型）",
+    ENGINE_SENSEVOICE: "SenseVoice（阿里的中英文识别模型）",
     ENGINE_WHISPER: "faster-whisper",
     ENGINE_WHISPER_WORDS: "faster-whisper（逐字把握程度）",
     "": "规则检查",
 }
 ENGINE_SHORT = {ENGINE_FUNASR: "FunASR", ENGINE_WHISPER: "faster-whisper", ENGINE_WHISPER_WORDS: "faster-whisper",
-                "": ""}
+                ENGINE_SENSEVOICE: "SenseVoice", "": ""}
 
 REASON_FUNASR = "用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红"
 REASON_WHISPER = "用 faster-whisper 把每段再听一遍，和现在的文字对比，并标出识别时没把握的字"
 REASON_WHISPER_SUBS = "用 faster-whisper 把每段再听一遍，和字幕里的文字对比，不一样的地方标红"
 REASON_WORDS = "没有装第二个识别引擎（FunASR）：用 faster-whisper 重新听一遍，标出识别时没把握的字"
+REASON_VOTE = "；再用 SenseVoice（阿里的中英文识别模型）听一遍，三个引擎投票：另外两个听到的一样，就是有把握的建议"
 REASON_NONE = "没有装可用的识别引擎，只按规则检查（比如中文里夹着奇怪的英文、同一句话连说几遍）；能发现的错字比较少"
 
 #: GPT-SoVITS 整合包自带的 paraformer（和 GSV 的 tools/asr/funasr_asr.py 用的是同一个）
 PARAFORMER_LOCAL = "tools/asr/models/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch"
 PARAFORMER_ID = "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch"
 SEACO_ID = "iic/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch"  # = "paraformer-zh"
+#: SenseVoiceSmall（阿里的中英文识别模型）：第三个引擎，和 faster-whisper、FunASR 一起投票（asr_vote.py）
+SENSEVOICE_ID = "iic/SenseVoiceSmall"
 
 # ---------------------------------------------------------------------------- 打分
 FLAG_THRESHOLD = 0.45  # 合起来的分数到这个值才标红
@@ -109,6 +116,10 @@ W_LATIN = 0.5  # 英文不同，另一边是 faster-whisper
 W_PARTICLE = 0.2  # 多/少一个"的了着过儿"
 W_STUTTER = 0.3  # 另一个引擎听到某个词说了两遍（口误重复）：Whisper 常把它省掉
 W_LOGPROB = 0.15  # 整段识别置信度偏低（只在已有别的证据时加分）
+W_VOTE = 0.8  # 三个引擎投票：另外两个引擎听到的一样（或者凑成了语法术语），有把握
+W_VOTE_UNSURE = 0.6  # 投票的结果、但是一处太长：只给建议
+#: 存进 record["suspect"]：只按三个引擎投票有把握的地方改出来的整句（文字校正时这些建议算有把握，一键校正直接采用）
+VOTE_ALT = "vote_alt"
 
 SAVE_EVERY = 20  # 每检查这么多段存一次（中途停止也不白做）
 MAX_REASONS = 6
@@ -1110,15 +1121,55 @@ def _finish_reasons(sus: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     return out
 
 
+def _edit_overlaps(a: Tuple[int, int, str], b: Tuple[int, int, str]) -> bool:
+    """两处改动碰到一起（补字的位置在另一处中间也算；挨着不算）。"""
+    (s1, e1, _r1), (s2, e2, _r2) = a, b
+    if s1 == e1 and s2 == e2:
+        return s1 == s2
+    if s1 == e1:
+        return s2 < s1 < e2
+    if s2 == e2:
+        return s1 < s2 < e1
+    return s1 < e2 and s2 < e1
+
+
+def _vote_evidence(text: str, votes: Sequence[Any]) -> List[_Ev]:
+    """三个引擎投票的结果（asr_vote.VoteEdit）当证据：有把握的分量大，一处就够标红，并且拼进建议。"""
+    toks = tokenize(text)
+    out: List[_Ev] = []
+    for v in votes or ():
+        try:
+            s, e, rep, sure, reason = int(v.start), int(v.end), str(v.rep), bool(v.sure), str(v.reason)
+        except (AttributeError, TypeError, ValueError):
+            continue
+        if not (0 <= s <= e <= len(text)):
+            continue
+        if s < e:
+            ms, me = s, e
+        else:  # 补字：标出缺字的位置两边的字（连中间的标点一起：建议里标点可能跟着变）
+            k = sum(1 for t in toks if t.end <= s)
+            prev, nxt = (toks[k - 1] if k > 0 else None), (toks[k] if k < len(toks) else None)
+            ms = prev.start if prev is not None else s
+            me = nxt.end if nxt is not None else e
+            if me <= ms:
+                ms, me = _insert_mark(toks, k)
+        out.append(_Ev(ms, me, reason, W_VOTE if sure else W_VOTE_UNSURE, "vote" if sure else "vote_unsure",
+                       (s, e, rep), "yes"))
+    return out
+
+
 def build_suspect(text: str, other: Optional[str] = None, words: Any = None, *, engine: str = "",
                   known_terms: Iterable[str] = (), frequent: Iterable[str] = (), lang: str = "",
                   srt: bool = False, avg_logprob: Optional[float] = None,
-                  vocab: AbstractSet[str] = frozenset(), with_pos: bool = False) -> Optional[Dict[str, Any]]:
+                  vocab: AbstractSet[str] = frozenset(), with_pos: bool = False,
+                  votes: Sequence[Any] = ()) -> Optional[Dict[str, Any]]:
     """把所有证据合起来，返回 record["suspect"]（没问题时返回 None）。
 
     other：第二个引擎听到的文字（None = 没有第二个引擎 / 这段没用它；"" = 它什么都没听到）。
     words：faster-whisper 的逐词结果（含 probability），可以为空。
     with_pos=True（查错字的过程中用）：另外带上每条原因的位置（REASON_POS），原因先不截短；存以前用 _finish_reasons。
+    votes：三个引擎投票的结果（asr_vote.vote 的返回值）。有把握的那几处：另一个引擎在同一个地方的对比结果不要了
+    （投票已经定了），建议按投票的改；只按有把握的改出来的整句存在 suspect["vote_alt"]（文字校正时这几处算有把握）。
     """
     text = str(text or "")
     if not text.strip():
@@ -1131,6 +1182,19 @@ def build_suspect(text: str, other: Optional[str] = None, words: Any = None, *, 
         ev.extend(cmp.evidence)
         if cmp.total:
             total_alt = cmp.total_alt
+    vote_ev = _vote_evidence(text, votes) if total_alt is None else []
+    if vote_ev:
+        edits_v = [x.edit for x in vote_ev if x.edit is not None]
+        kept: List[_Ev] = []
+        for x in ev:
+            hit = [v for v in edits_v if x.edit is not None and _edit_overlaps(x.edit, v)]
+            if not hit:
+                kept.append(x)
+            elif not any(v[0] <= x.edit[0] and x.edit[1] <= v[1] for v in hit):  # type: ignore[index]
+                x.splice = "no"  # 另一个引擎这一处比投票定下的大：标红和说明留着，建议按投票的
+                kept.append(x)
+            # 整个在投票定下的地方里面：投票的说明已经说了，不要了
+        ev = kept + vote_ev
     if words:
         for s, e, p in low_prob_spans(text, words):
             ev.append(_Ev(s, e, f"「{_short(text[s:e])}」识别时把握不大（{int(round(p * 100))}%）",
@@ -1161,10 +1225,18 @@ def build_suspect(text: str, other: Optional[str] = None, words: Any = None, *, 
         edits = [x.edit for x in ev if x.edit is not None and (
             x.splice == "yes" or (x.splice == "if_heur" and any(_overlaps(x, h) for h in latin_heur)))]
         alt = _apply_edits(text, edits) if edits else ""
+    out: Dict[str, Any] = {"spans": spans, "alt": alt}
     if with_pos:
         reasons, pos = _reasons_pos(shown)
-        return {"spans": spans, "alt": alt, "reasons": reasons, "score": round(score, 3), REASON_POS: pos}
-    return {"spans": spans, "alt": alt, "reasons": _reasons(shown), "score": round(score, 3)}
+        out.update(reasons=reasons, score=round(score, 3))
+        out[REASON_POS] = pos
+    else:
+        out.update(reasons=_reasons(shown), score=round(score, 3))
+    sure_v = [x.edit for x in ev if x.kind == "vote" and x.edit is not None]
+    vote_alt = _apply_edits(text, sure_v) if (sure_v and alt and total_alt is None) else ""
+    if vote_alt:
+        out[VOTE_ALT] = vote_alt
+    return out
 
 
 # ============================================================================ 显示
@@ -1295,10 +1367,26 @@ def _engine_chain(cfg: Any) -> List[str]:
     return chain
 
 
+def _vote_chain(cfg: Any) -> List[str]:
+    """除了用来对比的那个引擎，还要再听一遍、拿来投票的引擎：主识别是 faster-whisper、对比用 FunASR 时，
+    再用 SenseVoice 听一遍，三个引擎投票（asr_vote.py）。prepare.proofcheck_vote: off 可以关掉。"""
+    primary = str(_cfg_get(cfg, "prepare.asr.engine", ENGINE_WHISPER) or ENGINE_WHISPER).strip().lower()
+    force = str(_cfg_get(cfg, "prepare.proofcheck_engine", "auto") or "auto").strip().lower()
+    vote = _cfg_get(cfg, "prepare.proofcheck_vote", "auto")
+    if vote is False:  # YAML 里写 off，读出来是 False
+        vote = "off"
+    vote = str("auto" if vote is None or vote is True else vote).strip().lower()
+    if vote in ("off", "false", "no", "0", "none", "关"):
+        return []
+    if primary != ENGINE_WHISPER or force not in ("auto", ENGINE_FUNASR):  # 只在主识别 faster-whisper 上实测过
+        return []
+    return [ENGINE_SENSEVOICE] if _funasr_installed() else []
+
+
 def _reason_for(engine: str, cfg: Any) -> str:
     primary = str(_cfg_get(cfg, "prepare.asr.engine", ENGINE_WHISPER) or ENGINE_WHISPER).strip().lower()
     if engine == ENGINE_FUNASR:
-        return REASON_FUNASR
+        return REASON_FUNASR + (REASON_VOTE if _vote_chain(cfg) else "")
     if engine == ENGINE_WHISPER:
         return REASON_WHISPER_SUBS if primary in ("none", "") else REASON_WHISPER
     if engine == ENGINE_WHISPER_WORDS:
@@ -1399,9 +1487,7 @@ class _FunASRChecker:
         kwargs: Dict[str, Any] = {"model": self.path, "device": "cuda:0" if device == "cuda" else "cpu",
                                   "disable_update": True, "disable_pbar": True, "disable_log": True,
                                   "check_latest": False, "log_level": "ERROR"}
-        if not os.path.isdir(self.path):
-            kwargs["model_revision"] = "v2.0.4"  # 和 GPT-SoVITS 整合包用的版本一致
-            log.info("查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……")
+        kwargs.update(self._extra_kwargs())
         threads = None
         try:
             import torch  # funasr 本来就要用；先记下线程数
@@ -1417,7 +1503,13 @@ class _FunASRChecker:
                     torch.set_num_threads(threads)
                 except Exception:
                     pass
-        log.info(f"查错字：已加载 FunASR（{device}）{self.path}")
+        log.info(f"查错字：已加载 {ENGINE_SHORT.get(self.name, self.name)}（{device}）{self.path}")
+
+    def _extra_kwargs(self) -> Dict[str, Any]:
+        if not os.path.isdir(self.path):
+            log.info("查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……")
+            return {"model_revision": "v2.0.4"}  # 和 GPT-SoVITS 整合包用的版本一致
+        return {}
 
     def recognize(self, wav16k: Any, lang: str) -> Tuple[str, Optional[List[Tuple[str, float]]]]:
         res = self.model.generate(input=wav16k)  # 一次一段；没听到声音时返回 []
@@ -1428,6 +1520,57 @@ class _FunASRChecker:
     def close(self) -> None:
         self.model = None
         _free_gpu_memory()
+
+
+def sensevoice_path(cfg: Any) -> str:
+    """优先用 ModelScope 缓存里已经下载好的 SenseVoiceSmall，没有才用模型名（第一次用时联网下载）。"""
+    ms = os.environ.get("MODELSCOPE_CACHE") or str(Path.home() / ".cache" / "modelscope" / "hub")
+    cands: List[Path] = [Path(ms) / SENSEVOICE_ID, Path(ms) / "models" / SENSEVOICE_ID]
+    root = _gsv_root(cfg)
+    if root is not None:
+        cands.append(root / "tools" / "asr" / "models" / "SenseVoiceSmall")
+    for c in cands:
+        if _model_dir_ok(c):
+            return str(c)
+    return SENSEVOICE_ID
+
+
+_SV_TAG = re.compile(r"<\|[^|<>]*\|>")
+
+
+def _sensevoice_text(raw: Any) -> str:
+    """SenseVoice 的结果去掉语种、情绪、事件这些标记（<|zh|><|NEUTRAL|><|Speech|>、表情符号）。"""
+    raw = str(raw or "")
+    try:
+        from funasr.utils.postprocess_utils import rich_transcription_postprocess
+
+        return str(rich_transcription_postprocess(raw) or "")
+    except Exception:  # noqa: BLE001 - 旧版 funasr 没有这个函数：自己去掉标记
+        return _SV_TAG.sub("", raw).strip()
+
+
+class _SenseVoiceChecker(_FunASRChecker):
+    """SenseVoiceSmall（中英文都能认）：和 FunASR 用同一个工具包；只听中文片段（投票要三个引擎都听过）。"""
+
+    name = ENGINE_SENSEVOICE
+    label = "SenseVoice 中英文识别模型"
+
+    def __init__(self, cfg: Any):
+        self.cfg = cfg
+        self.path = sensevoice_path(cfg)
+        self.model_id = self.path
+        self.model = None
+
+    def _extra_kwargs(self) -> Dict[str, Any]:
+        if not os.path.isdir(self.path):
+            log.info("查错字：本地没有 SenseVoice 模型，第一次使用会先从 ModelScope 下载模型……")
+        return {}
+
+    def recognize(self, wav16k: Any, lang: str) -> Tuple[str, Optional[List[Tuple[str, float]]]]:
+        res = self.model.generate(input=wav16k, cache={}, language="auto", use_itn=True)
+        item = res[0] if isinstance(res, (list, tuple)) and res else {}
+        text = item.get("text", "") if isinstance(item, dict) else ""
+        return _sensevoice_text(text), None
 
 
 def _whisper_model_name(name: Any) -> str:
@@ -1496,6 +1639,8 @@ def _make_checker(name: str, cfg: Any) -> Any:
     """测试里会替换它（不需要真的模型）。"""
     if name == ENGINE_FUNASR:
         return _FunASRChecker(cfg)
+    if name == ENGINE_SENSEVOICE:
+        return _SenseVoiceChecker(cfg)
     if name == ENGINE_WHISPER:
         return _WhisperChecker(cfg, words_only=False)
     if name == ENGINE_WHISPER_WORDS:
@@ -1571,8 +1716,10 @@ class _RecogCache:
 class _EngineRunner:
     """管理"当前用哪个引擎"：用到时才加载；加载失败或一直出错就换下一个，最后退回到只用规则。"""
 
-    def __init__(self, project: Any, cfg: Any, chain: Sequence[str], progress: Optional[ProgressFn]):
+    def __init__(self, project: Any, cfg: Any, chain: Sequence[str], progress: Optional[ProgressFn],
+                 no_more: str = "改用规则检查"):
         self.project, self.cfg, self.progress = project, cfg, progress
+        self.no_more = no_more  # 最后一个引擎也用不了时，说明里写的后果
         self.pending = list(chain)
         self.ck: Any = None
         self.loaded = False
@@ -1597,9 +1744,12 @@ class _EngineRunner:
     def _drop(self, why: str, exc: Optional[BaseException] = None) -> None:
         ck = self.ck
         self.ck = None
-        nxt = ENGINE_LABELS.get(self.pending[0], self.pending[0]) if self.pending else "规则检查"
-        sep = " " if nxt[:1].isascii() else ""
-        note = f"{getattr(ck, 'label', '识别引擎')} 没能用上（{why}），改用{sep}{nxt}"
+        if self.pending:
+            nxt = ENGINE_LABELS.get(self.pending[0], self.pending[0])
+            tail = f"改用{' ' if nxt[:1].isascii() else ''}{nxt}"
+        else:
+            tail = self.no_more
+        note = f"{getattr(ck, 'label', '识别引擎')} 没能用上（{why}），{tail}"
         self.notes.append(note)
         log.warning(f"⚠️ 查错字：{note}", exc_info=exc)  # 原始报错（英文 Traceback）只进黑色窗口和 voicetwin.log
         try:
@@ -1806,6 +1956,39 @@ def _count_flagged(project: Any, ids: Set[str]) -> int:
         return 0
 
 
+def _vote_sure_count(text: str, sus: Optional[Dict[str, Any]]) -> int:
+    """这一条建议里，三个引擎投票有把握的有几处（改过的字、老师撤销过的改法去掉以后还在建议里的）。"""
+    if not sus or not sus.get(VOTE_ALT) or not sus.get("alt"):
+        return 0
+    try:
+        from voicetwin.data import review as _review
+
+        alt = set(_review.suggestion_edits(text, str(sus["alt"])))
+        return sum(1 for ed in _review.suggestion_edits(text, str(sus[VOTE_ALT])) if ed in alt)
+    except Exception:  # noqa: BLE001 - 只是数一数
+        return 0
+
+
+def _vote_for(voter: "_EngineRunner", rec: Dict[str, Any], lang: str, text: str,
+              others: Dict[str, Optional[str]]) -> Tuple[List[Any], int]:
+    """第三个引擎再听一遍，三个引擎投票。返回 (投票的结果, 1 = 第三个引擎听了 / 0 = 没听（用不了）/ -1 = 出错了)。
+    第三个引擎出错只是这一条不投票，不影响照常和 FunASR 对比。"""
+    try:
+        sv, _words, sv_eng = voter.recognize(rec, lang)
+    except Exception as exc:  # noqa: BLE001 - 停止按钮（TaskCancelled）照常传出去
+        log.warning(f"⚠️ 查错字：SenseVoice 听片段 {rec.get('id')} 时出错（{_why(exc)}），这一条不投票", exc_info=exc)
+        return [], -1
+    if sv is None or not sv_eng:
+        return [], 0
+    try:
+        from voicetwin.data import asr_vote
+
+        return asr_vote.vote(text, dict(others, **{sv_eng: sv})), 1
+    except Exception as exc:  # noqa: BLE001
+        log.warning(f"⚠️ 查错字：三个引擎投票时出错（{_why(exc)}），这一条不投票", exc_info=exc)
+        return [], 1
+
+
 def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None, only_kept: bool = True,
                   limit: Optional[int] = None) -> Dict[str, Any]:
     """逐段查找可能的错字，结果写进 manifest（record["suspect"]），返回
@@ -1841,6 +2024,13 @@ def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None,
     frequent = _frequent_caps(records)
     vocab = english_vocab(records)
     runner = _EngineRunner(project, cfg, chain, progress)
+    try:
+        vchain = _vote_chain(cfg)
+    except Exception:  # noqa: BLE001
+        vchain = []
+    # 第三个引擎（SenseVoice）：主识别 faster-whisper、对比用 FunASR 的句子再听一遍，三个引擎投票（asr_vote.py）
+    voter = _EngineRunner(project, cfg, vchain, progress, no_more="这次不投票，只和 FunASR 对比") if vchain else None
+    voted, vote_sure, vote_errors = 0, 0, 0
     try:  # 表格里没保存的修改（「这句没错」按显示的文字记；一键校正改好、还没保存的行要能撤销）
         from voicetwin.data import review as _review
 
@@ -1884,9 +2074,15 @@ def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None,
             else:
                 try:
                     other, words, eng = runner.recognize(rec, lang)
+                    votes: List[Any] = []
+                    if voter is not None and eng == ENGINE_FUNASR and other is not None and not _is_srt_text(rec):
+                        voter.frac = runner.frac
+                        votes, heard = _vote_for(voter, rec, lang, text, {eng: other})
+                        voted += 1 if heard > 0 else 0
+                        vote_errors += 1 if heard < 0 else 0
                     asr = rec.get("asr") if isinstance(rec.get("asr"), dict) else {}
                     sus = build_suspect(text, other, words, engine=eng, srt=_is_srt_text(rec),
-                                        avg_logprob=asr.get("avg_logprob"), with_pos=True, **heur_kw)
+                                        avg_logprob=asr.get("avg_logprob"), with_pos=True, votes=votes, **heur_kw)
                 except Exception as exc:  # noqa: BLE001 - 一段出错不影响别的段；停止按钮（TaskCancelled）照常传出去
                     errors += 1
                     eng = ""
@@ -1902,6 +2098,7 @@ def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None,
             sus = _protect_changed(rec, text, sus)  # 改过的字（老师改的、一键校正改好的）不标红、不建议改回去
             sus = _drop_rejected_auto(rec, text, sus, rejected.get(rec.get("id")))  # 老师撤销过的改法不再建议
             sus = _finish_reasons(sus)  # 说明里去掉的那几处的原因也去掉了；存以前去掉原因的位置
+            vote_sure += _vote_sure_count(text, sus)
             old = rec.get("suspect") if isinstance(rec.get("suspect"), dict) else None
             undo = bool(old and _review is not None and _review.analyze(rec, shown)["undo"])
             if (old and old.get("src") == "transcript") or (not undo and str(rec.get("id")) in oneclick):
@@ -1938,6 +2135,8 @@ def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None,
                 # 中途存的：要合在一起的行存原来的标记（这时窗口关了 / 电脑断电，也不会留下没核对过的结果）
                 project.save_manifest(_with_marks(records, prev))
                 runner.save()
+                if voter is not None:
+                    voter.save()
         finished = True
     finally:
         if not finished:  # 停止或出了意外：已经查完的部分先存下来（要和一键校正合在一起的行放回原来的标记）
@@ -1946,6 +2145,8 @@ def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None,
             except Exception as exc:  # noqa: BLE001
                 log.warning(f"⚠️ 查错字：保存已检查的结果失败（{_why(exc)}）", exc_info=exc)
         runner.close()
+        if voter is not None:
+            voter.close()
     project.save_manifest(records)
     if remerge and _tf is not None:
         _report(progress, 1.0, f"和你的母本对照（母本优先，{len(remerge)} 条）……")
@@ -1976,9 +2177,18 @@ def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None,
             parts.append(f"另外 {rules_only} 条只用规则检查（比如英文片段、出错的片段）")
     elif rules_only:
         parts.append(f"按规则检查了 {rules_only} 条（没有可用的第二个识别引擎，能发现的错字比较少）")
+    if voted:
+        found = (f"{vote_sure} 处另外两个引擎听到的一样（或者凑成了语法术语），算有把握的建议，"
+                 f"「📝 一键全部文字校正」会直接采用（和母本对不上的以母本为准）" if vote_sure
+                 else "没有找到另外两个引擎都听成别的写法的地方")
+        parts.append(f"用 SenseVoice（阿里的中英文识别模型）又听了 {voted} 条，三个识别引擎投票：{found}")
     if dismissed:
         parts.append(f"{dismissed} 条你已经确认过没错，没有再标红")
     parts += runner.notes
+    if voter is not None:
+        parts += voter.notes
+        if vote_errors:
+            parts.append(f"SenseVoice 有 {vote_errors} 条没听成，这几条没有投票")
     if errors:
         parts.append(f"有 {errors} 条处理时出错，已改用规则检查（例如 {err_samples[0]}）" if err_samples
                      else f"有 {errors} 条处理时出错，已改用规则检查")
@@ -1987,7 +2197,7 @@ def find_suspects(project: Any, cfg: Any, progress: Optional[ProgressFn] = None,
     log.info(f"查错字完成：检查了 {checked} 条，其中 {flagged} 条可能有错。{note}用时 {secs} 秒。")
     _report(progress, 1.0, f"查完了：检查了 {checked} 条，其中 {flagged} 条可能有错（已标红）")
     return {"checked": checked, "flagged": flagged, "engine": main_engine, "note": note, "total": n,
-            "errors": errors, "seconds": secs, "reason": reason}
+            "errors": errors, "seconds": secs, "reason": reason, "voted": voted, "vote_sure": vote_sure}
 
 
 def dismiss_suspect(project: Any, clip_id: str) -> bool:
@@ -2012,5 +2222,5 @@ __all__ = [
     "ENGINE_FUNASR", "ENGINE_WHISPER", "ENGINE_WHISPER_WORDS", "ENGINE_LABELS", "FLAG_THRESHOLD", "RED_SPAN",
     "GREEN_SPAN", "Tok", "tokenize", "merge_spans", "compare", "heuristics", "low_prob_spans", "build_suspect",
     "render_marked", "render_plain", "render_diff_html", "available_checker", "find_suspects", "dismiss_suspect",
-    "paraformer_path", "voice_vocab", "english_vocab",
+    "paraformer_path", "voice_vocab", "english_vocab", "ENGINE_SENSEVOICE", "sensevoice_path", "VOTE_ALT",
 ]
