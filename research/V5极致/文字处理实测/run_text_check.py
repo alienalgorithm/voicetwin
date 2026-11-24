@@ -643,6 +643,8 @@ class Official:
     def mixed_train(self, text: str, lang: str) -> Tuple[List[Dict[str, Any]], str]:
         """get_text_mixed.py 对一行训练素材做的（同样的函数、同样的顺序），每一段的结果。"""
         text = re.sub(" {2,}", " ", text)
+        if hasattr(self.mixed, "english_commas"):   # 和 get_text_mixed.py 一样：英文后面的「，」「、」→「,」
+            text = self.mixed.english_commas(text)
         if lang == "zh" or (lang == "en" and has_cjk(text)):
             with quiet():
                 raw = self.LangSegmenter.getTexts(text)
