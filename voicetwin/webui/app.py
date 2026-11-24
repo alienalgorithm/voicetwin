@@ -4605,7 +4605,7 @@ class WebUI:
             with gr.Tabs() as tabs:
                 # ---------------------------------------------------- ① 准备素材
                 with gr.Tab("① 准备素材", id="prep"):
-                    gr.Markdown("上传你的**讲课视频或录音**（越多越好，建议总时长 ≥30 分钟，1~3 小时最佳；"
+                    gr.Markdown("上传你的**讲课视频或录音**（越多越好，建议总时长 ≥30 分钟；"
                                 "只要你本人说话的部分）。如果视频有同名 `.srt` 字幕，也一起放进去，会直接用字幕的文字，更准确。")
                     try:
                         from voicetwin.data.prepare import MEDIA_EXTS

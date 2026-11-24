@@ -130,9 +130,10 @@ def test_only_saved_corrected_text_is_used_and_deleted_clips_never(env):
     backend = get_backend("gptsovits", cfg, project)
     name2text = (root / "logs" / backend.exp_name / "2-name2text.txt").read_text(encoding="utf-8")
     seen = {ln.split("\t")[0]: ln.split("\t")[-1] for ln in name2text.splitlines() if ln.strip()}
+    punct = str.maketrans("，。", ",.")   # 处理文字时中文标点按 GPT-SoVITS 的规矩换成英文标点（「。」→「.」），字要一样
     for rid, fixed in ((a["id"], FIXED_A), (u["id"], FIXED_U)):
         if manifest[rid].get("split") != "val":
-            assert seen[wav_of[rid]] == fixed
+            assert seen[wav_of[rid]].translate(punct) == fixed.translate(punct)
     assert wav_of[d_ref] not in seen and wav_of[d_val] not in seen
     # 5c. 参考音频：没有删除的；配的文字和校对表里保存的一样
     refs2 = project.load_references()

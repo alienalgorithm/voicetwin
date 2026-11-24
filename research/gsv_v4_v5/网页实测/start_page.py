@@ -12,6 +12,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path[:0] = [str(ROOT), str(ROOT / "tests")]
 os.environ.setdefault("EXPECT_VERSION", "v5dev")   # 替身的「处理文字」检查程序传的版本和官方 webui 一样是 v5dev
+# 替身里没有 BERT：VoiceTwin 自己的「中英文一起」处理文字按测试的办法跑（和 tests/conftest.py 一样）。
+# 不设的话它会失败，「一模一样」档就停下（不再退回会丢掉英文的官方方法），网页点不到最后。
+os.environ.setdefault("VOICETWIN_TEXT_DRYRUN", "1")
 
 import yaml  # noqa: E402
 

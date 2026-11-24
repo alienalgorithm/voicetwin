@@ -3,7 +3,8 @@
 - gsv_mixed_text：合并规则（照抄 abe9843 的 TextPreprocessor）、拼接、英文音素计数；
 - gsv_scripts/get_text_mixed.py：在仿真 GPT-SoVITS 目录里用替身的 LangSegmenter / clean_text 跑（VOICETWIN_TEXT_DRYRUN=1），
   分几路、自检、出错；
-- 训练时：成功就用它；出错（替身抛异常、缺模块、自检不过）自动退回官方的 1-get-text.py 并说明原因；
+- 训练时：成功就用它；出错（替身抛异常、缺模块、自检不过）时，「一模一样」档和练 V5 时停下说清楚（官方的方法会丢掉英文），
+  只有「标准」档练别的版本（或者素材里没有会被丢掉的英文）时退回官方的 1-get-text.py 并说明原因；
   换了处理文字的方法 / 录音文件改过 → 重新提取特征、旧的训练备份起来。
 这些都不需要 torch，也不需要 yaml（1A / 1B / 1C 的仿真脚本只用标准库），三个环境都跑。"""
 
@@ -284,6 +285,89 @@ def test_mixed_front_end_falls_back_to_official(gsv_env, monkeypatch, vt_log, ho
     assert reason in warn[0]
 
 
+def _break_mixed(how, root, monkeypatch):
+    if how == "raise":
+        monkeypatch.setenv("FAKE_GSV_LANGSEG_RAISE", "1")
+    elif how == "self_check":
+        monkeypatch.setenv("FAKE_GSV_LANGSEG_DROP", "1")
+    else:
+        for name in ("LangSegmenter.py", "cleaner.py"):
+            (root / "GPT_SoVITS" / "text" / name).unlink()
+
+
+@pytest.mark.parametrize("how", ["raise", "missing", "self_check"])
+def test_mixed_front_end_stops_when_english_would_be_lost(gsv_env, monkeypatch, vt_log, how):
+    """「一模一样」档 / 练 V5（mixed_required）：「中英文一起」没成功时停下说清楚原因、怎么办，不退回官方的方法
+    （官方的方法会把中文句子里夹着的英文全部丢掉，带着这个缺陷练完就不像她了）。"""
+    from voicetwin.data.exporters import export_gptsovits
+    from voicetwin.errors import explain
+
+    monkeypatch.setenv("VOICETWIN_TEXT_DRYRUN", "1")
+    make, root = gsv_env
+    _break_mixed(how, root, monkeypatch)
+    _, project, b = make()
+    n_en = gsv._english_lost_lines(Path(export_gptsovits(project, speaker=b.exp_name)["list"]))
+    assert n_en > 0   # 测试素材里有「今天我们来学习Python里面的列表推导式。」这样的句子
+    with pytest.raises(RuntimeError) as ei:
+        _features(b, mixed_required=True)
+    msg = str(ei.value)
+    assert msg.startswith("中英文一起处理文字没成功，训练先停下了（原因：")
+    assert f"你的素材里有 {n_en} 句夹着英文" in msg and "怎么办：" in msg and "gsv_1a_text.log" in msg
+    reason = {"raise": "（不到 98%）", "missing": "整合包里缺少需要的文字处理模块", "self_check": "自检没通过"}[how]
+    assert reason in msg
+    opt = b._opt_dir()
+    # 官方的方法没有跑、没有写出丢掉英文的结果；下次训练重新处理文字；后面的声音特征也没开始提取
+    assert not (opt / "2-name2text.txt").exists() and not list(opt.glob("2-name2text-*.txt"))
+    assert not (opt / "voicetwin_list.sha1").exists() and not (opt / gsv.FRONTEND_FILE).exists()
+    assert not (opt / "4-cnhubert").exists()
+    assert not any("已改用官方的方法" in m for m in vt_log.messages)
+    # 网页上的报错：说清楚为什么停下、怎么办（缺模块时原因里的「No module named」不能把它盖过去）
+    f = explain(ei.value)
+    assert f.key == "mixed_text_stop" and f.title == "中英文一起处理文字没成功，训练先停下了"
+    assert "英文" in f.advice and "开始训练" in f.advice and "gsv_1a_text.log" in f.advice
+
+
+def test_mixed_required_by_mode_and_version(gsv_env):
+    """停不停：「一模一样」档停；练 V5 时「标准」档也停；「标准」档练别的版本照以前退回官方的方法；设置成官方的方法就不用停。"""
+    make, _ = gsv_env
+    _, _, b = make()   # 测试默认 v2ProPlus
+    assert b._mixed_required("identical") is True and b._mixed_required("standard") is False
+    b.main_version = "v5dev"
+    assert b._mixed_required("standard") is True
+    _, _, off = make(text_frontend="official")
+    assert off._mixed_required("identical") is False
+
+
+def test_english_lost_lines_counts_only_what_official_drops(tmp_path):
+    """官方的 1-get-text.py 按 zh 处理时丢掉英文字母；标 en 的整句英文官方能处理，不算。"""
+    lst = tmp_path / "a.list"
+    lst.write_text("a.wav|s|zh|翻译成英文就是There are some nuts。\nb.wav|s|en|Hello world.\nc.wav|s|zh|纯中文的一句话。\n"
+                   "d.wav|s|ZH|OK，好的\ne.wav|s|zh|我们今天学第3课，\n", encoding="utf-8")
+    assert gsv._english_lost_lines(lst) == 2
+
+
+def test_required_falls_back_when_no_english_would_be_lost(gsv_env, monkeypatch, vt_log, tmp_path):
+    """素材里没有夹着英文的句子：官方的方法什么也不会丢，「一模一样」档也照样退回官方的方法练（不白白停下）。"""
+    import re
+
+    from voicetwin.data.exporters import export_gptsovits
+
+    monkeypatch.setenv("VOICETWIN_TEXT_DRYRUN", "1")
+    monkeypatch.setenv("FAKE_GSV_LANGSEG_RAISE", "1")
+    make, _ = gsv_env
+    _, project, b = make()
+    exp = export_gptsovits(project, speaker=b.exp_name)
+    lines = [ln for ln in Path(exp["list"]).read_text(encoding="utf-8").splitlines()
+             if ln.strip() and not re.search(r"[A-Za-z]", ln.split("|", 3)[3])]
+    zh_list = tmp_path / "zh_only.list"
+    zh_list.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert lines and gsv._english_lost_lines(zh_list) == 0
+    res = b._prepare_features(zh_list, Path(exp["wav_dir"]), None, n_clips=len(lines), parts=1, mixed_required=True)
+    assert res["frontend"] == "official" and all(r[1] == "ph" for r in _rows(b))
+    warn = [m for m in vt_log.messages if m.startswith("中英文一起训练的新方法这次没成功（原因：")]
+    assert len(warn) == 1 and warn[0].endswith("已改用官方的方法（素材里没有会被丢掉的英文），训练照常进行。")
+
+
 def test_official_front_end_when_configured(gsv_env, monkeypatch, vt_log):
     monkeypatch.setenv("VOICETWIN_TEXT_DRYRUN", "1")
     make, _ = gsv_env
@@ -401,9 +485,11 @@ needs_fake_python = pytest.mark.skipif(not _fake_python_ok(), reason="这个环�
 def test_fallback_is_not_claimed_and_mixed_is_retried_later(gsv_env, monkeypatch, vt_log):
     """新方法没成功、退回了官方的方法：训练计划（存进 models.json 的、网页上显示的、之后的预览）不能再写「中文和英文都参加训练」。
     下次训练先在临时文件夹里再试一次：还是不行 → 接着用现在的特征（不重新练、不备份）；成功了 → 从头练，
-    原来的模型备份起来、一起参加比较。"""
+    原来的模型备份起来、一起参加比较。
+    「一模一样」档只有素材里没有会被丢掉的英文时才退回官方的方法（有的话停下，见下一个测试）：这里按没有算。"""
     monkeypatch.setenv("VOICETWIN_TEXT_DRYRUN", "1")
     monkeypatch.setenv("FAKE_GSV_LANGSEG_RAISE", "1")
+    monkeypatch.setattr(gsv, "_english_lost_lines", lambda path: 0)
     make, _ = gsv_env
     cfg, project, b = make(batch_size=4)
     confirm_material(cfg, project.voice)
@@ -448,11 +534,46 @@ def test_fallback_is_not_claimed_and_mixed_is_retried_later(gsv_env, monkeypatch
 
 
 @needs_fake_python
+def test_identical_training_stops_instead_of_dropping_english(gsv_env, monkeypatch):
+    """「一模一样」档、素材里有夹着英文的句子：「中英文一起」没成功就停下，不退回官方的方法、不带着丢掉英文的素材练完。
+    「标准」档练 v2ProPlus 照以前退回官方的方法；之后换回「一模一样」档、再试还是不行 → 也停下（现在的特征里没有英文）；
+    好了 → 从头练、中英文一起。"""
+    monkeypatch.setenv("VOICETWIN_TEXT_DRYRUN", "1")
+    monkeypatch.setenv("FAKE_GSV_LANGSEG_RAISE", "1")
+    make, _ = gsv_env
+    cfg, project, b = make(batch_size=4)
+    confirm_material(cfg, project.voice)
+    opt = b._opt_dir()
+    with pytest.raises(RuntimeError, match="^中英文一起处理文字没成功，训练先停下了"):
+        wf.run_train(cfg, project.voice, "gptsovits", select=False, mode="identical")
+    assert not (project.load_models().get("gptsovits") or {}).get("sovits")   # 什么都没练
+    assert not (opt / "2-name2text.txt").exists()
+
+    std = wf.run_train(cfg, project.voice, "gptsovits", select=False, mode="standard")
+    assert std["params"]["text_frontend"] == "official"
+    assert (opt / gsv.FRONTEND_FILE).read_text(encoding="utf-8") == "official"
+
+    msgs = []
+    with pytest.raises(RuntimeError, match="^中英文一起处理文字没成功，训练先停下了"):
+        wf.run_train(cfg, project.voice, "gptsovits", select=False, mode="identical",
+                     progress=lambda f, m="": msgs.append(m))
+    assert any("这次先再试一次" in m for m in msgs) and not (opt / "_vt_mixed_try").exists()
+    assert project.load_models()["gptsovits"]["sovits"] == std["sovits"]   # 「标准」档练好的模型还在
+
+    monkeypatch.delenv("FAKE_GSV_LANGSEG_RAISE")
+    fresh = wf.run_train(cfg, project.voice, "gptsovits", select=False, mode="identical")
+    fp = fresh["params"]
+    assert fp["run_state"] == "fresh" and fp["text_frontend"] == "mixed" and fp["en_lines"] > 0
+    assert (opt / gsv.FRONTEND_FILE).read_text(encoding="utf-8") == "mixed"
+
+
+@needs_fake_python
 def test_settings_change_also_retries_mixed(gsv_env, monkeypatch):
     """上次退回了官方的方法、这次只是明确改了训练设置（打开 DPO，要从头练、文字特征本来接着用）：也先再试一次「中英文一起」，
     成功了就用新方法处理文字，两个原因都写上。"""
     monkeypatch.setenv("VOICETWIN_TEXT_DRYRUN", "1")
     monkeypatch.setenv("FAKE_GSV_LANGSEG_RAISE", "1")
+    monkeypatch.setattr(gsv, "_english_lost_lines", lambda path: 0)   # 按素材里没有会被丢掉的英文算（不然停下）
     make, _ = gsv_env
     cfg, project, b = make(batch_size=4)
     confirm_material(cfg, project.voice)

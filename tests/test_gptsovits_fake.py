@@ -895,7 +895,9 @@ def test_empty_text_step_does_not_block_later_training(prepared, tmp_path, monke
     留下一个只有换行的 2-name2text-0.txt。真实脚本看到这个文件就什么都不做——以前这个文件一直留着，
     原因修好了、改了素材再训练，也一直报「1A 文本处理没有产出」，只能去整合包里删隐藏的文件。"""
     cfg, project, _ = prepared
-    gcfg, root, p2 = _small_train_cfg(project, tmp_path, "GSV-1a")
+    # 测的是官方 1-get-text.py 的行为（中英文一起的方法在 test_mixed_text.py 里测）
+    gcfg, root, p2 = _small_train_cfg(project, tmp_path, "GSV-1a", train={
+        "sovits_epochs": 4, "gpt_epochs": 4, "batch_size": 2, "text_frontend": "official"})
     confirm_material(gcfg, project.voice)
     monkeypatch.setenv("FAKE_GSV_TEXT_FAIL", "1")
     with pytest.raises(RuntimeError, match="1A 文本处理没有产出"):
@@ -936,7 +938,9 @@ def test_leftover_part_files_are_not_reused_after_material_change(prepared, tmp_
     """上次处理完、还没来得及合并就停了（或者杀毒软件占着删不掉），留下了旧素材的分块结果：
     改了素材再训练，不能悄悄用旧的文字 / 语义（真实脚本看到分块文件在就直接跳过）。"""
     cfg, project, _ = prepared
-    gcfg, root, p2 = _small_train_cfg(project, tmp_path, "GSV-parts")
+    # 测的是官方 1-get-text.py 的行为（中英文一起的方法自己先删掉分块文件，见 _run_mixed_text）
+    gcfg, root, p2 = _small_train_cfg(project, tmp_path, "GSV-parts", train={
+        "sovits_epochs": 4, "gpt_epochs": 4, "batch_size": 2, "text_frontend": "official"})
     confirm_material(gcfg, project.voice)
     first = wf.run_train(gcfg, project.voice, "gptsovits", select=False)
     opt_dir = root / "logs" / first["exp_name"]

@@ -218,11 +218,17 @@ def test_gptsovits_list_text_uses_comma_rule(tmp_path):
          "duration": 3.0},
         {"id": "c3", "path": "clips/c3.wav", "text": "验证用的句子", "lang": "zh", "keep": True, "split": "val",
          "duration": 3.0},
+        # 英文单词多、被判成 en 的中英夹杂句子：标生成时真正发的语言 zh（标 en 的话官方的 1-get-text.py 会丢掉汉字）
+        {"id": "c4", "path": "clips/c4.wav", "text": "这叫 list comprehension and generator expression.", "lang": "en",
+         "keep": True, "split": "train", "duration": 3.0},
     ]
     project.save_manifest(recs)
     lines = gptsovits_list_text(project, "spk").splitlines()
     assert lines == ["c0.wav|spk|zh|翻译成英文就是There are some nuts which，", "c1.wav|spk|en|There are some nuts which,",
-                     "c2.wav|spk|zh|好的。"]
+                     "c2.wav|spk|zh|好的。", "c4.wav|spk|zh|这叫 list comprehension and generator expression."]
+    # 以前的规则（只用来认出以前训练时的素材）：标原来的语言
+    assert "c4.wav|x|en|这叫 list comprehension and generator expression." in gptsovits_list_text(
+        project, "x", legacy_punct=True).splitlines()
     assert [r["text"] for r in project.load_manifest()][0] == "翻译成英文就是There are some nuts which"  # manifest 不改
 
 
@@ -275,6 +281,9 @@ def test_summarize_counts_english_inside_chinese_lines(tmp_path):
     assert not any(w.startswith("素材里没有英文") for w in warnings)
     only_zh = summarize(project, [recs[2]], [])["warnings"]
     assert any(w.startswith("素材里没有英文") for w in only_zh)
+    # 素材少（这里 5 分钟）：只说量出来的分钟数，不写没有实测过的「1~3 小时效果最好」（永久规定 7「不要乱写」）
+    short = next(w for w in only_zh if w.startswith("可用素材只有"))
+    assert short.startswith("可用素材只有 5.0 分钟。") and "小时" not in short and "没有实测过" in short
 
 
 # ============================================================================ P2：档位名、默认值

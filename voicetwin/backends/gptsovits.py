@@ -22,8 +22,9 @@
   训练前先用官方的训练程序实测显卡一次最多能练几条（_probe_batch：练够 40 步或 90 秒就停，比每秒练几条、看显存有没有满），
   每批多练几条时轮数按比例加多（模型更新的次数和每批 4 条时一样；每批不到 4 条时按 4 条算，轮数不会比每批 4 条时少）。
   训练完把第 4 轮以后存下的每个版本都拿来比较。
-两种方式都用 VoiceTwin 自己的「处理文字」（gsv_scripts/get_text_mixed.py：中文句子里夹着的英文也参加训练，
-不成功自动退回官方的 1-get-text.py）和「末尾没有标点补「，」」：这两条是修正素材，不是加大训练量。
+两种方式都用 VoiceTwin 自己的「处理文字」（gsv_scripts/get_text_mixed.py：中文句子里夹着的英文也参加训练；
+不成功时「一模一样」档和练 V5 时停下说明原因（官方的方法会丢掉英文），只有「标准」档练别的版本时退回官方的 1-get-text.py）
+和「末尾没有标点补「，」」：这两条是修正素材，不是加大训练量。
 素材、处理文字的方法、录音文件变了 → 从头训练（旧模型备份起来，下次挑选时也参加比较）；
 没变而计划练得更多 → 接着上次往下练；没变而且已经练够了 → 不重新训练，直接挑选。
 """
@@ -278,7 +279,7 @@ PROBE_MIN_GAIN = 1.05
 PROBE_SPILL_GB = 0.3
 #: 训练时显存不够：每批减 1 条再练，最多减几次
 OOM_MAX_RETRIES = 3
-#: 实际参加训练的不到这么多就提醒；VoiceTwin 自己的「处理文字」写出来的不到这么多句就退回官方的方法
+#: 实际参加训练的不到这么多就提醒；VoiceTwin 自己的「处理文字」写出来的不到这么多句就算没成功（停下或退回官方的方法）
 MIN_TRAINED_SHARE = 0.98
 MIXED_MIN_SHARE = 0.98
 #: 硬盘至少留这么多（GB）
@@ -638,6 +639,27 @@ def _forget_features(opt_dir: Path) -> None:
         (opt_dir / "voicetwin_list.sha1").unlink(missing_ok=True)
     except OSError as exc:  # 删不掉：下次照样按「素材有变化」以外的情况判断，至少说一声
         log.warning(f"删不掉训练记录里的素材指纹 voicetwin_list.sha1（{exc}）：下次训练前请先把它删掉，不然可能不会重新处理文字")
+
+
+def _english_lost_lines(list_path: Path) -> int:
+    """训练列表里有几句的英文会被官方的 1-get-text.py 丢掉：标的不是 en、文字里有英文字母的句子
+    （官方按 zh 处理时 chinese2.py 把英文字母全部删掉；没有汉字、标 en 的整句英文官方也能处理）。"""
+    n = 0
+    for ln in list_path.read_text(encoding="utf-8").splitlines():
+        parts = ln.split("|", 3)
+        if len(parts) == 4 and parts[2].strip().lower() != "en" and re.search(r"[A-Za-z]", parts[3]):
+            n += 1
+    return n
+
+
+def _mixed_stop_message(why: str, n_en: int) -> str:
+    """「中英文一起」处理文字没成功、又不能退回官方的方法时，停下给老师看的话（第一句要和 errors.py 的 mixed_text_stop 对上）。"""
+    return (f"中英文一起处理文字没成功，训练先停下了（原因：{why}）。"
+            f"官方的处理方法会把英文字母全部丢掉：你的素材里有 {n_en} 句夹着英文，改用它接着练的话这些英文都学不到，"
+            "练出来说英文不像你，所以没有改用它。"
+            "怎么办：先到「🩺 环境检查」页看看有没有问题（缺模型就按页面上的说明补上）；GPT-SoVITS 整合包不完整的话，"
+            "重新解压整合包，再双击 install_windows.bat。弄好后再点一次「开始训练」。"
+            "还不行就把 logs 文件夹里的 gsv_1a_text.log 发给帮你的人。")
 
 
 #: 每个版本自己的底模提取的语义 token（官方训练哪个版本就用哪个版本的底模提取；V5 和 v2ProPlus 底模里提取语义的那部分权重
@@ -1995,6 +2017,13 @@ class GPTSoVITSBackend(Backend):
         v = str(self._tcfg().get("text_frontend", "auto") or "auto").strip().lower()
         return "official" if v in ("official", "官方", "false", "off", "no") else "mixed"
 
+    def _mixed_required(self, mode: str) -> bool:
+        """「中英文一起」处理文字没成功时，是停下（True）还是退回官方的方法接着练（False）。
+        「一模一样」档、设置里的版本是 V5 时停下：官方的方法会把中文句子里夹着的英文全部丢掉，练出来说英文不像她
+        （要的是中文、英文都一模一样）。只有「标准」档练 V5 以外的版本时，照以前退回官方的方法。
+        设置成官方的方法（text_frontend: official）就本来不用新方法，也不用停。"""
+        return self._text_frontend() == "mixed" and (mode == "identical" or str(self.main_version).startswith("v5"))
+
     def _feature_parts(self, tier: str) -> int:
         """提取特征分几路同时做：auto = 8 GB 档以上 2 路，否则 1 路；也可以在 config.yaml 里写 1~4。"""
         v = self._tcfg().get("feature_parts", "auto")
@@ -2471,13 +2500,15 @@ class GPTSoVITSBackend(Backend):
     def _prepare_features(self, list_path: Path, wav_dir: Path, progress: Optional[ProgressFn],
                           n_clips: int = 0, *, feat: Optional[Dict[str, str]] = None, changed: Optional[bool] = None,
                           kinds: Optional[List[str]] = None, pos: Optional[Dict[str, float]] = None, parts: int = 1,
-                          mixed_ready: Optional[Tuple[Path, Dict[str, int]]] = None) -> Dict[str, Any]:
+                          mixed_ready: Optional[Tuple[Path, Dict[str, int]]] = None,
+                          mixed_required: bool = False) -> Dict[str, Any]:
         """1A 处理文字 → 1B 声音特征（+ v2Pro 声纹）→ 1C 语义，和官方 WebUI 一样的脚本和文件。
 
         素材的指纹（_feature_digest：训练列表 + 版本 + 处理文字的方法 + 录音文件）变了：删掉旧的特征文件、把旧的训练进度和
         模型挪进 old_runs（_archive_old_run），这次从头训练。只是文字或处理文字的方法变了（录音、句子都没变）时只重新处理文字，
         声音特征接着用。1B / 声纹 / 1C 分 parts 路同时做（_run_parts）。
         mixed_ready：上次退回了官方的方法、这次先在临时文件夹里试成功的「中英文一起」的结果，直接拿来用。
+        mixed_required：「中英文一起」没成功时停下、不退回官方的方法（_mixed_required）。
         返回 {"opt_dir", "frontend": 这次文字实际是哪种方法处理的, "en_phones", "en_lines"}。"""
         pos = pos or TRAIN_POS["standard"]
         opt_dir = self._opt_dir()
@@ -2545,7 +2576,7 @@ class GPTSoVITSBackend(Backend):
             if mixed_ready is not None:
                 frontend, en = "mixed", self._adopt_mixed(mixed_ready[0], opt_dir, mixed_ready[1])
             else:
-                frontend, en = self._run_text(opt_dir, base, n, progress, pos, parts)
+                frontend, en = self._run_text(opt_dir, base, n, progress, pos, parts, required=mixed_required)
             (opt_dir / FRONTEND_FILE).write_text(frontend, encoding="utf-8")
             text_file.write_text(json.dumps(en), encoding="utf-8")
         else:
@@ -2683,9 +2714,11 @@ class GPTSoVITSBackend(Backend):
         _remove_parts(opt_dir, "2-name2text*.txt")
         shutil.rmtree(opt_dir / "3-bert", ignore_errors=True)
 
-    # ---------------------------------------------------------------- 处理文字：中英文一起（失败退回官方的方法）
+    # ---------------------------------------------------------------- 处理文字：中英文一起（失败时停下或退回官方的方法）
     def _run_text(self, opt_dir: Path, base: Dict[str, Any], n: int, progress: Optional[ProgressFn],
-                  pos: Dict[str, float], parts: int) -> Tuple[str, Dict[str, int]]:
+                  pos: Dict[str, float], parts: int, required: bool = False) -> Tuple[str, Dict[str, int]]:
+        """required（_mixed_required）：「中英文一起」没成功、素材里又有会被官方的方法丢掉的英文时停下；
+        素材里没有这样的英文时，官方的方法不会丢掉英文，照样退回官方的方法。"""
         lo, hi = pos["text"], pos["hubert"]
         if self._text_frontend() == "mixed":
             self.step(progress, lo, "处理文字：中文和英文都参加训练（以前英文部分会被丢掉）")
@@ -2693,7 +2726,12 @@ class GPTSoVITSBackend(Backend):
             if ok:
                 return "mixed", en
             self._clear_text_outputs(opt_dir)
-            msg = f"中英文一起训练的新方法这次没成功（原因：{why}），已改用官方的方法（英文部分不参加训练），训练照常进行。"
+            n_en = _english_lost_lines(Path(base["inp_text"]))
+            if required and n_en:
+                _forget_features(opt_dir)   # 下次训练要重新处理文字
+                raise RuntimeError(_mixed_stop_message(why, n_en))
+            lost = "英文部分不参加训练" if n_en else "素材里没有会被丢掉的英文"
+            msg = f"中英文一起训练的新方法这次没成功（原因：{why}），已改用官方的方法（{lost}），训练照常进行。"
             log.warning(msg)
             if progress:
                 try:
@@ -2735,7 +2773,7 @@ class GPTSoVITSBackend(Backend):
                         prange: Tuple[float, float], parts: int) -> Tuple[bool, str, Dict[str, int]]:
         """用 VoiceTwin 自己的 1A（gsv_scripts/get_text_mixed.py）处理文字，结果写进 out_dir。
         返回 (成功没有, 没成功的中文原因, {"en_phones": 英文音素个数, "en_lines": 夹着英文的句子数})。
-        整合包里缺模块、出错、退出码不是 0、写出来的不到 98% 的句子，都算没成功（调用的地方退回官方的方法）。"""
+        整合包里缺模块、出错、退出码不是 0、写出来的不到 98% 的句子，都算没成功（调用的地方按 _mixed_required 停下或退回官方的方法）。"""
         if not MIXED_SCRIPT.exists():
             return False, "程序里缺少 get_text_mixed.py", {}
         env = self.env({**base, "opt_dir": str(out_dir), "bert_pretrained_dir": str(self.p(BERT_DIR)),
@@ -2768,9 +2806,10 @@ class GPTSoVITSBackend(Backend):
         return True, "", vt
 
     def _try_mixed(self, list_path: Path, wav_dir: Path, opt_dir: Path, n: int, progress: Optional[ProgressFn],
-                   pos: Dict[str, float], parts: int) -> Optional[Tuple[Path, Dict[str, int]]]:
+                   pos: Dict[str, float], parts: int, required: bool = False) -> Optional[Tuple[Path, Dict[str, int]]]:
         """上次「中英文一起」的方法没成功、退回了官方的方法：这次先在临时文件夹里再试一次（不动现在的特征）。
-        成功了返回 (临时文件夹, 英文的数字)，调用的地方当成素材变了（从头训练）；没成功就接着用现在的特征，说明原因。"""
+        成功了返回 (临时文件夹, 英文的数字)，调用的地方当成素材变了（从头训练）；没成功就接着用现在的特征，说明原因。
+        required（_mixed_required）而且素材里有会被官方的方法丢掉的英文时，没成功就停下（现在的特征里没有这些英文）。"""
         tmp = opt_dir / "_vt_mixed_try"
         shutil.rmtree(tmp, ignore_errors=True)
         tmp.mkdir(parents=True, exist_ok=True)
@@ -2781,6 +2820,9 @@ class GPTSoVITSBackend(Backend):
             log.info("中英文一起训练的新方法这次成功了：重新训练（英文部分也参加训练）")
             return tmp, en
         shutil.rmtree(tmp, ignore_errors=True)
+        n_en = _english_lost_lines(list_path) if required else 0
+        if n_en:
+            raise RuntimeError(_mixed_stop_message(why, n_en))
         log.warning(f"中英文一起训练的新方法这次还是没成功（原因：{why}），接着用现在的特征（英文部分不参加训练），训练照常进行。")
         return None
 
@@ -3215,11 +3257,12 @@ class GPTSoVITSBackend(Backend):
         opt_dir.mkdir(parents=True, exist_ok=True)
         feat = self._feature_digest(list_path, wav_dir)
         st = self._run_state(feat, mode, dict(opts), n, minutes, gpu)
+        mixed_required = self._mixed_required(mode)
         mixed_ready = None
         settings_only = set(st.get("kinds") or []) == {"settings"}   # 素材没变、只是训练设置改了：文字特征也是接着用的
         if ((st["state"] in ("extend", "skip", "continue") or settings_only) and feat["frontend"] == "mixed"
                 and self._frontend_used(opt_dir) == "official" and (opt_dir / "2-name2text.txt").exists()):
-            mixed_ready = self._try_mixed(list_path, wav_dir, opt_dir, n, progress, pos, parts)
+            mixed_ready = self._try_mixed(list_path, wav_dir, opt_dir, n, progress, pos, parts, required=mixed_required)
             if mixed_ready is not None:
                 reasons = list(st.get("reasons") or []) if settings_only else []
                 reasons.append("中英文一起训练的新方法")
@@ -3256,7 +3299,8 @@ class GPTSoVITSBackend(Backend):
         self.ensure_users_pth()
         t_feat = time.time()
         feats = self._prepare_features(list_path, wav_dir, progress, n_clips=n, feat=feat, changed=state == "fresh",
-                                       kinds=st.get("kinds"), pos=pos, parts=parts, mixed_ready=mixed_ready)
+                                       kinds=st.get("kinds"), pos=pos, parts=parts, mixed_ready=mixed_ready,
+                                       mixed_required=mixed_required)
         features_s = time.time() - t_feat
         features = self._count_features(opt_dir, n)
         mixed_used = feats["frontend"] == "mixed"

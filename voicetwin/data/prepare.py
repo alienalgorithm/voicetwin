@@ -848,7 +848,9 @@ def summarize(project: Project, records: List[Dict[str, Any]], refs: List[Dict[s
                         "以后录音把音量调小一点、话筒离远一点；你听着没问题的句子，可以在校对表里点「⋯ 选项」→「✅ 这一条也要用」")
     total_min = sum(by_lang.values()) / 60.0
     if total_min < 10:
-        warnings.append(f"可用素材只有 {total_min:.1f} 分钟。能训练，但建议 ≥30 分钟，1~3 小时效果最好。")
+        # 只说量出来的分钟数；「多少小时效果最好」没有实测过，不写（永久规定 7）
+        warnings.append(f"可用素材只有 {total_min:.1f} 分钟。能训练，但建议 ≥30 分钟（多少分钟效果最好，没有实测过）；"
+                        "有更多干净的讲课录音，就一起加进来。")
     if 0 < by_lang.get("en", 0) / 60.0 < 5:
         warnings.append("英文素材不足 5 分钟：英文会带一点「中文腔」。如果要做英文课，建议加入英文讲课录音。")
     if not by_lang.get("en"):

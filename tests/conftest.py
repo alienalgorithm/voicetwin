@@ -58,6 +58,14 @@ def lecture_dir(tmp_path_factory):
 
 
 @pytest.fixture(autouse=True)
+def _mixed_text_dry_run(monkeypatch):
+    """测试里没有真的 torch / BERT：VoiceTwin 自己的「处理文字」（gsv_scripts/get_text_mixed.py）按测试用的办法跑
+    （VOICETWIN_TEXT_DRYRUN=1，用仿真 GPT-SoVITS 目录里的替身模块）。不设的话它在测试里总是失败：以前悄悄退回官方的方法，
+    现在「一模一样」档和练 V5 时会停下（官方的方法会丢掉英文）。要测它失败的情况，测试自己弄坏替身。"""
+    monkeypatch.setenv("VOICETWIN_TEXT_DRYRUN", "1")
+
+
+@pytest.fixture(autouse=True)
 def _no_sv_download(monkeypatch):
     """测试不联网下载声纹模型（要测下载本身的测试自己换回真的 download，并换掉网络请求）。"""
     from voicetwin.eval import sv_models
