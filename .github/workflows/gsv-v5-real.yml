@@ -11,6 +11,7 @@ on:
     paths:
       - ".github/workflows/gsv-v5-real.yml"
       - "research/gsv_v4_v5/真实V5实测/run_real_v5.py"
+      - "tests/constraints-gsv-v5.txt"
 
 permissions:
   contents: write
