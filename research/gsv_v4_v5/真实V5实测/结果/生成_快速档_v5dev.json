@@ -1,36 +1,36 @@
 {
  "audio": "research/gsv_v4_v5/真实V5实测/结果/生成_快速档_v5dev.wav",
  "backend": "gptsovits",
- "model": "gsv-v5dev-s2-g1-55afa7",
+ "model": "gsv-v5dev-s2-g2-9b7cf5",
  "model_name": "v5dev",
  "models_used": [
   {
    "name": "v5dev",
    "sentences": 3,
-   "seconds": 18.76,
+   "seconds": 18.05,
    "files": [
     {
      "kind": "SoVITS",
      "file": "vt_419cd8_e2_s252_l32.pth",
-     "fingerprint": "b1afcb462e670896"
+     "fingerprint": "d48321381538a8ae"
     },
     {
      "kind": "GPT",
-     "file": "vt_419cd8-e1.ckpt",
-     "fingerprint": "73f1e4de8332547e"
+     "file": "vt_419cd8-e2.ckpt",
+     "fingerprint": "dbfe00ccd53c2775"
     }
    ],
    "how": "模型文件里的版本标记"
   }
  ],
- "file_comment": "VoiceTwin 生成；模型：v5dev；模型文件：SoVITS vt_419cd8_e2_s252_l32.pth（指纹 b1afcb462e670896）、GPT vt_419cd8-e1.ckpt（指纹 73f1e4de8332547e）",
+ "file_comment": "VoiceTwin 生成；模型：v5dev；模型文件：SoVITS vt_419cd8_e2_s252_l32.pth（指纹 d48321381538a8ae）、GPT vt_419cd8-e2.ckpt（指纹 dbfe00ccd53c2775）",
  "srt": "research/gsv_v4_v5/真实V5实测/结果/生成_快速档_v5dev.srt",
  "quality": "fast",
  "quality_label": "快速（最快，每句只做 1 遍）",
- "duration": 20.93,
+ "duration": 20.23,
  "speed": 1.0,
- "mean_speaker_sim": 0.8022,
- "overall_pct": 90.4,
+ "mean_speaker_sim": 0.791,
+ "overall_pct": 89.6,
  "min_pct": 85.0,
  "similarity_filter": true,
  "similarity": {
@@ -64,12 +64,12 @@
   "definition": "100% = 和你自己的真实录音一样像，0% = 陌生人的水平",
   "note": "相似度是几个声纹模型一起自动打分，越高越像；机器打分不可能百分之百准确，最终以耳朵为准"
  },
- "elapsed_sec": 540.1,
+ "elapsed_sec": 687.7,
  "warnings": [],
  "flagged": [],
  "notes": [
   "本次生成：共 3 句（新生成 3 句），平均每句试了 1.0 次。",
-  "整篇像你本人 90.4%（100% = 和你自己的真实录音一样像，0% = 陌生人的水平；相似度是几个声纹模型一起自动打分，越高越像；机器打分不可能百分之百准确，最终以耳朵为准）。",
+  "整篇像你本人 89.6%（100% = 和你自己的真实录音一样像，0% = 陌生人的水平；相似度是几个声纹模型一起自动打分，越高越像；机器打分不可能百分之百准确，最终以耳朵为准）。",
   "没有需要特别注意的句子。"
  ],
  "variants": [],
@@ -81,23 +81,23 @@
    "tts_text": "大家好，今天我们继续学习定语从句。",
    "lang": "zh",
    "start": 0.35,
-   "end": 5.205,
+   "end": 5.345,
    "ref": "第1课_8a31f3_0016",
    "cached": false,
    "seed": 20240601,
-   "speaker_sim": 0.7979,
+   "speaker_sim": 0.7859,
    "cer": null,
    "hyp": null,
-   "rate": 3.3557,
+   "rate": 3.2328,
    "issues": [],
-   "pct": 90.3,
+   "pct": 88.8,
    "pcts": {
-    "eres2netv2": 83.3,
-    "resemblyzer": 97.4
+    "eres2netv2": 82.0,
+    "resemblyzer": 95.6
    },
    "sims": {
-    "eres2netv2": 0.7979,
-    "resemblyzer": 0.9452
+    "eres2netv2": 0.7859,
+    "resemblyzer": 0.9275
    },
    "status": "🟢",
    "hint": "",
@@ -107,42 +107,42 @@
    "candidates": [
     {
      "seed": 20240601,
-     "pct": 90.3,
+     "pct": 88.8,
      "cer": null,
      "errors": null,
-     "total": 1.7949,
-     "speaker_sim": 0.7979,
+     "total": 1.7518,
+     "speaker_sim": 0.7859,
      "round": 0,
      "eliminated": false,
      "chosen": true
     }
    ],
    "model": "v5dev",
-   "clip": "cache/segments/48/48b93605b53e7bd8.wav"
+   "clip": "cache/segments/58/587af3027bedb508.wav"
   },
   {
    "index": 2,
    "text": "上节课我们讲了关系代词 which 和 who 的用法，今天我们来看介词加关系代词的结构。",
    "tts_text": "上节课我们讲了关系代词 which 和 who 的用法，今天我们来看介词加关系代词的结构。",
    "lang": "zh",
-   "start": 5.909,
-   "end": 16.419,
+   "start": 6.049,
+   "end": 16.094,
    "ref": "第1课_8a31f3_0016",
    "cached": false,
    "seed": 20248520,
-   "speaker_sim": 0.8154,
+   "speaker_sim": 0.8041,
    "cer": null,
    "hyp": null,
-   "rate": 3.1579,
+   "rate": 3.4447,
    "issues": [],
-   "pct": 91.3,
+   "pct": 90.6,
    "pcts": {
-    "eres2netv2": 85.1,
-    "resemblyzer": 97.6
+    "eres2netv2": 83.9,
+    "resemblyzer": 97.3
    },
    "sims": {
-    "eres2netv2": 0.8154,
-    "resemblyzer": 0.947
+    "eres2netv2": 0.8041,
+    "resemblyzer": 0.9443
    },
    "status": "🟢",
    "hint": "",
@@ -152,42 +152,42 @@
    "candidates": [
     {
      "seed": 20248520,
-     "pct": 91.3,
+     "pct": 90.6,
      "cer": null,
      "errors": null,
-     "total": 1.79,
-     "speaker_sim": 0.8154,
+     "total": 1.7894,
+     "speaker_sim": 0.8041,
      "round": 0,
      "eliminated": false,
      "chosen": true
     }
    ],
    "model": "v5dev",
-   "clip": "cache/segments/4b/4b1239df034ed1e8.wav"
+   "clip": "cache/segments/3b/3b7231a7ece44008.wav"
   },
   {
    "index": 3,
    "text": "First, let's look at an example from the passage.",
    "tts_text": "First, let's look at an example from the passage.",
    "lang": "en",
-   "start": 17.142,
-   "end": 20.532,
+   "start": 16.817,
+   "end": 19.827,
    "ref": "第1课_8a31f3_0067",
    "cached": false,
    "seed": 20256439,
-   "speaker_sim": 0.7934,
+   "speaker_sim": 0.783,
    "cer": null,
    "hyp": null,
-   "rate": 3.6036,
+   "rate": 4.0678,
    "issues": [],
-   "pct": 87.6,
+   "pct": 87.5,
    "pcts": {
-    "eres2netv2": 82.8,
-    "resemblyzer": 92.4
+    "eres2netv2": 81.7,
+    "resemblyzer": 93.3
    },
    "sims": {
-    "eres2netv2": 0.7934,
-    "resemblyzer": 0.8966
+    "eres2netv2": 0.783,
+    "resemblyzer": 0.9055
    },
    "status": "🟢",
    "hint": "",
@@ -197,18 +197,18 @@
    "candidates": [
     {
      "seed": 20256439,
-     "pct": 87.6,
+     "pct": 87.5,
      "cer": null,
      "errors": null,
-     "total": 1.6516,
-     "speaker_sim": 0.7934,
+     "total": 1.6992,
+     "speaker_sim": 0.783,
      "round": 0,
      "eliminated": false,
      "chosen": true
     }
    ],
    "model": "v5dev",
-   "clip": "cache/segments/f3/f321d92fb54c4144.wav"
+   "clip": "cache/segments/c3/c39637b6da73d052.wav"
   }
  ],
  "tries_avg": 1.0

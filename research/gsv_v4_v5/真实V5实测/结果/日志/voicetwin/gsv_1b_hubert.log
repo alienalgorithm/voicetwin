@@ -1,4 +1,4 @@
 
-===== 2026-11-24 14:36:38 提取声音特征 =====
+===== 2026-11-24 16:00:32 提取声音特征 =====
 命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/prepare_datasets/2-get-hubert-wav32k.py
 目录：/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0

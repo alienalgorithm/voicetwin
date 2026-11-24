@@ -2,12 +2,12 @@
  "steps": {
   "合成讲课录音（espeak-ng）": {
    "ok": true,
-   "seconds": 2.0,
+   "seconds": 1.8,
    "result": "/mnt/w/vt/素材/第1课.wav"
   },
   "准备素材 + 确认训练素材": {
    "ok": true,
-   "seconds": 47.2,
+   "seconds": 45.9,
    "result": {
     "clips": null,
     "kept": null,
@@ -46,7 +46,7 @@
   },
   "环境检查": {
    "ok": true,
-   "seconds": 2.1,
+   "seconds": 1.9,
    "result": [
     {
      "item": "Python",
@@ -159,9 +159,213 @@
      "detail": "找不到 index-tts 仓库：/home/runner/work/voicetwin/voicetwin/third_party/index-tts（git clone https://github.com/index-tts/index-tts.git third_party/index-tts）（Python：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python）"
     }
    ]
+  },
+  "网页右上角的模型型号（还没训练：官方 V5 底模）": {
+   "ok": true,
+   "seconds": 0.0,
+   "result": {
+    "text": "GPT-SoVITS v5dev",
+    "note": "底模，这个声音还没训练",
+    "detail": "从模型文件读出来的版本（官方底模（按文件内容核对））：s2Gv5dev.pth",
+    "version": "v5dev",
+    "source": "pretrained",
+    "level": "ok"
+   }
+  },
+  "训练（V5：v5dev 的 LoRA + GPT）并自动挑选": {
+   "ok": true,
+   "seconds": 8807.3,
+   "result": {
+    "versions": [
+     "v5dev"
+    ],
+    "timing": {},
+    "sovits": [
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s126_l32.pth",
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth"
+    ],
+    "gpt": [
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt",
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt"
+    ],
+    "selected": {
+     "id": "s2-g2",
+     "sovits": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth",
+     "gpt": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt",
+     "sovits_epoch": 2,
+     "gpt_epoch": 2,
+     "version": "v5dev"
+    },
+    "params_lora": {
+     "version": "v5dev",
+     "batch_size": 1,
+     "epochs": 2,
+     "save_every": 1,
+     "rank": 32,
+     "auto": {
+      "lora_batch_size": true,
+      "lora_epochs": false,
+      "lora_save_every": true
+     },
+     "summary": "v5dev 音色（LoRA 微调，官方的练法）：每批 1 条、2 轮、每轮存一个，练完用你没参加训练的录音实测挑最像的那一轮",
+     "batch_size_used": 1
+    },
+    "trained_counts": {
+     "sovits": 63,
+     "gpt": 63,
+     "expected": 63,
+     "reasons": {},
+     "ids": []
+    },
+    "results": [
+     {
+      "id": "s1-g1",
+      "version": null,
+      "pct": 87.7,
+      "to_real": null,
+      "sim": null,
+      "score": null,
+      "cer": null,
+      "rhythm": null
+     },
+     {
+      "id": "s1-g2",
+      "version": null,
+      "pct": 88.1,
+      "to_real": null,
+      "sim": null,
+      "score": null,
+      "cer": null,
+      "rhythm": null
+     },
+     {
+      "id": "s2-g1",
+      "version": null,
+      "pct": 89.6,
+      "to_real": null,
+      "sim": null,
+      "score": null,
+      "cer": null,
+      "rhythm": null
+     },
+     {
+      "id": "s2-g2",
+      "version": null,
+      "pct": 89.7,
+      "to_real": null,
+      "sim": null,
+      "score": null,
+      "cer": null,
+      "rhythm": null
+     }
+    ],
+    "badge_after_training": {
+     "text": "GPT-SoVITS v5dev",
+     "note": "",
+     "detail": "从模型文件读出来的版本（模型文件里的版本标记）：vt_419cd8_e2_s252_l32.pth",
+     "version": "v5dev",
+     "source": "trained",
+     "level": "ok"
+    }
+   }
+  },
+  "生成一段讲稿（快速档）": {
+   "ok": true,
+   "seconds": 688.2,
+   "result": {
+    "file": "生成_快速档_v5dev.wav",
+    "duration": 20.226604166666668,
+    "sr": 48000,
+    "seconds": 20.227,
+    "channels": 1
+   }
+  },
+  "要好几个版本时（V5：程序现在一个一个生成）": {
+   "ok": true,
+   "seconds": 827.1,
+   "result": {
+    "model_version": "v5dev",
+    "batch_versions_in_program": [
+     "v2",
+     "v2Pro",
+     "v2ProPlus"
+    ],
+    "one_by_one": {
+     "seconds": 417.2,
+     "count": 3,
+     "durations": [
+      5.76,
+      6.12,
+      5.84
+     ],
+     "sr": 48000
+    },
+    "batched": {
+     "seconds": 397.7,
+     "count": 3,
+     "durations": [
+      5.88,
+      6.12,
+      5.84
+     ]
+    },
+    "why_not_batched": "v5dev 模型只能一个一个生成",
+    "batched_requests": 3,
+    "last_many": {
+     "mode": "single",
+     "seeds": [
+      7,
+      104736,
+      209465
+     ],
+     "speed": 1.0
+    },
+    "batch_stats": {
+     "requests": 6,
+     "pieces": 6,
+     "by_batch": {
+      "1": {
+       "requests": 6,
+       "pieces": 6,
+       "seconds": 814.883
+      }
+     },
+     "oom_backoffs": 0,
+     "split_fallbacks": 0,
+     "split_reason": "",
+     "gpu_releases": 0,
+     "single_reasons": {
+      "v5dev 模型只能一个一个生成": 2
+     },
+     "speed_trick": null,
+     "speed_trick_reason": "",
+     "max_batch": null
+    }
+   }
+  },
+  "V5 底模（音色没有训练）+ 练好的语气模型：换上、生成": {
+   "ok": true,
+   "seconds": 154.6,
+   "result": {
+    "ckpt": {
+     "id": "base-g2",
+     "sovits": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth",
+     "gpt": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt",
+     "label": "V5 底模，音色没有训练"
+    },
+    "detected": {
+     "version": "v5dev",
+     "lora": false,
+     "how": "官方底模（按文件内容核对）",
+     "file": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth"
+    },
+    "sr": 48000,
+    "seconds": 5.76,
+    "channels": 1
+   }
   }
  },
- "started": "2026-11-24 14:35:12",
+ "started": "2026-11-24 15:59:15",
  "env": {
   "python": "3.12.16",
   "torch": "2.7.1+cpu",
@@ -173,5 +377,405 @@
   "sr": 22050,
   "seconds": 458.245,
   "channels": 1
- }
+ },
+ "train_detail": {
+  "versions": [
+   "v5dev"
+  ],
+  "timing": {},
+  "sovits": [
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s126_l32.pth",
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth"
+  ],
+  "gpt": [
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt",
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt"
+  ],
+  "selected": {
+   "id": "s2-g2",
+   "sovits": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth",
+   "gpt": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt",
+   "sovits_epoch": 2,
+   "gpt_epoch": 2,
+   "version": "v5dev"
+  },
+  "params_lora": {
+   "version": "v5dev",
+   "batch_size": 1,
+   "epochs": 2,
+   "save_every": 1,
+   "rank": 32,
+   "auto": {
+    "lora_batch_size": true,
+    "lora_epochs": false,
+    "lora_save_every": true
+   },
+   "summary": "v5dev 音色（LoRA 微调，官方的练法）：每批 1 条、2 轮、每轮存一个，练完用你没参加训练的录音实测挑最像的那一轮",
+   "batch_size_used": 1
+  },
+  "trained_counts": {
+   "sovits": 63,
+   "gpt": 63,
+   "expected": 63,
+   "reasons": {},
+   "ids": []
+  },
+  "results": [
+   {
+    "id": "s1-g1",
+    "version": null,
+    "pct": 87.7,
+    "to_real": null,
+    "sim": null,
+    "score": null,
+    "cer": null,
+    "rhythm": null
+   },
+   {
+    "id": "s1-g2",
+    "version": null,
+    "pct": 88.1,
+    "to_real": null,
+    "sim": null,
+    "score": null,
+    "cer": null,
+    "rhythm": null
+   },
+   {
+    "id": "s2-g1",
+    "version": null,
+    "pct": 89.6,
+    "to_real": null,
+    "sim": null,
+    "score": null,
+    "cer": null,
+    "rhythm": null
+   },
+   {
+    "id": "s2-g2",
+    "version": null,
+    "pct": 89.7,
+    "to_real": null,
+    "sim": null,
+    "score": null,
+    "cer": null,
+    "rhythm": null
+   }
+  ],
+  "badge_after_training": {
+   "text": "GPT-SoVITS v5dev",
+   "note": "",
+   "detail": "从模型文件读出来的版本（模型文件里的版本标记）：vt_419cd8_e2_s252_l32.pth",
+   "version": "v5dev",
+   "source": "trained",
+   "level": "ok"
+  }
+ },
+ "progress_messages": [
+  [
+   0.3663,
+   "训练音色：第 1/2 轮（95%）",
+   "16:09:49"
+  ],
+  [
+   0.374,
+   "训练音色：第 1/2 轮完成",
+   "16:10:13"
+  ],
+  [
+   0.3909,
+   "训练音色：第 2/2 轮（11%）",
+   "16:11:15"
+  ],
+  [
+   0.4156,
+   "训练音色：第 2/2 轮（27%）",
+   "16:12:42"
+  ],
+  [
+   0.4402,
+   "训练音色：第 2/2 轮（43%）",
+   "16:14:01"
+  ],
+  [
+   0.4649,
+   "训练音色：第 2/2 轮（59%）",
+   "16:15:21"
+  ],
+  [
+   0.4895,
+   "训练音色：第 2/2 轮（75%）",
+   "16:16:46"
+  ],
+  [
+   0.5126,
+   "训练音色：第 2/2 轮（90%）",
+   "16:18:11"
+  ],
+  [
+   0.528,
+   "训练音色：第 2/2 轮完成",
+   "16:19:04"
+  ],
+  [
+   0.528,
+   "训练语气和节奏（GPT），共 2 轮……",
+   "16:19:06"
+  ],
+  [
+   0.836,
+   "保存模型……",
+   "16:23:19"
+  ],
+  [
+   0.836,
+   "实际参加训练：音色 63 条、语气 63 条（一共 63 条）。",
+   "16:23:19"
+  ],
+  [
+   0.836,
+   "英文：16 句里的英文这次也参加了训练（一共 71 个英文音素）。",
+   "16:23:19"
+  ],
+  [
+   0.836,
+   "用时（实测）：处理文字和提取特征 1.1 分钟、语气每轮 126 秒。",
+   "16:23:19"
+  ],
+  [
+   0.88,
+   "GPT-SoVITS 训练完成",
+   "16:23:19"
+  ],
+  [
+   0.88,
+   "训练完成，开始自动挑选最像你的模型",
+   "16:23:19"
+  ],
+  [
+   0.88,
+   "挑选方式：标准——从早到晚均匀挑几个版本比（大约 5~15 分钟，估计）",
+   "16:23:19"
+  ],
+  [
+   0.88,
+   "加载声纹和识别模型（第一次使用会先下载）……",
+   "16:23:19"
+  ],
+  [
+   0.886,
+   "启动合成引擎（要先加载模型）……",
+   "16:24:34"
+  ],
+  [
+   0.892,
+   "切换到模型 s1-g1（第 1/4 个）",
+   "16:24:50"
+  ],
+  [
+   0.895,
+   "试听模型 s1-g1：1/36",
+   "16:29:39"
+  ],
+  [
+   0.898,
+   "试听模型 s1-g1：2/36",
+   "16:33:18"
+  ],
+  [
+   0.901,
+   "试听模型 s1-g1：3/36",
+   "16:34:46"
+  ],
+  [
+   0.904,
+   "试听模型 s1-g1：4/36",
+   "16:39:06"
+  ],
+  [
+   0.907,
+   "试听模型 s1-g1：5/36",
+   "16:42:56"
+  ],
+  [
+   0.91,
+   "试听模型 s1-g1：6/36",
+   "16:46:40"
+  ],
+  [
+   0.913,
+   "试听模型 s1-g1：7/36",
+   "16:50:26"
+  ],
+  [
+   0.916,
+   "试听模型 s1-g1：8/36",
+   "16:54:10"
+  ],
+  [
+   0.919,
+   "试听模型 s1-g1：9/36",
+   "16:55:33"
+  ],
+  [
+   0.919,
+   "切换到模型 s1-g2（第 2/4 个）",
+   "16:55:33"
+  ],
+  [
+   0.922,
+   "试听模型 s1-g2：10/36",
+   "17:00:10"
+  ],
+  [
+   0.925,
+   "试听模型 s1-g2：11/36",
+   "17:03:50"
+  ],
+  [
+   0.928,
+   "试听模型 s1-g2：12/36",
+   "17:05:14"
+  ],
+  [
+   0.931,
+   "试听模型 s1-g2：13/36",
+   "17:09:36"
+  ],
+  [
+   0.934,
+   "试听模型 s1-g2：14/36",
+   "17:13:20"
+  ],
+  [
+   0.937,
+   "试听模型 s1-g2：15/36",
+   "17:17:11"
+  ],
+  [
+   0.94,
+   "试听模型 s1-g2：16/36",
+   "17:20:56"
+  ],
+  [
+   0.943,
+   "试听模型 s1-g2：17/36",
+   "17:24:43"
+  ],
+  [
+   0.946,
+   "试听模型 s1-g2：18/36",
+   "17:26:02"
+  ],
+  [
+   0.946,
+   "切换到模型 s2-g1（第 3/4 个）",
+   "17:26:02"
+  ],
+  [
+   0.949,
+   "试听模型 s2-g1：19/36",
+   "17:30:39"
+  ],
+  [
+   0.952,
+   "试听模型 s2-g1：20/36",
+   "17:34:14"
+  ],
+  [
+   0.955,
+   "试听模型 s2-g1：21/36",
+   "17:35:41"
+  ],
+  [
+   0.958,
+   "试听模型 s2-g1：22/36",
+   "17:39:59"
+  ],
+  [
+   0.961,
+   "试听模型 s2-g1：23/36",
+   "17:43:48"
+  ],
+  [
+   0.964,
+   "试听模型 s2-g1：24/36",
+   "17:47:34"
+  ],
+  [
+   0.967,
+   "试听模型 s2-g1：25/36",
+   "17:51:20"
+  ],
+  [
+   0.97,
+   "试听模型 s2-g1：26/36",
+   "17:55:06"
+  ],
+  [
+   0.973,
+   "试听模型 s2-g1：27/36",
+   "17:56:30"
+  ],
+  [
+   0.973,
+   "切换到模型 s2-g2（第 4/4 个）",
+   "17:56:30"
+  ],
+  [
+   0.976,
+   "试听模型 s2-g2：28/36",
+   "18:00:52"
+  ],
+  [
+   0.979,
+   "试听模型 s2-g2：29/36",
+   "18:04:33"
+  ],
+  [
+   0.982,
+   "试听模型 s2-g2：30/36",
+   "18:05:58"
+  ],
+  [
+   0.985,
+   "试听模型 s2-g2：31/36",
+   "18:10:23"
+  ],
+  [
+   0.988,
+   "试听模型 s2-g2：32/36",
+   "18:14:10"
+  ],
+  [
+   0.991,
+   "试听模型 s2-g2：33/36",
+   "18:18:02"
+  ],
+  [
+   0.994,
+   "试听模型 s2-g2：34/36",
+   "18:21:47"
+  ],
+  [
+   0.997,
+   "试听模型 s2-g2：35/36",
+   "18:25:35"
+  ],
+  [
+   1.0,
+   "试听模型 s2-g2：36/36",
+   "18:26:53"
+  ],
+  [
+   1.0,
+   "训练完成",
+   "18:26:54"
+  ]
+ ],
+ "detected": {
+  "vt_419cd8_e1_s126_l32.pth": "v5dev",
+  "vt_419cd8_e2_s252_l32.pth": "v5dev"
+ },
+ "finished": "2026-11-24 18:54:44"
 }
