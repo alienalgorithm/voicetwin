@@ -1,0 +1,231 @@
+{
+ "variant": "default",
+ "variant_note": "和老师的 8 GB 显卡上程序的默认练法一样：音色 V5 LoRA 每批 1 条、8 轮；语气 GPT 每批 4 条、20 轮（处理器上是全精度，程序会把填的每批数量减半，所以填 8；只练 V5 时「每批数量」也会用在音色 LoRA 上，所以 LoRA 明确写 1 条）",
+ "made": "2026-11-24 16:37:54",
+ "prep": {
+  "counts": {
+   "total": 1221,
+   "deleted": 0,
+   "unusable": 3,
+   "material": 1218,
+   "val": 20,
+   "train": 1198,
+   "minutes": 150.4,
+   "no_text": 1,
+   "pending": 1
+  },
+  "match": {
+   "texts": 1221,
+   "clips": 1221,
+   "by_id": 1221,
+   "by_time": 0,
+   "id_same_but_span_differs": 0,
+   "unmatched_texts": 0,
+   "unmatched_text_ids": [],
+   "clips_without_text": 0,
+   "clips_without_text_ids": [],
+   "per_file": {
+    "0006.wav": {
+     "id": 152,
+     "clips": 152,
+     "texts": 152
+    },
+    "0007.wav": {
+     "id": 143,
+     "clips": 143,
+     "texts": 143
+    },
+    "001.1.1.1.-.wav": {
+     "id": 126,
+     "clips": 126,
+     "texts": 126
+    },
+    "05.wav": {
+     "id": 177,
+     "clips": 177,
+     "texts": 177
+    },
+    "1.wav": {
+     "id": 78,
+     "clips": 78,
+     "texts": 78
+    },
+    "22222222222.wav": {
+     "id": 86,
+     "clips": 86,
+     "texts": 86
+    },
+    "9999999.wav": {
+     "id": 91,
+     "clips": 91,
+     "texts": 91
+    },
+    "and-revised.wav": {
+     "id": 70,
+     "clips": 70,
+     "texts": 70
+    },
+    "binglieju.wav": {
+     "id": 26,
+     "clips": 26,
+     "texts": 26
+    },
+    "but.wav": {
+     "id": 15,
+     "clips": 15,
+     "texts": 15
+    },
+    "guanxifuci.wav": {
+     "id": 23,
+     "clips": 23,
+     "texts": 23
+    },
+    "level 2.wav": {
+     "id": 142,
+     "clips": 142,
+     "texts": 142
+    },
+    "liancihebingyuanli.wav": {
+     "id": 13,
+     "clips": 13,
+     "texts": 13
+    },
+    "nor.wav": {
+     "id": 25,
+     "clips": 25,
+     "texts": 25
+    },
+    "or-revised.wav": {
+     "id": 31,
+     "clips": 31,
+     "texts": 31
+    },
+    "so.wav": {
+     "id": 12,
+     "clips": 12,
+     "texts": 12
+    },
+    "yet.wav": {
+     "id": 11,
+     "clips": 11,
+     "texts": 11
+    }
+   },
+   "same_ids_as_transcription": true
+  },
+  "train_minutes": 148.3,
+  "applied_texts": 1220,
+  "drop_reasons_with_text": {
+   "太短": 2
+  },
+  "confirmed": true,
+  "recordings": [
+   {
+    "name": "0006.wav",
+    "bytes": 207159374,
+    "ok": true
+   },
+   {
+    "name": "0007.wav",
+    "bytes": 202346574,
+    "ok": true
+   },
+   {
+    "name": "001.1.1.1.-.wav",
+    "bytes": 182890574,
+    "ok": true
+   },
+   {
+    "name": "05.wav",
+    "bytes": 252416078,
+    "ok": true
+   },
+   {
+    "name": "1.wav",
+    "bytes": 118399054,
+    "ok": true
+   },
+   {
+    "name": "22222222222.wav",
+    "bytes": 119513166,
+    "ok": true
+   },
+   {
+    "name": "9999999.wav",
+    "bytes": 132546638,
+    "ok": true
+   },
+   {
+    "name": "and-revised.wav",
+    "bytes": 95309902,
+    "ok": true
+   },
+   {
+    "name": "binglieju.wav",
+    "bytes": 41316430,
+    "ok": true
+   },
+   {
+    "name": "but.wav",
+    "bytes": 20398158,
+    "ok": true
+   },
+   {
+    "name": "guanxifuci.wav",
+    "bytes": 39542862,
+    "ok": true
+   },
+   {
+    "name": "level 2.wav",
+    "bytes": 197853262,
+    "ok": true
+   },
+   {
+    "name": "liancihebingyuanli.wav",
+    "bytes": 19738702,
+    "ok": true
+   },
+   {
+    "name": "nor.wav",
+    "bytes": 36065358,
+    "ok": true
+   },
+   {
+    "name": "or-revised.wav",
+    "bytes": 44986446,
+    "ok": true
+   },
+   {
+    "name": "so.wav",
+    "bytes": 17535054,
+    "ok": true
+   },
+   {
+    "name": "yet.wav",
+    "bytes": 15077454,
+    "ok": true
+   }
+  ]
+ },
+ "done": null,
+ "ranking": {
+  "order": [],
+  "notes": [],
+  "tie": null
+ },
+ "rows": [],
+ "timing": {
+  "prep": {
+   "下载录音": 35.8,
+   "准备素材（不识别文字）": 136.0,
+   "确认训练素材（重新统计、声纹检查、留考试题）": 138.3
+  },
+  "prep_total_s": 310.3,
+  "train_jobs": [],
+  "eval_shards": [],
+  "lora_epoch_seconds_median": null,
+  "lora_epoch_seconds_n": 0,
+  "gpt_epoch_seconds_median": null,
+  "gpt_epoch_seconds_n": 0
+ }
+}

@@ -1,0 +1,362 @@
+{
+ "kind": "prep",
+ "variant_independent": true,
+ "started": "2026-11-24 16:32:19",
+ "timing_s": {
+  "下载录音": 35.8,
+  "准备素材（不识别文字）": 136.0,
+  "确认训练素材（重新统计、声纹检查、留考试题）": 138.3
+ },
+ "recordings": [
+  {
+   "name": "0006.wav",
+   "bytes": 207159374,
+   "ok": true
+  },
+  {
+   "name": "0007.wav",
+   "bytes": 202346574,
+   "ok": true
+  },
+  {
+   "name": "001.1.1.1.-.wav",
+   "bytes": 182890574,
+   "ok": true
+  },
+  {
+   "name": "05.wav",
+   "bytes": 252416078,
+   "ok": true
+  },
+  {
+   "name": "1.wav",
+   "bytes": 118399054,
+   "ok": true
+  },
+  {
+   "name": "22222222222.wav",
+   "bytes": 119513166,
+   "ok": true
+  },
+  {
+   "name": "9999999.wav",
+   "bytes": 132546638,
+   "ok": true
+  },
+  {
+   "name": "and-revised.wav",
+   "bytes": 95309902,
+   "ok": true
+  },
+  {
+   "name": "binglieju.wav",
+   "bytes": 41316430,
+   "ok": true
+  },
+  {
+   "name": "but.wav",
+   "bytes": 20398158,
+   "ok": true
+  },
+  {
+   "name": "guanxifuci.wav",
+   "bytes": 39542862,
+   "ok": true
+  },
+  {
+   "name": "level 2.wav",
+   "bytes": 197853262,
+   "ok": true
+  },
+  {
+   "name": "liancihebingyuanli.wav",
+   "bytes": 19738702,
+   "ok": true
+  },
+  {
+   "name": "nor.wav",
+   "bytes": 36065358,
+   "ok": true
+  },
+  {
+   "name": "or-revised.wav",
+   "bytes": 44986446,
+   "ok": true
+  },
+  {
+   "name": "so.wav",
+   "bytes": 17535054,
+   "ok": true
+  },
+  {
+   "name": "yet.wav",
+   "bytes": 15077454,
+   "ok": true
+  }
+ ],
+ "prepare_summary": {
+  "voice": "老师",
+  "clips_total": 1221,
+  "clips_kept": 0,
+  "minutes_kept": 0.0,
+  "val_clips": 0,
+  "transcripts_csv": "/mnt/w/vt/workspace/老师/transcripts.csv",
+  "elapsed_min": 2.2,
+  "files_total": 17,
+  "files_new": 17
+ },
+ "match": {
+  "texts": 1221,
+  "clips": 1221,
+  "by_id": 1221,
+  "by_time": 0,
+  "id_same_but_span_differs": 0,
+  "unmatched_texts": 0,
+  "unmatched_text_ids": [],
+  "clips_without_text": 0,
+  "clips_without_text_ids": [],
+  "per_file": {
+   "0006.wav": {
+    "id": 152,
+    "clips": 152,
+    "texts": 152
+   },
+   "0007.wav": {
+    "id": 143,
+    "clips": 143,
+    "texts": 143
+   },
+   "001.1.1.1.-.wav": {
+    "id": 126,
+    "clips": 126,
+    "texts": 126
+   },
+   "05.wav": {
+    "id": 177,
+    "clips": 177,
+    "texts": 177
+   },
+   "1.wav": {
+    "id": 78,
+    "clips": 78,
+    "texts": 78
+   },
+   "22222222222.wav": {
+    "id": 86,
+    "clips": 86,
+    "texts": 86
+   },
+   "9999999.wav": {
+    "id": 91,
+    "clips": 91,
+    "texts": 91
+   },
+   "and-revised.wav": {
+    "id": 70,
+    "clips": 70,
+    "texts": 70
+   },
+   "binglieju.wav": {
+    "id": 26,
+    "clips": 26,
+    "texts": 26
+   },
+   "but.wav": {
+    "id": 15,
+    "clips": 15,
+    "texts": 15
+   },
+   "guanxifuci.wav": {
+    "id": 23,
+    "clips": 23,
+    "texts": 23
+   },
+   "level 2.wav": {
+    "id": 142,
+    "clips": 142,
+    "texts": 142
+   },
+   "liancihebingyuanli.wav": {
+    "id": 13,
+    "clips": 13,
+    "texts": 13
+   },
+   "nor.wav": {
+    "id": 25,
+    "clips": 25,
+    "texts": 25
+   },
+   "or-revised.wav": {
+    "id": 31,
+    "clips": 31,
+    "texts": 31
+   },
+   "so.wav": {
+    "id": 12,
+    "clips": 12,
+    "texts": 12
+   },
+   "yet.wav": {
+    "id": 11,
+    "clips": 11,
+    "texts": 11
+   }
+  },
+  "same_ids_as_transcription": true
+ },
+ "applied_texts": 1220,
+ "not_used": [
+  {
+   "id": "0006_769708_0028",
+   "文字id": "0006_769708_0028",
+   "why": "对齐质量：和引擎差别大（31%）"
+  }
+ ],
+ "confirmed": true,
+ "counts": {
+  "total": 1221,
+  "deleted": 0,
+  "unusable": 3,
+  "material": 1218,
+  "val": 20,
+  "train": 1198,
+  "minutes": 150.4,
+  "no_text": 1,
+  "pending": 1
+ },
+ "drop_reasons_with_text": {
+  "太短": 2
+ },
+ "val": [
+  {
+   "id": "0006_769708_0005",
+   "秒": 7.8,
+   "lang": "zh",
+   "文字": "大多数情况下，as所代替的一般情况下就是整个句子中的主句。在定语从句中， as主要被翻译为正如。"
+  },
+  {
+   "id": "0006_769708_0081",
+   "秒": 5.7,
+   "lang": "zh",
+   "文字": "所以说，将它们合并成一个句子最好的方式，就是把后面的句子变成一个从句。"
+  },
+  {
+   "id": "0007_4610d2_0002",
+   "秒": 8.98,
+   "lang": "zh",
+   "文字": "我们会在学习关系代词that的时候来讲解这个知识点。好，那接下来我们先来了解一下which和who这两个关系代词的主要区别是什么。"
+  },
+  {
+   "id": "0007_4610d2_0038",
+   "秒": 3.045,
+   "lang": "zh",
+   "文字": "翻译成英文就是There are some nuts which Lucy bought on the table."
+  },
+  {
+   "id": "0007_4610d2_0091",
+   "秒": 7.215,
+   "lang": "zh",
+   "文字": "包括在下面的这个例句中的先行词person,同样也是被形容词的最高级smartest所修饰和限定。"
+  },
+  {
+   "id": "0007_4610d2_0126",
+   "秒": 8.995,
+   "lang": "zh",
+   "文字": "并且我们在这里需要注意的是，如果that这个关系代词在限定性定语从句中做了表语这个句子成分的情况下，那么它可以被省略。"
+  },
+  {
+   "id": "001_1_1_1_-_8ae47d_0035",
+   "秒": 3.8,
+   "lang": "zh",
+   "文字": "通过以上的一系列分析和推理，我们可以得出一个结论。"
+  },
+  {
+   "id": "05_479493_0002",
+   "秒": 6.325,
+   "lang": "zh",
+   "文字": "由此我们可以得出一个结论，关系副词没有办法像关系代词那样直接去代替先行词。"
+  },
+  {
+   "id": "05_479493_0032",
+   "秒": 4.515,
+   "lang": "zh",
+   "文字": "好，现在我们来看一下这个语句。Sunday is the day when I can rest at home."
+  },
+  {
+   "id": "05_479493_0075",
+   "秒": 4.165,
+   "lang": "zh",
+   "文字": "这就是将中文的形容词转变成定语从句的正确思路。"
+  },
+  {
+   "id": "05_479493_0110",
+   "秒": 8.17,
+   "lang": "zh",
+   "文字": "再比如说我们平时提到的VR也属于抽象地点的代名词，说到VR我就想起一部很经典的电影，叫做头号玩家。"
+  },
+  {
+   "id": "05_479493_0159",
+   "秒": 8.28,
+   "lang": "zh",
+   "文字": "那通过把关系代词that还原为它所代替的对象之后，我们就可以得到定语从句的原型，那就是I'm reading the book。"
+  },
+  {
+   "id": "1_f5b385_0035",
+   "秒": 8.865,
+   "lang": "zh",
+   "文字": "假如说我还想再买一个东西，是电脑，那我们就可以说，what I want to buy is a computer,因为这个computer它符合一个条件，是我想买的东西。"
+  },
+  {
+   "id": "9999999_f1163a_0065",
+   "秒": 5.865,
+   "lang": "zh",
+   "文字": "去掉白勺的之后，那就只剩下正在说话，我们会发现这是一个正在进行的动作。"
+  },
+  {
+   "id": "and-revised_0893d7_0021",
+   "秒": 4.59,
+   "lang": "zh",
+   "文字": "AND在句子中是不做任何句子成分的，它只起到一个连接的作用。"
+  },
+  {
+   "id": "and-revised_0893d7_0050",
+   "秒": 7.54,
+   "lang": "zh",
+   "文字": "我们把long and boring这个整体称作为并列表语。and还有一个作用，就是连接两个主语，或者是更多数量的主语。"
+  },
+  {
+   "id": "but_26940f_0001",
+   "秒": 6.875,
+   "lang": "zh",
+   "文字": "刚开始，我先唱白脸，后面我就开始唱黑脸。比如说下面这个句子，Tony is smart, but he's lazy。Tony很聪明，但他很懒。"
+  },
+  {
+   "id": "level_2_65bd73_0013",
+   "秒": 5.15,
+   "lang": "zh",
+   "文字": "这两个关系代词的主要区别在于，它们在从句中能够做的句子成分不一样。"
+  },
+  {
+   "id": "or-revised_3497a3_0008",
+   "秒": 7.635,
+   "lang": "zh",
+   "文字": "而在疑问句里面，我们一般把or翻译为还是。好，接下来我们看一下or的第二个作用，那就是在否定句中代替and。"
+  },
+  {
+   "id": "yet_ae6384_0010",
+   "秒": 5.068,
+   "lang": "zh",
+   "文字": "好，以上这些就是yet的主要用法，接下来我们就学习一下连词or的用法。"
+  }
+ ],
+ "train_minutes": 148.3,
+ "seconds": 310.3,
+ "finished": "2026-11-24 16:37:30",
+ "pack": {
+  "kind": "prep",
+  "files": 1261,
+  "bytes": 1608028160,
+  "seconds": 1.9,
+  "parts": 1
+ }
+}

@@ -1,0 +1,141 @@
+2026-11-24 16:32:57,008 | INFO | voicetwin.prepare | 找到 17 个视频/录音
+2026-11-24 16:32:57,008 | INFO | voicetwin.prepare | [第 1/17 个文件] 从视频里提取声音：0006.wav（198 MB）
+2026-11-24 16:32:58,172 | INFO | voicetwin.prepare | [第 1/17 个文件] 降噪、统一音量
+2026-11-24 16:33:00,668 | INFO | voicetwin.enhance |   估计信噪比 24.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:33:14,566 | INFO | voicetwin.prepare | [第 1/17 个文件] 切成小段……
+2026-11-24 16:33:16,164 | INFO | voicetwin.prepare |   切出 152 段
+2026-11-24 16:33:16,174 | INFO | voicetwin.prepare | [第 2/17 个文件] 从视频里提取声音：0007.wav（193 MB）
+2026-11-24 16:33:16,940 | INFO | voicetwin.prepare | [第 2/17 个文件] 降噪、统一音量
+2026-11-24 16:33:19,381 | INFO | voicetwin.enhance |   估计信噪比 24.4 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:33:31,261 | INFO | voicetwin.prepare | [第 2/17 个文件] 切成小段……
+2026-11-24 16:33:32,834 | INFO | voicetwin.prepare |   切出 143 段
+2026-11-24 16:33:32,844 | INFO | voicetwin.prepare | [第 3/17 个文件] 从视频里提取声音：001.1.1.1.-.wav（174 MB）
+2026-11-24 16:33:33,503 | INFO | voicetwin.prepare | [第 3/17 个文件] 降噪、统一音量
+2026-11-24 16:33:35,767 | INFO | voicetwin.enhance |   估计信噪比 23.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:33:46,856 | INFO | voicetwin.prepare | [第 3/17 个文件] 切成小段……
+2026-11-24 16:33:48,381 | INFO | voicetwin.prepare |   切出 126 段
+2026-11-24 16:33:48,392 | INFO | voicetwin.prepare | [第 4/17 个文件] 从视频里提取声音：05.wav（241 MB）
+2026-11-24 16:33:49,303 | INFO | voicetwin.prepare | [第 4/17 个文件] 降噪、统一音量
+2026-11-24 16:33:54,294 | INFO | voicetwin.prepare | [第 4/17 个文件] 切成小段……
+2026-11-24 16:33:56,221 | INFO | voicetwin.prepare |   切出 177 段
+2026-11-24 16:33:56,235 | INFO | voicetwin.prepare | [第 5/17 个文件] 从视频里提取声音：1.wav（113 MB）
+2026-11-24 16:33:56,697 | INFO | voicetwin.prepare | [第 5/17 个文件] 降噪、统一音量
+2026-11-24 16:33:59,093 | INFO | voicetwin.prepare | [第 5/17 个文件] 切成小段……
+2026-11-24 16:34:00,077 | INFO | voicetwin.prepare |   切出 78 段
+2026-11-24 16:34:00,088 | INFO | voicetwin.prepare | [第 6/17 个文件] 从视频里提取声音：22222222222.wav（114 MB）
+2026-11-24 16:34:00,564 | INFO | voicetwin.prepare | [第 6/17 个文件] 降噪、统一音量
+2026-11-24 16:34:02,026 | INFO | voicetwin.enhance |   估计信噪比 22.1 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:09,018 | INFO | voicetwin.prepare | [第 6/17 个文件] 切成小段……
+2026-11-24 16:34:10,012 | INFO | voicetwin.prepare |   切出 86 段
+2026-11-24 16:34:10,024 | INFO | voicetwin.prepare | [第 7/17 个文件] 从视频里提取声音：9999999.wav（126 MB）
+2026-11-24 16:34:10,527 | INFO | voicetwin.prepare | [第 7/17 个文件] 降噪、统一音量
+2026-11-24 16:34:12,149 | INFO | voicetwin.enhance |   估计信噪比 23.4 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:19,928 | INFO | voicetwin.prepare | [第 7/17 个文件] 切成小段……
+2026-11-24 16:34:20,934 | INFO | voicetwin.prepare |   切出 91 段
+2026-11-24 16:34:20,947 | INFO | voicetwin.prepare | [第 8/17 个文件] 从视频里提取声音：and-revised.wav（91 MB）
+2026-11-24 16:34:21,319 | INFO | voicetwin.prepare | [第 8/17 个文件] 降噪、统一音量
+2026-11-24 16:34:22,472 | INFO | voicetwin.enhance |   估计信噪比 21.0 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:27,996 | INFO | voicetwin.prepare | [第 8/17 个文件] 切成小段……
+2026-11-24 16:34:28,740 | INFO | voicetwin.prepare |   切出 70 段
+2026-11-24 16:34:28,753 | INFO | voicetwin.prepare | [第 9/17 个文件] 从视频里提取声音：binglieju.wav（39 MB）
+2026-11-24 16:34:28,958 | INFO | voicetwin.prepare | [第 9/17 个文件] 降噪、统一音量
+2026-11-24 16:34:29,469 | INFO | voicetwin.enhance |   估计信噪比 22.2 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:31,882 | INFO | voicetwin.prepare | [第 9/17 个文件] 切成小段……
+2026-11-24 16:34:32,206 | INFO | voicetwin.prepare |   切出 26 段
+2026-11-24 16:34:32,218 | INFO | voicetwin.prepare | [第 10/17 个文件] 从视频里提取声音：but.wav（19 MB）
+2026-11-24 16:34:32,354 | INFO | voicetwin.prepare | [第 10/17 个文件] 降噪、统一音量
+2026-11-24 16:34:32,621 | INFO | voicetwin.enhance |   估计信噪比 21.1 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:33,863 | INFO | voicetwin.prepare | [第 10/17 个文件] 切成小段……
+2026-11-24 16:34:34,049 | INFO | voicetwin.prepare |   切出 15 段
+2026-11-24 16:34:34,062 | INFO | voicetwin.prepare | [第 11/17 个文件] 从视频里提取声音：guanxifuci.wav（38 MB）
+2026-11-24 16:34:34,261 | INFO | voicetwin.prepare | [第 11/17 个文件] 降噪、统一音量
+2026-11-24 16:34:35,105 | INFO | voicetwin.prepare | [第 11/17 个文件] 切成小段……
+2026-11-24 16:34:35,434 | INFO | voicetwin.prepare |   切出 23 段
+2026-11-24 16:34:35,446 | INFO | voicetwin.prepare | [第 12/17 个文件] 从视频里提取声音：level 2.wav（189 MB）
+2026-11-24 16:34:36,166 | INFO | voicetwin.prepare | [第 12/17 个文件] 降噪、统一音量
+2026-11-24 16:34:38,550 | INFO | voicetwin.enhance |   估计信噪比 23.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:50,150 | INFO | voicetwin.prepare | [第 12/17 个文件] 切成小段……
+2026-11-24 16:34:51,692 | INFO | voicetwin.prepare |   切出 142 段
+2026-11-24 16:34:51,708 | INFO | voicetwin.prepare | [第 13/17 个文件] 从视频里提取声音：liancihebingyuanli.wav（19 MB）
+2026-11-24 16:34:51,841 | INFO | voicetwin.prepare | [第 13/17 个文件] 降噪、统一音量
+2026-11-24 16:34:52,091 | INFO | voicetwin.enhance |   估计信噪比 21.4 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:53,306 | INFO | voicetwin.prepare | [第 13/17 个文件] 切成小段……
+2026-11-24 16:34:53,475 | INFO | voicetwin.prepare |   切出 13 段
+2026-11-24 16:34:53,489 | INFO | voicetwin.prepare | [第 14/17 个文件] 从视频里提取声音：nor.wav（34 MB）
+2026-11-24 16:34:53,683 | INFO | voicetwin.prepare | [第 14/17 个文件] 降噪、统一音量
+2026-11-24 16:34:54,139 | INFO | voicetwin.enhance |   估计信噪比 21.9 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:56,268 | INFO | voicetwin.prepare | [第 14/17 个文件] 切成小段……
+2026-11-24 16:34:56,574 | INFO | voicetwin.prepare |   切出 25 段
+2026-11-24 16:34:56,588 | INFO | voicetwin.prepare | [第 15/17 个文件] 从视频里提取声音：or-revised.wav（43 MB）
+2026-11-24 16:34:56,803 | INFO | voicetwin.prepare | [第 15/17 个文件] 降噪、统一音量
+2026-11-24 16:34:57,355 | INFO | voicetwin.enhance |   估计信噪比 21.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:34:59,961 | INFO | voicetwin.prepare | [第 15/17 个文件] 切成小段……
+2026-11-24 16:35:00,315 | INFO | voicetwin.prepare |   切出 31 段
+2026-11-24 16:35:00,329 | INFO | voicetwin.prepare | [第 16/17 个文件] 从视频里提取声音：so.wav（17 MB）
+2026-11-24 16:35:00,452 | INFO | voicetwin.prepare | [第 16/17 个文件] 降噪、统一音量
+2026-11-24 16:35:00,661 | INFO | voicetwin.enhance |   估计信噪比 21.4 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:35:01,667 | INFO | voicetwin.prepare | [第 16/17 个文件] 切成小段……
+2026-11-24 16:35:01,813 | INFO | voicetwin.prepare |   切出 12 段
+2026-11-24 16:35:01,827 | INFO | voicetwin.prepare | [第 17/17 个文件] 从视频里提取声音：yet.wav（14 MB）
+2026-11-24 16:35:01,947 | INFO | voicetwin.prepare | [第 17/17 个文件] 降噪、统一音量
+2026-11-24 16:35:02,133 | INFO | voicetwin.enhance |   估计信噪比 21.5 dB，进行轻度降噪（强度 0.6）
+2026-11-24 16:35:03,015 | INFO | voicetwin.prepare | [第 17/17 个文件] 切成小段……
+2026-11-24 16:35:03,133 | INFO | voicetwin.prepare |   切出 11 段
+2026-11-24 16:35:03,147 | WARNING | voicetwin.prepare | 1221 个片段没有文字（识别引擎为 none 且没有字幕），它们不会参与训练
+2026-11-24 16:35:03,148 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 1221 段）……
+2026-11-24 16:35:11,697 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 16:35:11,732 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 16:35:11,747 | WARNING | voicetwin.references | 没有挑到合适的参考音频（需要 3.5~9.5 秒、完整一句话的片段）。可在 transcripts.csv 里检查文字后重试。
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare | 每种去掉的原因（按句子种类、按文件分开数），以及哪些文件自动降噪过：
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   没有文字的句子：一共 1221 段，用来训练 0 段，去掉 1221 段（没有识别出文字 1221 段）
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「0006.wav」：一共 152 段，用来训练 0 段，去掉 152 段（没有识别出文字 152 段）；这个文件自动降噪过
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「0007.wav」：一共 143 段，用来训练 0 段，去掉 143 段（没有识别出文字 143 段）；这个文件自动降噪过
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「001.1.1.1.-.wav」：一共 126 段，用来训练 0 段，去掉 126 段（没有识别出文字 126 段）；这个文件自动降噪过
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「05.wav」：一共 177 段，用来训练 0 段，去掉 177 段（没有识别出文字 177 段）
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「1.wav」：一共 78 段，用来训练 0 段，去掉 78 段（没有识别出文字 78 段）
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「22222222222.wav」：一共 86 段，用来训练 0 段，去掉 86 段（没有识别出文字 86 段）；这个文件自动降噪过
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「9999999.wav」：一共 91 段，用来训练 0 段，去掉 91 段（没有识别出文字 91 段）；这个文件自动降噪过
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「and-revised.wav」：一共 70 段，用来训练 0 段，去掉 70 段（没有识别出文字 70 段）；这个文件自动降噪过
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「binglieju.wav」：一共 26 段，用来训练 0 段，去掉 26 段（没有识别出文字 26 段）；这个文件自动降噪过
+2026-11-24 16:35:11,777 | INFO | voicetwin.prepare |   文件「but.wav」：一共 15 段，用来训练 0 段，去掉 15 段（没有识别出文字 15 段）；这个文件自动降噪过
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   文件「guanxifuci.wav」：一共 23 段，用来训练 0 段，去掉 23 段（没有识别出文字 23 段）
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   文件「level 2.wav」：一共 142 段，用来训练 0 段，去掉 142 段（没有识别出文字 142 段）；这个文件自动降噪过
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   文件「liancihebingyuanli.wav」：一共 13 段，用来训练 0 段，去掉 13 段（没有识别出文字 13 段）；这个文件自动降噪过
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   文件「nor.wav」：一共 25 段，用来训练 0 段，去掉 25 段（没有识别出文字 25 段）；这个文件自动降噪过
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   文件「or-revised.wav」：一共 31 段，用来训练 0 段，去掉 31 段（没有识别出文字 31 段）；这个文件自动降噪过
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   文件「so.wav」：一共 12 段，用来训练 0 段，去掉 12 段（没有识别出文字 12 段）；这个文件自动降噪过
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   文件「yet.wav」：一共 11 段，用来训练 0 段，去掉 11 段（没有识别出文字 11 段）；这个文件自动降噪过
+2026-11-24 16:35:11,778 | INFO | voicetwin.prepare |   自动降噪过的文件（14 个）：「0006.wav」、「0007.wav」、「001.1.1.1.-.wav」、「22222222222.wav」、「9999999.wav」、「and-revised.wav」、「binglieju.wav」、「but.wav」、「level 2.wav」、「liancihebingyuanli.wav」、「nor.wav」、「or-revised.wav」、「so.wav」、「yet.wav」
+2026-11-24 16:35:11,779 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 16:35:11,781 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 16:35:20,654 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 16:35:21,068 | INFO | voicetwin.prepare | 计算声纹 1/1218
+2026-11-24 16:35:26,082 | INFO | voicetwin.prepare | 计算声纹 51/1218
+2026-11-24 16:35:31,250 | INFO | voicetwin.prepare | 计算声纹 101/1218
+2026-11-24 16:35:36,196 | INFO | voicetwin.prepare | 计算声纹 151/1218
+2026-11-24 16:35:41,415 | INFO | voicetwin.prepare | 计算声纹 201/1218
+2026-11-24 16:35:46,509 | INFO | voicetwin.prepare | 计算声纹 251/1218
+2026-11-24 16:35:51,682 | INFO | voicetwin.prepare | 计算声纹 301/1218
+2026-11-24 16:35:56,557 | INFO | voicetwin.prepare | 计算声纹 351/1218
+2026-11-24 16:36:01,980 | INFO | voicetwin.prepare | 计算声纹 401/1218
+2026-11-24 16:36:07,036 | INFO | voicetwin.prepare | 计算声纹 451/1218
+2026-11-24 16:36:12,068 | INFO | voicetwin.prepare | 计算声纹 501/1218
+2026-11-24 16:36:17,105 | INFO | voicetwin.prepare | 计算声纹 551/1218
+2026-11-24 16:36:21,789 | INFO | voicetwin.prepare | 计算声纹 601/1218
+2026-11-24 16:36:27,174 | INFO | voicetwin.prepare | 计算声纹 651/1218
+2026-11-24 16:36:32,394 | INFO | voicetwin.prepare | 计算声纹 701/1218
+2026-11-24 16:36:37,174 | INFO | voicetwin.prepare | 计算声纹 751/1218
+2026-11-24 16:36:42,702 | INFO | voicetwin.prepare | 计算声纹 801/1218
+2026-11-24 16:36:47,847 | INFO | voicetwin.prepare | 计算声纹 851/1218
+2026-11-24 16:36:52,720 | INFO | voicetwin.prepare | 计算声纹 901/1218
+2026-11-24 16:36:58,223 | INFO | voicetwin.prepare | 计算声纹 951/1218
+2026-11-24 16:37:02,798 | INFO | voicetwin.prepare | 计算声纹 1001/1218
+2026-11-24 16:37:07,886 | INFO | voicetwin.prepare | 计算声纹 1051/1218
+2026-11-24 16:37:13,025 | INFO | voicetwin.prepare | 计算声纹 1101/1218
+2026-11-24 16:37:18,141 | INFO | voicetwin.prepare | 计算声纹 1151/1218
+2026-11-24 16:37:23,524 | INFO | voicetwin.prepare | 计算声纹 1201/1218
+2026-11-24 16:37:25,105 | INFO | voicetwin.prepare | 计算声纹 1218/1218
+2026-11-24 16:37:25,517 | INFO | voicetwin.references |   主参考（zh）：就比如说第一个句子，定语只是一个形容词handsome,如果把这个handsome转换成定语从句的话，那就是who is handsome。（8.18 秒）
+2026-11-24 16:37:30,094 | INFO | voicetwin.profile |   中文语速：6.10 音节/秒（不含停顿）
+2026-11-24 16:37:30,094 | INFO | voicetwin.profile |   中文音高：102 Hz，起伏 4.4 半音
+2026-11-24 16:37:30,094 | INFO | voicetwin.profile |   停顿习惯：逗号 0.25s / 句号 0.35s / 段落 0.60s
