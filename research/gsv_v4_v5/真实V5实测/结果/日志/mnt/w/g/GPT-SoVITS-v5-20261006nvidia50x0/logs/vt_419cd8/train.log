@@ -1,34 +1,34 @@
-2026-11-24 16:01:20,211	vt_419cd8	INFO	{'train': {'log_interval': 20, 'eval_interval': 500, 'seed': 1234, 'epochs': 2, 'learning_rate': 0.0001, 'betas': [0.8, 0.99], 'eps': 1e-09, 'batch_size': 1, 'fp16_run': False, 'lr_decay': 0.999875, 'segment_size': 20480, 'init_lr_ratio': 1, 'warmup_epochs': 0, 'c_mel': 45, 'c_kl': 1.0, 'text_low_lr_rate': 0.4, 'grad_ckpt': False, 'pretrained_s2G': '/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth', 'pretrained_s2D': '', 'if_save_latest': True, 'if_save_every_weights': True, 'save_every_epoch': 1, 'gpu_numbers': '0', 'lora_rank': 32}, 'data': {'max_wav_value': 32768.0, 'sampling_rate': 32000, 'filter_length': 2048, 'hop_length': 640, 'win_length': 2048, 'n_mel_channels': 128, 'mel_fmin': 0.0, 'mel_fmax': None, 'add_blank': True, 'n_speakers': 300, 'cleaned_text': True, 'exp_dir': '/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8'}, 'model': {'inter_channels': 192, 'hidden_channels': 192, 'filter_channels': 768, 'n_heads': 2, 'n_layers': 6, 'kernel_size': 3, 'p_dropout': 0.1, 'resblock': '1', 'resblock_kernel_sizes': [3, 7, 11], 'resblock_dilation_sizes': [[1, 3, 5], [1, 3, 5], [1, 3, 5]], 'upsample_rates': [10, 8, 2, 2, 2], 'upsample_initial_channel': 512, 'upsample_kernel_sizes': [16, 16, 8, 2, 2], 'n_layers_q': 3, 'use_spectral_norm': False, 'gin_channels': 512, 'semantic_frame_rate': '25hz', 'freeze_quantizer': True, 'version': 'v5dev'}, 's2_ckpt_dir': '/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8', 'content_module': 'cnhubert', 'save_weight_dir': 'SoVITS_weights_v5dev', 'name': 'vt_419cd8', 'version': 'v5dev', 'pretrain': None, 'resume_step': None}
-2026-11-24 16:01:24,378	vt_419cd8	INFO	loaded pretrained /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth
-2026-11-24 16:01:29,622	vt_419cd8	INFO	Train Epoch: 1 [0%]
-2026-11-24 16:01:29,623	vt_419cd8	INFO	[0.248051717877388, 0, 9.99875e-05]
-2026-11-24 16:02:51,007	vt_419cd8	INFO	Train Epoch: 1 [16%]
-2026-11-24 16:02:51,007	vt_419cd8	INFO	[0.2025943398475647, 20, 9.99875e-05]
-2026-11-24 16:04:20,376	vt_419cd8	INFO	Train Epoch: 1 [32%]
-2026-11-24 16:04:20,376	vt_419cd8	INFO	[0.11182630062103271, 40, 9.99875e-05]
-2026-11-24 16:05:36,928	vt_419cd8	INFO	Train Epoch: 1 [48%]
-2026-11-24 16:05:36,928	vt_419cd8	INFO	[0.43884530663490295, 60, 9.99875e-05]
-2026-11-24 16:07:08,423	vt_419cd8	INFO	Train Epoch: 1 [63%]
-2026-11-24 16:07:08,423	vt_419cd8	INFO	[0.09855435788631439, 80, 9.99875e-05]
-2026-11-24 16:08:37,190	vt_419cd8	INFO	Train Epoch: 1 [79%]
-2026-11-24 16:08:37,190	vt_419cd8	INFO	[0.1359851062297821, 100, 9.99875e-05]
-2026-11-24 16:09:49,099	vt_419cd8	INFO	Train Epoch: 1 [95%]
-2026-11-24 16:09:49,099	vt_419cd8	INFO	[0.06853706389665604, 120, 9.99875e-05]
-2026-11-24 16:10:11,793	vt_419cd8	INFO	Saving model and optimizer state at iteration 1 to /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8/logs_s2_v5dev_lora_32/G_233333333333.pth
-2026-11-24 16:10:13,241	vt_419cd8	INFO	saving ckpt vt_419cd8_e1:Success.
-2026-11-24 16:10:13,241	vt_419cd8	INFO	====> Epoch: 1
-2026-11-24 16:11:15,892	vt_419cd8	INFO	Train Epoch: 2 [11%]
-2026-11-24 16:11:15,892	vt_419cd8	INFO	[0.05226477235555649, 140, 9.99750015625e-05]
-2026-11-24 16:12:42,527	vt_419cd8	INFO	Train Epoch: 2 [27%]
-2026-11-24 16:12:42,527	vt_419cd8	INFO	[0.0861605703830719, 160, 9.99750015625e-05]
-2026-11-24 16:14:01,341	vt_419cd8	INFO	Train Epoch: 2 [43%]
-2026-11-24 16:14:01,341	vt_419cd8	INFO	[0.048755500465631485, 180, 9.99750015625e-05]
-2026-11-24 16:15:21,266	vt_419cd8	INFO	Train Epoch: 2 [59%]
-2026-11-24 16:15:21,266	vt_419cd8	INFO	[0.7877452373504639, 200, 9.99750015625e-05]
-2026-11-24 16:16:46,968	vt_419cd8	INFO	Train Epoch: 2 [75%]
-2026-11-24 16:16:46,968	vt_419cd8	INFO	[0.06520776450634003, 220, 9.99750015625e-05]
-2026-11-24 16:18:11,868	vt_419cd8	INFO	Train Epoch: 2 [90%]
-2026-11-24 16:18:11,868	vt_419cd8	INFO	[0.0306212417781353, 240, 9.99750015625e-05]
-2026-11-24 16:18:56,122	vt_419cd8	INFO	Saving model and optimizer state at iteration 2 to /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8/logs_s2_v5dev_lora_32/G_233333333333.pth
-2026-11-24 16:19:04,925	vt_419cd8	INFO	saving ckpt vt_419cd8_e2:Success.
-2026-11-24 16:19:04,925	vt_419cd8	INFO	====> Epoch: 2
+2026-11-24 19:11:18,344	vt_419cd8	INFO	{'train': {'log_interval': 20, 'eval_interval': 500, 'seed': 1234, 'epochs': 2, 'learning_rate': 0.0001, 'betas': [0.8, 0.99], 'eps': 1e-09, 'batch_size': 1, 'fp16_run': False, 'lr_decay': 0.999875, 'segment_size': 20480, 'init_lr_ratio': 1, 'warmup_epochs': 0, 'c_mel': 45, 'c_kl': 1.0, 'text_low_lr_rate': 0.4, 'grad_ckpt': False, 'pretrained_s2G': '/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth', 'pretrained_s2D': '', 'if_save_latest': True, 'if_save_every_weights': True, 'save_every_epoch': 1, 'gpu_numbers': '0', 'lora_rank': 32}, 'data': {'max_wav_value': 32768.0, 'sampling_rate': 32000, 'filter_length': 2048, 'hop_length': 640, 'win_length': 2048, 'n_mel_channels': 128, 'mel_fmin': 0.0, 'mel_fmax': None, 'add_blank': True, 'n_speakers': 300, 'cleaned_text': True, 'exp_dir': '/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8'}, 'model': {'inter_channels': 192, 'hidden_channels': 192, 'filter_channels': 768, 'n_heads': 2, 'n_layers': 6, 'kernel_size': 3, 'p_dropout': 0.1, 'resblock': '1', 'resblock_kernel_sizes': [3, 7, 11], 'resblock_dilation_sizes': [[1, 3, 5], [1, 3, 5], [1, 3, 5]], 'upsample_rates': [10, 8, 2, 2, 2], 'upsample_initial_channel': 512, 'upsample_kernel_sizes': [16, 16, 8, 2, 2], 'n_layers_q': 3, 'use_spectral_norm': False, 'gin_channels': 512, 'semantic_frame_rate': '25hz', 'freeze_quantizer': True, 'version': 'v5dev'}, 's2_ckpt_dir': '/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8', 'content_module': 'cnhubert', 'save_weight_dir': 'SoVITS_weights_v5dev', 'name': 'vt_419cd8', 'version': 'v5dev', 'pretrain': None, 'resume_step': None}
+2026-11-24 19:11:23,147	vt_419cd8	INFO	loaded pretrained /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth
+2026-11-24 19:11:30,351	vt_419cd8	INFO	Train Epoch: 1 [0%]
+2026-11-24 19:11:30,351	vt_419cd8	INFO	[0.24805158376693726, 0, 9.99875e-05]
+2026-11-24 19:13:20,219	vt_419cd8	INFO	Train Epoch: 1 [16%]
+2026-11-24 19:13:20,219	vt_419cd8	INFO	[0.15448543429374695, 20, 9.99875e-05]
+2026-11-24 19:15:23,541	vt_419cd8	INFO	Train Epoch: 1 [32%]
+2026-11-24 19:15:23,541	vt_419cd8	INFO	[0.3523649275302887, 40, 9.99875e-05]
+2026-11-24 19:17:05,657	vt_419cd8	INFO	Train Epoch: 1 [48%]
+2026-11-24 19:17:05,658	vt_419cd8	INFO	[0.11959242075681686, 60, 9.99875e-05]
+2026-11-24 19:19:12,283	vt_419cd8	INFO	Train Epoch: 1 [63%]
+2026-11-24 19:19:12,283	vt_419cd8	INFO	[0.046043504029512405, 80, 9.99875e-05]
+2026-11-24 19:21:12,700	vt_419cd8	INFO	Train Epoch: 1 [79%]
+2026-11-24 19:21:12,700	vt_419cd8	INFO	[0.04144874960184097, 100, 9.99875e-05]
+2026-11-24 19:22:58,212	vt_419cd8	INFO	Train Epoch: 1 [95%]
+2026-11-24 19:22:58,212	vt_419cd8	INFO	[0.03815280273556709, 120, 9.99875e-05]
+2026-11-24 19:23:26,856	vt_419cd8	INFO	Saving model and optimizer state at iteration 1 to /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8/logs_s2_v5dev_lora_32/G_233333333333.pth
+2026-11-24 19:23:28,776	vt_419cd8	INFO	saving ckpt vt_419cd8_e1:Success.
+2026-11-24 19:23:28,777	vt_419cd8	INFO	====> Epoch: 1
+2026-11-24 19:24:46,406	vt_419cd8	INFO	Train Epoch: 2 [11%]
+2026-11-24 19:24:46,406	vt_419cd8	INFO	[0.138401061296463, 140, 9.99750015625e-05]
+2026-11-24 19:26:51,733	vt_419cd8	INFO	Train Epoch: 2 [27%]
+2026-11-24 19:26:51,733	vt_419cd8	INFO	[0.013616219162940979, 160, 9.99750015625e-05]
+2026-11-24 19:28:40,530	vt_419cd8	INFO	Train Epoch: 2 [43%]
+2026-11-24 19:28:40,530	vt_419cd8	INFO	[0.026183070614933968, 180, 9.99750015625e-05]
+2026-11-24 19:30:30,737	vt_419cd8	INFO	Train Epoch: 2 [59%]
+2026-11-24 19:30:30,737	vt_419cd8	INFO	[0.1503855586051941, 200, 9.99750015625e-05]
+2026-11-24 19:32:28,442	vt_419cd8	INFO	Train Epoch: 2 [75%]
+2026-11-24 19:32:28,442	vt_419cd8	INFO	[0.038378600031137466, 220, 9.99750015625e-05]
+2026-11-24 19:34:24,669	vt_419cd8	INFO	Train Epoch: 2 [90%]
+2026-11-24 19:34:24,669	vt_419cd8	INFO	[0.0659290999174118, 240, 9.99750015625e-05]
+2026-11-24 19:35:28,763	vt_419cd8	INFO	Saving model and optimizer state at iteration 2 to /mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/logs/vt_419cd8/logs_s2_v5dev_lora_32/G_233333333333.pth
+2026-11-24 19:35:33,123	vt_419cd8	INFO	saving ckpt vt_419cd8_e2:Success.
+2026-11-24 19:35:33,123	vt_419cd8	INFO	====> Epoch: 2

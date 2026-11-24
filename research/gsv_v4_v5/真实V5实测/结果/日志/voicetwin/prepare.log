@@ -1,128 +1,126 @@
-2026-11-24 15:59:19,075 | INFO | voicetwin.prepare | 找到 1 个视频/录音
-2026-11-24 15:59:19,076 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：第1课.wav（19 MB）
-2026-11-24 15:59:19,502 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
-2026-11-24 15:59:22,269 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
-2026-11-24 15:59:22,328 | INFO | voicetwin.prepare |   使用字幕 第1课.srt（72 条）切分
-2026-11-24 15:59:38,117 | INFO | voicetwin.prepare |   切出 72 段
-2026-11-24 15:59:38,123 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 72 段）……
-2026-11-24 15:59:38,553 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
-2026-11-24 15:59:52,782 | INFO | voicetwin.prepare | 计算声纹 1/72
-2026-11-24 15:59:54,627 | INFO | voicetwin.prepare | 计算声纹 51/72
-2026-11-24 15:59:55,355 | INFO | voicetwin.prepare | 计算声纹 72/72
-2026-11-24 15:59:55,369 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
-2026-11-24 15:59:55,562 | INFO | voicetwin.references |   主参考（zh）：记住，逗号后面不能用 that,这是一个常考点。（5.6 秒）
-2026-11-24 15:59:55,562 | INFO | voicetwin.references |   主参考（en）：The author uses a relative clause to describe the city.（3.4 秒）
-2026-11-24 15:59:55,566 | INFO | voicetwin.prepare | 每种去掉的原因（按句子种类、按文件分开数），以及哪些文件自动降噪过：
-2026-11-24 15:59:55,566 | INFO | voicetwin.prepare |   纯中文的句子：一共 36 段，用来训练 36 段，一段都没去掉
-2026-11-24 15:59:55,566 | INFO | voicetwin.prepare |   中英混合的句子：一共 18 段，用来训练 18 段，一段都没去掉
-2026-11-24 15:59:55,566 | INFO | voicetwin.prepare |   纯英文的句子：一共 18 段，用来训练 18 段，一段都没去掉
-2026-11-24 15:59:55,566 | INFO | voicetwin.prepare |   文件「第1课.wav」：一共 72 段，用来训练 72 段，一段都没去掉
-2026-11-24 15:59:55,566 | INFO | voicetwin.prepare |   没有文件被自动降噪
-2026-11-24 15:59:55,567 | INFO | voicetwin.prepare | 素材整理完成
-2026-11-24 15:59:55,567 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
-2026-11-24 15:59:58,112 | INFO | voicetwin.profile |   中文语速：3.34 音节/秒（不含停顿）
-2026-11-24 15:59:58,113 | INFO | voicetwin.profile |   中文音高：88 Hz，起伏 1.9 半音
-2026-11-24 15:59:58,113 | INFO | voicetwin.profile |   英文语速：4.46 音节/秒（不含停顿）
-2026-11-24 15:59:58,113 | INFO | voicetwin.profile |   英文音高：100 Hz，起伏 2.0 半音
-2026-11-24 15:59:58,113 | INFO | voicetwin.profile |   停顿习惯：逗号 0.22s / 句号 0.75s / 段落 1.00s
-2026-11-24 16:00:02,070 | INFO | voicetwin.workflow | 素材准备完成
-2026-11-24 16:00:02,098 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
-2026-11-24 16:00:02,199 | INFO | voicetwin.references |   主参考（zh）：记住，逗号后面不能用 that,这是一个常考点。（5.6 秒）
-2026-11-24 16:00:02,199 | INFO | voicetwin.references |   主参考（en）：The author uses a relative clause to describe the city.（3.4 秒）
-2026-11-24 16:00:04,839 | INFO | voicetwin.profile |   中文语速：3.34 音节/秒（不含停顿）
-2026-11-24 16:00:04,839 | INFO | voicetwin.profile |   中文音高：88 Hz，起伏 1.9 半音
-2026-11-24 16:00:04,839 | INFO | voicetwin.profile |   英文语速：4.46 音节/秒（不含停顿）
-2026-11-24 16:00:04,839 | INFO | voicetwin.profile |   英文音高：100 Hz，起伏 2.0 半音
-2026-11-24 16:00:04,839 | INFO | voicetwin.profile |   停顿习惯：逗号 0.22s / 句号 0.75s / 段落 1.00s
-2026-11-24 16:00:06,792 | INFO | voicetwin.workflow | 这次训练用校对表里保存好的文字：63 条训练、9 条当「考试题」
-2026-11-24 16:00:06,793 | INFO | voicetwin.backend | 检查显卡、整理训练素材（大约半分钟）……
-2026-11-24 16:00:06,795 | INFO | voicetwin.gptsovits | 实验名 vt_419cd8；GPT-SoVITS 版本 v5dev（目前公开的最新版本）
-2026-11-24 16:00:06,795 | INFO | voicetwin.backend | 训练素材 63 条，共 6.3 分钟
-2026-11-24 16:00:08,187 | WARNING | voicetwin.gptsovits | 没有检测到可用的 NVIDIA 显卡，训练会非常慢（CPU 训练可能需要数天）
-2026-11-24 16:00:08,189 | INFO | voicetwin.backend | 训练计划：没有检测到能用的 N 卡 → 音色每批 1 条、语气每批 1 条（用 CPU 训练会非常慢）；素材 6.3 分钟（63 条） → 音色 v5dev（官方的 LoRA 练法）2 轮（你指定的）、语气 GPT 2 轮（你指定的）；音色每轮、语气每轮存一次模型，训练完自动挑最像你的那个；不开 DPO（官方实验功能，显存也不够；需要的话可以在高级设置里手动打开）。
-2026-11-24 16:00:08,189 | INFO | voicetwin.gptsovits |   · 显卡用全精度训练（is_half: false），每批数量减半
-2026-11-24 16:00:08,222 | INFO | voicetwin.backend | 处理文字：中文和英文都参加训练（以前英文部分会被丢掉）
-2026-11-24 16:00:08,223 | INFO | voicetwin.backend | ▶ 处理文字（详细日志：gsv_1a_text.log）
-2026-11-24 16:00:12,924 | INFO | voicetwin.backend |   处理文字 1/63
-2026-11-24 16:00:20,855 | INFO | voicetwin.backend |   处理文字 7/63
-2026-11-24 16:00:22,294 | INFO | voicetwin.backend |   处理文字 13/63
-2026-11-24 16:00:23,405 | INFO | voicetwin.backend |   处理文字 19/63
-2026-11-24 16:00:24,501 | INFO | voicetwin.backend |   处理文字 26/63
-2026-11-24 16:00:26,032 | INFO | voicetwin.backend |   处理文字 32/63
-2026-11-24 16:00:27,277 | INFO | voicetwin.backend |   处理文字 38/63
-2026-11-24 16:00:27,759 | INFO | voicetwin.backend |   处理文字 45/63
-2026-11-24 16:00:29,531 | INFO | voicetwin.backend |   处理文字 51/63
-2026-11-24 16:00:30,894 | INFO | voicetwin.backend |   处理文字 57/63
-2026-11-24 16:00:31,413 | INFO | voicetwin.backend |   处理文字 63/63
-2026-11-24 16:00:32,906 | INFO | voicetwin.backend | 提取声音特征（比较慢，素材多时要十几分钟）
-2026-11-24 16:00:32,907 | INFO | voicetwin.backend | ▶ 提取声音特征（详细日志：gsv_1b_hubert.log）
-2026-11-24 16:00:34,908 | INFO | voicetwin.backend |   提取声音特征 0/63
-2026-11-24 16:00:42,910 | INFO | voicetwin.backend |   提取声音特征 7/63
-2026-11-24 16:00:46,911 | INFO | voicetwin.backend |   提取声音特征 15/63
-2026-11-24 16:00:48,911 | INFO | voicetwin.backend |   提取声音特征 22/63
-2026-11-24 16:00:50,912 | INFO | voicetwin.backend |   提取声音特征 26/63
-2026-11-24 16:00:54,913 | INFO | voicetwin.backend |   提取声音特征 35/63
-2026-11-24 16:00:56,914 | INFO | voicetwin.backend |   提取声音特征 42/63
-2026-11-24 16:00:58,915 | INFO | voicetwin.backend |   提取声音特征 45/63
-2026-11-24 16:01:02,916 | INFO | voicetwin.backend |   提取声音特征 54/63
-2026-11-24 16:01:04,917 | INFO | voicetwin.backend |   提取声音特征 59/63
-2026-11-24 16:01:06,918 | INFO | voicetwin.backend |   提取声音特征 63/63
-2026-11-24 16:01:07,063 | INFO | voicetwin.backend | 提取语义（大约 1~3 分钟）
-2026-11-24 16:01:07,064 | INFO | voicetwin.backend | ▶ 提取语义（详细日志：gsv_1c_semantic.log）
-2026-11-24 16:01:14,585 | INFO | voicetwin.backend | 训练音色（v5dev，LoRA 微调），共 2 轮……
-2026-11-24 16:01:14,586 | INFO | voicetwin.backend | ▶ 训练音色（v5dev）（详细日志：gsv_s2_train_v5dev.log）
-2026-11-24 16:01:29,623 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（0%）
-2026-11-24 16:04:20,376 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（32%）
-2026-11-24 16:05:36,928 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（48%）
-2026-11-24 16:07:08,423 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（63%）
-2026-11-24 16:09:49,100 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（95%）
-2026-11-24 16:10:13,242 | INFO | voicetwin.backend |   训练音色：第 1/2 轮完成
-2026-11-24 16:11:15,892 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（11%）
-2026-11-24 16:12:42,528 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（27%）
-2026-11-24 16:14:01,342 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（43%）
-2026-11-24 16:16:46,969 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（75%）
-2026-11-24 16:18:11,868 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（90%）
-2026-11-24 16:19:04,926 | INFO | voicetwin.backend |   训练音色：第 2/2 轮完成
-2026-11-24 16:19:06,397 | INFO | voicetwin.backend | 训练语气和节奏（GPT），共 2 轮……
-2026-11-24 16:19:06,402 | INFO | voicetwin.backend | ▶ 训练语气和节奏（详细日志：gsv_s1_train.log）
-2026-11-24 16:23:19,001 | INFO | voicetwin.backend | 保存模型……
-2026-11-24 16:23:19,002 | INFO | voicetwin.backend | 实际参加训练：音色 63 条、语气 63 条（一共 63 条）。
-2026-11-24 16:23:19,002 | INFO | voicetwin.backend | 英文：16 句里的英文这次也参加了训练（一共 71 个英文音素）。
-2026-11-24 16:23:19,002 | INFO | voicetwin.backend | 用时（实测）：处理文字和提取特征 1.1 分钟、语气每轮 126 秒。
-2026-11-24 16:23:19,004 | INFO | voicetwin.backend | GPT-SoVITS 训练完成
-2026-11-24 16:23:19,005 | INFO | voicetwin.workflow | 训练完成，开始自动挑选最像你的模型
-2026-11-24 16:23:19,049 | INFO | voicetwin.workflow | 挑选方式：标准——从早到晚均匀挑几个版本比（大约 5~15 分钟，估计）
-2026-11-24 16:23:19,050 | INFO | voicetwin.select | 加载声纹和识别模型（第一次使用会先下载）……
-2026-11-24 16:23:19,050 | INFO | voicetwin.speaker | 精准声纹模型还没下载，先用旧的打分方式（redimnet2-b6：声纹模型 ReDimNet2-B6（2026 年最新，中英文 10 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/redimnet2_b6_vb2_vox2_cnc2_lm.onnx）；eres2netv2-zh：声纹模型 ERes2NetV2（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2netv2_sv_zh-cn_16k-common.onnx）；eres2net-base-zh：声纹模型 ERes2Net-base（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2net_base_200k_sv_zh-cn_16k-common.onnx））
-2026-11-24 16:24:25,570 | WARNING | voicetwin.metrics | 识别校验不可用（未安装 faster-whisper：请执行 pip install "voicetwin[asr]"），将只用声纹和节奏打分
-2026-11-24 16:24:34,300 | INFO | voicetwin.select | 启动合成引擎（要先加载模型）……
-2026-11-24 16:24:34,304 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9880，模型 s2-g2）……
-2026-11-24 16:24:50,308 | INFO | voicetwin.gptsovits | 推理服务启动中（正在加载模型）……已等待 16 秒
-2026-11-24 16:24:50,311 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 16 秒）
-2026-11-24 16:24:50,312 | INFO | voicetwin.select | 共 4 个模型 × 9 句验证集，逐个试听（声纹模型：ERes2NetV2（GPT-SoVITS 自带）、Resemblyzer）
-2026-11-24 16:24:50,312 | INFO | voicetwin.select | 切换到模型 s1-g1（第 1/4 个）
-2026-11-24 16:55:33,047 | INFO | voicetwin.select |   s1-g1：像你本人 87.7% / 相似度 0.877 / 与原句 0.877 / 节奏偏差 0.036 → 综合 1.726
-2026-11-24 16:55:33,048 | INFO | voicetwin.select | 切换到模型 s1-g2（第 2/4 个）
-2026-11-24 17:26:02,780 | INFO | voicetwin.select |   s1-g2：像你本人 88.1% / 相似度 0.881 / 与原句 0.879 / 节奏偏差 0.034 → 综合 1.734
-2026-11-24 17:26:02,780 | INFO | voicetwin.select | 切换到模型 s2-g1（第 3/4 个）
-2026-11-24 17:56:30,488 | INFO | voicetwin.select |   s2-g1：像你本人 89.6% / 相似度 0.896 / 与原句 0.895 / 节奏偏差 0.038 → 综合 1.761
-2026-11-24 17:56:30,488 | INFO | voicetwin.select | 切换到模型 s2-g2（第 4/4 个）
-2026-11-24 18:26:53,624 | INFO | voicetwin.select |   s2-g2：像你本人 89.7% / 相似度 0.897 / 与原句 0.895 / 节奏偏差 0.034 → 综合 1.766
-2026-11-24 18:26:53,628 | INFO | voicetwin.select | 最佳模型：s2-g2（像你本人 89.7%）；语速校准：{'zh': 1.0, 'en': 1.0}
-2026-11-24 18:26:54,099 | INFO | voicetwin.workflow | 训练完成
-2026-11-24 18:26:54,229 | INFO | voicetwin.synth | 共 3 句，引擎 GPT-SoVITS，质量「快速」（每句做 1 遍）
-2026-11-24 18:26:54,233 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9881，模型 s2-g2）……
-2026-11-24 18:27:06,239 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 12 秒）
-2026-11-24 18:27:06,240 | INFO | voicetwin.speaker | 精准声纹模型还没下载，先用旧的打分方式（redimnet2-b6：声纹模型 ReDimNet2-B6（2026 年最新，中英文 10 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/redimnet2_b6_vb2_vox2_cnc2_lm.onnx）；eres2netv2-zh：声纹模型 ERes2NetV2（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2netv2_sv_zh-cn_16k-common.onnx）；eres2net-base-zh：声纹模型 ERes2Net-base（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2net_base_200k_sv_zh-cn_16k-common.onnx））
-2026-11-24 18:27:06,246 | INFO | voicetwin.synth | 声纹打分模型：ERes2NetV2（GPT-SoVITS 自带）、Resemblyzer（100% = 和你自己的真实录音一样像，0% = 陌生人的水平）
-2026-11-24 18:30:49,591 | INFO | voicetwin.synth | [1/3] 生成：大家好，今天我们继续学习定语从句。（像你本人 88.8%）
-2026-11-24 18:37:02,334 | INFO | voicetwin.synth | [2/3] 生成：上节课我们讲了关系代词 which 和 （像你本人 90.6%）
-2026-11-24 18:38:21,796 | INFO | voicetwin.synth | [3/3] 生成：First, let's look at（像你本人 87.5%）
-2026-11-24 18:38:21,898 | INFO | voicetwin.synth | 输出响度 -21.8 LUFS，时长 20.2 秒
-2026-11-24 18:38:21,900 | INFO | voicetwin.synth | 本次生成：共 3 句（新生成 3 句），平均每句试了 1.0 次。
-2026-11-24 18:38:21,900 | INFO | voicetwin.synth | 整篇像你本人 89.6%（100% = 和你自己的真实录音一样像，0% = 陌生人的水平；相似度是几个声纹模型一起自动打分，越高越像；机器打分不可能百分之百准确，最终以耳朵为准）。
-2026-11-24 18:38:21,901 | INFO | voicetwin.synth | 没有需要特别注意的句子。
-2026-11-24 18:38:22,376 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9880，模型 s2-g2）……
-2026-11-24 18:38:34,381 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 12 秒）
-2026-11-24 18:52:09,492 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9881，模型 s2-g2）……
-2026-11-24 18:52:21,497 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 12 秒）
+2026-11-24 19:08:51,990 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 19:08:51,990 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：第1课.wav（19 MB）
+2026-11-24 19:08:52,782 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 19:08:54,629 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 19:08:54,689 | INFO | voicetwin.prepare |   使用字幕 第1课.srt（72 条）切分
+2026-11-24 19:09:10,052 | INFO | voicetwin.prepare |   切出 72 段
+2026-11-24 19:09:10,058 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 72 段）……
+2026-11-24 19:09:10,470 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 19:09:26,082 | INFO | voicetwin.prepare | 计算声纹 1/72
+2026-11-24 19:09:28,772 | INFO | voicetwin.prepare | 计算声纹 51/72
+2026-11-24 19:09:29,828 | INFO | voicetwin.prepare | 计算声纹 72/72
+2026-11-24 19:09:29,845 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 19:09:30,040 | INFO | voicetwin.references |   主参考（zh）：记住，逗号后面不能用 that,这是一个常考点。（5.6 秒）
+2026-11-24 19:09:30,041 | INFO | voicetwin.references |   主参考（en）：The author uses a relative clause to describe the city.（3.4 秒）
+2026-11-24 19:09:30,044 | INFO | voicetwin.prepare | 每种去掉的原因（按句子种类、按文件分开数），以及哪些文件自动降噪过：
+2026-11-24 19:09:30,044 | INFO | voicetwin.prepare |   纯中文的句子：一共 36 段，用来训练 36 段，一段都没去掉
+2026-11-24 19:09:30,044 | INFO | voicetwin.prepare |   中英混合的句子：一共 18 段，用来训练 18 段，一段都没去掉
+2026-11-24 19:09:30,044 | INFO | voicetwin.prepare |   纯英文的句子：一共 18 段，用来训练 18 段，一段都没去掉
+2026-11-24 19:09:30,044 | INFO | voicetwin.prepare |   文件「第1课.wav」：一共 72 段，用来训练 72 段，一段都没去掉
+2026-11-24 19:09:30,044 | INFO | voicetwin.prepare |   没有文件被自动降噪
+2026-11-24 19:09:30,045 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 19:09:30,045 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 19:09:32,492 | INFO | voicetwin.profile |   中文语速：3.34 音节/秒（不含停顿）
+2026-11-24 19:09:32,492 | INFO | voicetwin.profile |   中文音高：88 Hz，起伏 1.9 半音
+2026-11-24 19:09:32,493 | INFO | voicetwin.profile |   英文语速：4.46 音节/秒（不含停顿）
+2026-11-24 19:09:32,493 | INFO | voicetwin.profile |   英文音高：100 Hz，起伏 2.0 半音
+2026-11-24 19:09:32,493 | INFO | voicetwin.profile |   停顿习惯：逗号 0.22s / 句号 0.75s / 段落 1.00s
+2026-11-24 19:09:36,352 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 19:09:36,384 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 19:09:36,490 | INFO | voicetwin.references |   主参考（zh）：记住，逗号后面不能用 that,这是一个常考点。（5.6 秒）
+2026-11-24 19:09:36,490 | INFO | voicetwin.references |   主参考（en）：The author uses a relative clause to describe the city.（3.4 秒）
+2026-11-24 19:09:39,070 | INFO | voicetwin.profile |   中文语速：3.34 音节/秒（不含停顿）
+2026-11-24 19:09:39,070 | INFO | voicetwin.profile |   中文音高：88 Hz，起伏 1.9 半音
+2026-11-24 19:09:39,070 | INFO | voicetwin.profile |   英文语速：4.46 音节/秒（不含停顿）
+2026-11-24 19:09:39,070 | INFO | voicetwin.profile |   英文音高：100 Hz，起伏 2.0 半音
+2026-11-24 19:09:39,070 | INFO | voicetwin.profile |   停顿习惯：逗号 0.22s / 句号 0.75s / 段落 1.00s
+2026-11-24 19:09:41,181 | INFO | voicetwin.workflow | 这次训练用校对表里保存好的文字：63 条训练、9 条当「考试题」
+2026-11-24 19:09:41,181 | INFO | voicetwin.backend | 检查显卡、整理训练素材（大约半分钟）……
+2026-11-24 19:09:41,183 | INFO | voicetwin.gptsovits | 实验名 vt_419cd8；GPT-SoVITS 版本 v5dev（目前公开的最新版本）
+2026-11-24 19:09:41,184 | INFO | voicetwin.backend | 训练素材 63 条，共 6.3 分钟
+2026-11-24 19:09:42,665 | WARNING | voicetwin.gptsovits | 没有检测到可用的 NVIDIA 显卡，训练会非常慢（CPU 训练可能需要数天）
+2026-11-24 19:09:42,668 | INFO | voicetwin.backend | 训练计划：没有检测到能用的 N 卡 → 音色每批 1 条、语气每批 1 条（用 CPU 训练会非常慢）；素材 6.3 分钟（63 条） → 音色 v5dev（官方的 LoRA 练法）2 轮（你指定的）、语气 GPT 2 轮（你指定的）；音色每轮、语气每轮存一次模型，训练完自动挑最像你的那个；不开 DPO（官方实验功能，显存也不够；需要的话可以在高级设置里手动打开）。
+2026-11-24 19:09:42,668 | INFO | voicetwin.gptsovits |   · 显卡用全精度训练（is_half: false），每批数量减半
+2026-11-24 19:09:42,701 | INFO | voicetwin.backend | 处理文字：中文和英文都参加训练（以前英文部分会被丢掉）
+2026-11-24 19:09:42,702 | INFO | voicetwin.backend | ▶ 处理文字（详细日志：gsv_1a_text.log）
+2026-11-24 19:09:47,903 | INFO | voicetwin.backend |   处理文字 1/63
+2026-11-24 19:09:57,236 | INFO | voicetwin.backend |   处理文字 7/63
+2026-11-24 19:09:59,303 | INFO | voicetwin.backend |   处理文字 13/63
+2026-11-24 19:10:00,827 | INFO | voicetwin.backend |   处理文字 19/63
+2026-11-24 19:10:02,479 | INFO | voicetwin.backend |   处理文字 26/63
+2026-11-24 19:10:04,812 | INFO | voicetwin.backend |   处理文字 32/63
+2026-11-24 19:10:06,572 | INFO | voicetwin.backend |   处理文字 38/63
+2026-11-24 19:10:07,296 | INFO | voicetwin.backend |   处理文字 45/63
+2026-11-24 19:10:09,911 | INFO | voicetwin.backend |   处理文字 51/63
+2026-11-24 19:10:11,893 | INFO | voicetwin.backend |   处理文字 57/63
+2026-11-24 19:10:12,617 | INFO | voicetwin.backend |   处理文字 63/63
+2026-11-24 19:10:14,060 | INFO | voicetwin.backend | 提取声音特征（比较慢，素材多时要十几分钟）
+2026-11-24 19:10:14,060 | INFO | voicetwin.backend | ▶ 提取声音特征（详细日志：gsv_1b_hubert.log）
+2026-11-24 19:10:16,062 | INFO | voicetwin.backend |   提取声音特征 0/63
+2026-11-24 19:10:28,064 | INFO | voicetwin.backend |   提取声音特征 9/63
+2026-11-24 19:10:32,065 | INFO | voicetwin.backend |   提取声音特征 14/63
+2026-11-24 19:10:36,066 | INFO | voicetwin.backend |   提取声音特征 22/63
+2026-11-24 19:10:40,067 | INFO | voicetwin.backend |   提取声音特征 27/63
+2026-11-24 19:10:44,069 | INFO | voicetwin.backend |   提取声音特征 33/63
+2026-11-24 19:10:48,070 | INFO | voicetwin.backend |   提取声音特征 40/63
+2026-11-24 19:10:52,071 | INFO | voicetwin.backend |   提取声音特征 46/63
+2026-11-24 19:10:56,073 | INFO | voicetwin.backend |   提取声音特征 51/63
+2026-11-24 19:11:02,075 | INFO | voicetwin.backend |   提取声音特征 60/63
+2026-11-24 19:11:04,066 | INFO | voicetwin.backend | 提取语义（大约 1~3 分钟）
+2026-11-24 19:11:04,066 | INFO | voicetwin.backend | ▶ 提取语义（详细日志：gsv_1c_semantic.log）
+2026-11-24 19:11:12,146 | INFO | voicetwin.backend | 训练音色（v5dev，LoRA 微调），共 2 轮……
+2026-11-24 19:11:12,147 | INFO | voicetwin.backend | ▶ 训练音色（v5dev）（详细日志：gsv_s2_train_v5dev.log）
+2026-11-24 19:11:30,351 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（0%）
+2026-11-24 19:15:23,541 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（32%）
+2026-11-24 19:17:05,658 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（48%）
+2026-11-24 19:19:12,283 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（63%）
+2026-11-24 19:22:58,212 | INFO | voicetwin.backend |   训练音色：第 1/2 轮（95%）
+2026-11-24 19:23:28,777 | INFO | voicetwin.backend |   训练音色：第 1/2 轮完成
+2026-11-24 19:24:46,407 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（11%）
+2026-11-24 19:26:51,733 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（27%）
+2026-11-24 19:28:40,530 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（43%）
+2026-11-24 19:32:28,443 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（75%）
+2026-11-24 19:34:24,669 | INFO | voicetwin.backend |   训练音色：第 2/2 轮（90%）
+2026-11-24 19:35:33,123 | INFO | voicetwin.backend |   训练音色：第 2/2 轮完成
+2026-11-24 19:35:34,758 | INFO | voicetwin.backend | 训练语气和节奏（GPT），共 2 轮……
+2026-11-24 19:35:34,763 | INFO | voicetwin.backend | ▶ 训练语气和节奏（详细日志：gsv_s1_train.log）
+2026-11-24 19:40:58,125 | INFO | voicetwin.backend | 保存模型……
+2026-11-24 19:40:58,126 | INFO | voicetwin.backend | 实际参加训练：音色 63 条、语气 63 条（一共 63 条）。
+2026-11-24 19:40:58,126 | INFO | voicetwin.backend | 英文：16 句里的英文这次也参加了训练（一共 71 个英文音素）。
+2026-11-24 19:40:58,126 | INFO | voicetwin.backend | 用时（实测）：处理文字和提取特征 1.5 分钟、语气每轮 162 秒。
+2026-11-24 19:40:58,128 | INFO | voicetwin.backend | GPT-SoVITS 训练完成
+2026-11-24 19:40:58,129 | INFO | voicetwin.workflow | 训练完成，开始自动挑选最像你的模型
+2026-11-24 19:40:58,178 | INFO | voicetwin.workflow | 挑选方式：标准——从早到晚均匀挑几个版本比（大约 5~15 分钟，估计）
+2026-11-24 19:40:58,179 | INFO | voicetwin.select | 加载声纹和识别模型（第一次使用会先下载）……
+2026-11-24 19:40:58,179 | INFO | voicetwin.speaker | 精准声纹模型还没下载，先用旧的打分方式（redimnet2-b6：声纹模型 ReDimNet2-B6（2026 年最新，中英文 10 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/redimnet2_b6_vb2_vox2_cnc2_lm.onnx）；eres2netv2-zh：声纹模型 ERes2NetV2（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2netv2_sv_zh-cn_16k-common.onnx）；eres2net-base-zh：声纹模型 ERes2Net-base（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2net_base_200k_sv_zh-cn_16k-common.onnx））
+2026-11-24 19:42:28,105 | WARNING | voicetwin.metrics | 识别校验不可用（未安装 faster-whisper：请执行 pip install "voicetwin[asr]"），将只用声纹和节奏打分
+2026-11-24 19:42:38,262 | INFO | voicetwin.select | 启动合成引擎（要先加载模型）……
+2026-11-24 19:42:38,266 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9880，模型 s2-g2）……
+2026-11-24 19:42:52,274 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 14 秒）
+2026-11-24 19:42:52,274 | INFO | voicetwin.select | 共 4 个模型 × 9 句验证集，逐个试听（声纹模型：ERes2NetV2（GPT-SoVITS 自带）、Resemblyzer）
+2026-11-24 19:42:52,274 | INFO | voicetwin.select | 切换到模型 s1-g1（第 1/4 个）
+2026-11-24 20:32:01,520 | INFO | voicetwin.select |   s1-g1：像你本人 89.2% / 相似度 0.892 / 与原句 0.890 / 节奏偏差 0.036 → 综合 1.754
+2026-11-24 20:32:01,521 | INFO | voicetwin.select | 切换到模型 s1-g2（第 2/4 个）
+2026-11-24 21:21:40,840 | INFO | voicetwin.select |   s1-g2：像你本人 89.1% / 相似度 0.891 / 与原句 0.891 / 节奏偏差 0.016 → 综合 1.769
+2026-11-24 21:21:40,841 | INFO | voicetwin.select | 切换到模型 s2-g1（第 3/4 个）
+2026-11-24 22:11:46,542 | INFO | voicetwin.select |   s2-g1：像你本人 90.4% / 相似度 0.904 / 与原句 0.901 / 节奏偏差 0.038 → 综合 1.776
+2026-11-24 22:11:46,543 | INFO | voicetwin.select | 切换到模型 s2-g2（第 4/4 个）
+2026-11-24 23:02:26,835 | INFO | voicetwin.select |   s2-g2：像你本人 89.9% / 相似度 0.899 / 与原句 0.899 / 节奏偏差 0.015 → 综合 1.786
+2026-11-24 23:02:26,839 | INFO | voicetwin.select | 最佳模型：s2-g2（像你本人 89.9%）；语速校准：{'zh': 1.0, 'en': 1.0}
+2026-11-24 23:02:27,609 | INFO | voicetwin.workflow | 训练完成
+2026-11-24 23:02:27,836 | INFO | voicetwin.synth | 共 3 句，引擎 GPT-SoVITS，质量「快速」（每句做 1 遍）
+2026-11-24 23:02:27,841 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9881，模型 s2-g2）……
+2026-11-24 23:02:39,846 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 12 秒）
+2026-11-24 23:02:39,847 | INFO | voicetwin.speaker | 精准声纹模型还没下载，先用旧的打分方式（redimnet2-b6：声纹模型 ReDimNet2-B6（2026 年最新，中英文 10 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/redimnet2_b6_vb2_vox2_cnc2_lm.onnx）；eres2netv2-zh：声纹模型 ERes2NetV2（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2netv2_sv_zh-cn_16k-common.onnx）；eres2net-base-zh：声纹模型 ERes2Net-base（3D-Speaker，中文 20 万人训练） 还没下载（/home/runner/work/voicetwin/voicetwin/models/sv/3dspeaker_speech_eres2net_base_200k_sv_zh-cn_16k-common.onnx））
+2026-11-24 23:02:39,853 | INFO | voicetwin.synth | 声纹打分模型：ERes2NetV2（GPT-SoVITS 自带）、Resemblyzer（100% = 和你自己的真实录音一样像，0% = 陌生人的水平）
+2026-11-24 23:08:38,817 | INFO | voicetwin.synth | [1/3] 生成：大家好，今天我们继续学习定语从句。（像你本人 90.0%）
+2026-11-24 23:18:37,937 | INFO | voicetwin.synth | [2/3] 生成：上节课我们讲了关系代词 which 和 （像你本人 91.5%）
+2026-11-24 23:20:45,215 | INFO | voicetwin.synth | [3/3] 生成：First, let's look at（像你本人 88.0%）
+2026-11-24 23:20:45,282 | INFO | voicetwin.synth | 输出响度 -22.3 LUFS，时长 20.0 秒
+2026-11-24 23:20:45,283 | INFO | voicetwin.synth | 本次生成：共 3 句（新生成 3 句），平均每句试了 1.0 次。
+2026-11-24 23:20:45,284 | INFO | voicetwin.synth | 整篇像你本人 90.5%（100% = 和你自己的真实录音一样像，0% = 陌生人的水平；相似度是几个声纹模型一起自动打分，越高越像；机器打分不可能百分之百准确，最终以耳朵为准）。
+2026-11-24 23:20:45,284 | INFO | voicetwin.synth | 没有需要特别注意的句子。
+2026-11-24 23:20:46,007 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9880，模型 s2-g2）……
+2026-11-24 23:20:58,012 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 12 秒）
+2026-11-24 23:43:26,496 | INFO | voicetwin.gptsovits | 启动 GPT-SoVITS 推理服务（端口 9881，模型 s2-g2）……
+2026-11-24 23:43:38,501 | INFO | voicetwin.gptsovits | GPT-SoVITS 推理服务已就绪（启动用了 12 秒）
