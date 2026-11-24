@@ -81,6 +81,18 @@ PREP_BTN, PREP_BUSY = "开始准备素材", "⏳ 正在准备素材……"
 TRAIN_BTN, TRAIN_BUSY = "开始训练", "⏳ 正在训练……"
 SELECT_BTN, SELECT_BUSY = "重新挑选最佳模型", "⏳ 正在挑选……"
 GEN_BTN, GEN_BUSY = "生成", "⏳ 正在生成……"
+# 「轻度美化」版本 C（research/V5极致/轻度美化设计.md 第 7 节）：「质量」下面的勾选框，只在「完美」「一模一样」显示，默认不勾。
+# 说明里只写做法和保证（检查是每次实测的），不写没测过的效果（例如「更好听」「录音棚」）。
+BEAUTY_LABEL = "同时做一个「轻度美化」版本（可选）"
+BEAUTY_HELP = ("在你的原声上做很轻的润色：声音稍微更温暖、更清楚，齿音更柔和。不改音调、不改语速、不换声音。"
+               "做完会自动检查「像你本人 %」和错字：比测量误差降得多、或者错字增加了，就自动减轻或者不用。"
+               "句子之间仍然是完全的数字静音。原声版本照常生成，不受影响。")
+BEAUTY_NAME = _engine.VARIANT_BEAUTY
+
+
+def _beauty_visible(quality: Any) -> bool:
+    """勾选框只在「完美」「一模一样」显示（这两档本来就在做多个版本）；没选（网页刚打开）按默认的「一模一样」。"""
+    return str(quality or "identical") in _engine.BEAUTY_TIERS
 PROOF_BTN, PROOF_BUSY = "🔍 自动查找可能的错字", "⏳ 正在查找……"
 TEXTFIX_BTN, TEXTFIX_BUSY = "📝 一键全部文字校正", "⏳ 正在校正……"
 DLTXT_BTN = "⬇️ 下载改好的文字（txt）"
@@ -2181,6 +2193,8 @@ def _variant_letter(v: Dict[str, Any], i: int) -> str:
         return "A"
     if name == "去杂音":
         return "B"
+    if name == BEAUTY_NAME:
+        return "C"
     return "AB"[i] if i < 2 else str(i + 1)
 
 
@@ -2210,9 +2224,21 @@ def _denoised_note(vs: Sequence[Dict[str, Any]]) -> str:
     return f"区别只在：B 只给第 {nums} 句去掉了轻微的杂音（别的句子两个版本一模一样）。"
 
 
+def _beauty_md(v: Dict[str, Any], i: int) -> str:
+    """版本 C（轻度美化，通过检查才有）：不参与推荐，如实写它这次实测的数字。"""
+    note = str(v.get("note") or "")
+    return (f"{i + 1}. **{_md_text(_variant_title(v, i))}**　（可选，不参与推荐）"
+            + (f"\n\n<small>{_md_text(note)}</small>" if note else ""))
+
+
 def _variants_md(vs: Sequence[Dict[str, Any]]) -> str:
-    """「完美」「一模一样」质量的两个版本：分数、推荐哪个。两个版本完全一样时（每句都量不出底噪）只说一样，
-    不说哪个「更像」；分数几乎一样时也不说「更像你的原声」。"""
+    """「完美」「一模一样」质量的版本：分数、推荐哪个。两个版本完全一样时（每句都量不出底噪）只说一样，
+    不说哪个「更像」；分数几乎一样时也不说「更像你的原声」。有版本 C（轻度美化，通过检查才有）时另外列在最后，
+    推荐（⭐）仍然只在 A 和 B 之间。"""
+    beauty = [v for v in vs if str(v.get("name") or "") == BEAUTY_NAME]
+    if beauty:
+        ab = [v for v in vs if str(v.get("name") or "") != BEAUTY_NAME]
+        return _variants_md(ab) + "\n\n" + _beauty_md(beauty[0], len(ab))
     if len(vs) < 2:
         return ""
     same = next((v for v in vs if v.get("same_as_raw")), None)
@@ -2835,7 +2861,8 @@ class WebUI:
     TRAIN_OUT = ("train_bar", "train_log", "train_md", "train_btn", "select_btn", "train_stop", "voice_status",
                  "train_next", "train_plan")
     GEN_OUT = ("gen_bar", "out_audio", "out_files", "gen_log", "gen_md", "gen_btn", "gen_stop", "redo", "gen_table",
-               "var_box", "var_md", "var_a", "var_b", "var_choice", "gen_state", "speed_try", "gen_after", "var_note")
+               "var_box", "var_md", "var_a", "var_b", "var_choice", "gen_state", "speed_try", "gen_after", "var_note",
+               "var_c")
     SPEED_OUT = ("gen_bar", "gen_log", "speed_audio", "speed_try", "gen_btn", "gen_stop")
     PROOF_OUT = ("proof_bar", "proof_md", "clips_count", "proof_btn", "proof_stop", "prep_log")
     TEXTFIX_OUT = ("proof_bar", "proof_md", "clips_count", "tr_btn", "prep_log", "tr_info")
@@ -4105,7 +4132,7 @@ class WebUI:
         return "", ""
 
     def do_generate(self, voice: Any, text: Any, sfile: Any, backend: Any, quality: Any, speed: Any, ref: Any,
-                    redo: Any, out_name: Any = "", out_fmt: Any = "") -> Iterator[Tuple[Any, ...]]:
+                    redo: Any, out_name: Any = "", out_fmt: Any = "", beauty: Any = False) -> Iterator[Tuple[Any, ...]]:
         O = self.GEN_OUT
         idle = dict(gen_btn=self._idle_btn(GEN_BTN), gen_stop=self._stop_hidden(), speed_try=self._idle_btn(SPEED_BTN))
         v = _voice_name(voice)
@@ -4146,6 +4173,7 @@ class WebUI:
                              out=str(out),
                              backend_name=str(backend or self.default_synth), quality=q, speed=factor,
                              reference=str(ref or "").strip(), redo=redo_list,
+                             beautify=bool(beauty) and _beauty_visible(q),
                              stages=_stages(self.cfg, "narrate", quality=q), note=NOTE)
         stop_once = _StopOnce()
         for logs, st in stream:
@@ -4170,12 +4198,17 @@ class WebUI:
             files_out = _gen_files(audio, srt, vs)
             state = {"voice": v, "audio": audio, "report": str(getattr(res, "report_path", "") or ""),
                      "srt": str(srt or ""), "variants": [dict(x) for x in vs]}
-            var: Dict[str, Any] = dict(var_box=_upd(visible=False), var_md="", var_note="")
+            var: Dict[str, Any] = dict(var_box=_upd(visible=False), var_md="", var_note="",
+                                       var_c=_upd(visible=False, value=None))
             if len(vs) >= 2:
+                # 第三个播放器「版本 C：轻度美化」只在 C 通过检查（报告的版本里有它）时出现；单选里也一样
+                vc = next(((i, x) for i, x in enumerate(vs) if str(x.get("name") or "") == BEAUTY_NAME), None)
                 choices = [(_variant_title(x, i).split("（")[0], str(x.get("name") or i)) for i, x in enumerate(vs)]
                 var = dict(var_box=_upd(visible=True), var_md=_variants_md(vs),
                            var_a=_upd(value=str(vs[0]["path"]), label=_variant_title(vs[0], 0)),
                            var_b=_upd(value=str(vs[1]["path"]), label=_variant_title(vs[1], 1)),
+                           var_c=(_upd(visible=True, value=str(vc[1]["path"]), label=_variant_title(vc[1], vc[0]))
+                                  if vc else _upd(visible=False, value=None)),
                            var_choice=_upd(choices=choices, value=_recommended_variant(vs)), var_note="")
             _info("✅ 音频生成好了，点 ▶ 试听")
             yield self._o(O, gen_bar=st.get("bar", ""), out_audio=_upd(value=audio or None, label="结果"),
@@ -4755,6 +4788,9 @@ class WebUI:
                                                         label="保存格式", scale=2)
                         with gr.Column(scale=2):
                             c["quality"] = gr.Radio(QUALITY_CHOICES, value="identical", label="质量")
+                            c["beauty"] = gr.Checkbox(value=bool(cfg.get_path("synth.beautify.enabled", False)),
+                                                      label=BEAUTY_LABEL, info=BEAUTY_HELP,
+                                                      visible=_beauty_visible("identical"))
                             c["quality_note"] = gr.Markdown(QUALITY_NOTE, elem_classes="vt-honest")
                             c["speed"] = gr.Slider(-30, 30, value=0, step=1, label=SPEED_LABEL)
                             c["speed_text"] = gr.Markdown(f"**{_speed_text(0)}**　<small>{SPEED_NOTE}</small>")
@@ -4777,6 +4813,8 @@ class WebUI:
                         with gr.Row():
                             c["var_a"] = gr.Audio(label="版本 A：未去杂音", type="filepath", interactive=False)
                             c["var_b"] = gr.Audio(label="版本 B：去杂音", type="filepath", interactive=False)
+                            c["var_c"] = gr.Audio(label="版本 C：轻度美化", type="filepath", interactive=False,
+                                                  visible=False)
                         c["var_choice"] = gr.Radio([("版本 A：未去杂音", "未去杂音"), ("版本 B：去杂音", "去杂音")],
                                                    label="最终使用哪个版本", value=None)
                         c["var_note"] = gr.Markdown(elem_classes="vt-md")
@@ -5025,7 +5063,8 @@ class WebUI:
             c["speed"].change(lambda s: f"**{_speed_text(s)}**　<small>{SPEED_NOTE}</small>", c["speed"], c["speed_text"],
                               **quick)
             gen_in = [c["voice"], c["script"], c["script_file"], c["s_backend"], c["quality"], c["speed"], c["ref"], c["redo"],
-                      c["out_name"], c["out_fmt"]]
+                      c["out_name"], c["out_fmt"], c["beauty"]]
+            c["quality"].change(lambda q: _upd(visible=_beauty_visible(q)), c["quality"], c["beauty"], **quick)
             c["gen_btn"].click(_settled(self.do_generate), gen_in, outs(self.GEN_OUT), **heavy).then(
                 self.after_task, c["voice"], after_outs, **quick)
             c["speed_try"].click(_settled(self.do_speed_preview), [c["voice"], c["script"], c["speed"], c["s_backend"]],

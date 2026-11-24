@@ -169,6 +169,10 @@ synth:
   output_format: wav          # wav | mp3 | m4a | flac（mp3 / m4a 是压缩格式，停顿里不再是完全的 0；要绝对静音请用 wav 或 flac）
   subtitles: true             # 同时输出 .srt 字幕
   skip_code_blocks: true      # Markdown 讲稿里的 ``` 代码块不朗读
+  beautify:                   # 「轻度美化」版本 C（可选，只在「完美」「一模一样」档做；网页上是「质量」下面的勾选框）
+    enabled: false            # 默认不做。true = 同时做一个很轻的润色版本：静态 EQ（锚定你本人录音的频谱）、去齿音、轻压缩，
+                              # 不改音调、语速，句子之间仍是绝对静音；强度由一次性校准自动定（不提供滑块），每篇都和原声
+                              # 配对检查「像你本人 %」、错字、频谱，超出测量误差就自动减半，减到 0 就如实说「和原声一样」
   asr_check: auto             # auto: quality=best/max/perfect/identical 时开启；用识别模型检查有没有漏字/多字
   asr_check_model: auto       # auto: 中文优先用整合包自带的 Paraformer（更准）；否则显存 ≥8GB 用 large-v3-turbo，更小用 small
   cer_retry_threshold: 0.15   # 均衡/最好：漏字/错字率超过它就重新生成（极致/完美有自己更严的门槛，见下面 tiers）

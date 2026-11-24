@@ -1180,7 +1180,8 @@ def run_narrate(cfg: Config, voice: str, source: str, out: Optional[str] = None,
                 quality: Optional[str] = None, candidates: Optional[int] = None, speed: Any = None,
                 reference: str = "", redo: Iterable[int] = (), subtitles: Optional[bool] = None,
                 asr_check: Optional[bool] = None, progress: Optional[ProgressFn] = None, backend=None,
-                variants: Optional[bool] = None):
+                variants: Optional[bool] = None, beautify: Optional[bool] = None):
+    """beautify：要不要同时做「轻度美化」版本 C（网页的勾选框；None = 按 synth.beautify.enabled，默认不做）。"""
     from voicetwin.backends.base import get_backend
     from voicetwin.synth.engine import Narrator
 
@@ -1204,7 +1205,8 @@ def run_narrate(cfg: Config, voice: str, source: str, out: Optional[str] = None,
             log.warning(note)
         try:
             narrator = Narrator(cfg, project, backend, quality=quality, candidates=candidates, speed=speed,
-                                reference=reference, asr_check=asr_check, progress=progress, variants=variants)
+                                reference=reference, asr_check=asr_check, progress=progress, variants=variants,
+                                beautify=beautify)
             if note:  # 「训练以后校对表又改过」也写进生成结果的提醒里（以前只在折起来的「详细过程」里）
                 narrator.warnings.append(note)
             missing = getattr(backend, "missing_model_note", lambda: "")()

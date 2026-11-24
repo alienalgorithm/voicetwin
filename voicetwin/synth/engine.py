@@ -165,6 +165,9 @@ QUALITY_PRESETS: Dict[str, Dict[str, Any]] = {
 #: 重做时用更保守的采样（温度/候选词更少 → 更稳）；GPT-SoVITS 官方温度上限是 1
 RETRY_SAMPLING = [{"temperature": 0.7, "top_k": 10, "top_p": 1.0}, {"temperature": 0.6, "top_k": 15, "top_p": 0.8}]
 VARIANT_RAW, VARIANT_DENOISED = "未去杂音", "去杂音"
+#: 可选的第三个版本「轻度美化」（research/V5极致/轻度美化设计.md 第 2–4 节）：只在这两档（本来就做多个版本）、勾选时做
+VARIANT_BEAUTY = "轻度美化"
+BEAUTY_TIERS = ("perfect", "identical")
 RESULT_HEADERS = ["#", "句子", "像你本人（%）", "状态", "提示"]
 LEAD_IN, LEAD_OUT = 0.35, 0.4
 
@@ -588,7 +591,7 @@ class Narrator:
     def __init__(self, cfg: Dict[str, Any], project: Project, backend: Backend, quality: Optional[str] = None,
                  candidates: Optional[int] = None, speed: Union[str, float, None] = None, reference: str = "",
                  asr_check: Optional[bool] = None, progress: Optional[ProgressFn] = None,
-                 variants: Optional[bool] = None, tier: Optional[str] = None):
+                 variants: Optional[bool] = None, tier: Optional[str] = None, beautify: Optional[bool] = None):
         self.cfg = cfg
         self.scfg: Dict[str, Any] = dict(cfg.get("synth", {}) or {})
         self.project = project
@@ -638,6 +641,12 @@ class Narrator:
             self.use_asr = bool(preset["asr"]) if asr_cfg in (None, "auto") else bool(asr_cfg)
         self.min_wrong = int(preset.get("min_wrong_chars", self.scfg.get("min_wrong_chars", 2)) or 0)
         self.want_variants = bool(preset.get("variants")) if variants is None else bool(variants)
+        # 「轻度美化」版本 C：默认不做（synth.beautify.enabled: false；网页的勾选框默认不勾）；只在「完美」「一模一样」
+        # 这两档、做多个版本时才做（它和原声配对比较，原声版本照常生成）
+        bcfg = self.scfg.get("beautify")
+        want_b = bool((bcfg or {}).get("enabled", False)) if isinstance(bcfg, dict) else False
+        want_b = want_b if beautify is None else bool(beautify)
+        self.want_beauty = bool(want_b and self.want_variants and self.quality in BEAUTY_TIERS)
         self.speed_opt = speed if speed is not None else self.scfg.get("speed", "auto")
         self.progress = progress
         self.profile = project.load_profile()
@@ -998,7 +1007,8 @@ class Narrator:
         try:
             judge = self.judge  # 用到时才建打分器（声纹模型、识别模型只加载一次）
             prepare_identical(self.cfg, self.project, self.backend, progress=prog, judge=judge,
-                              checker=self._checker if self.use_asr else None, use_asr=self.use_asr)
+                              checker=self._checker if self.use_asr else None, use_asr=self.use_asr,
+                              beautify=self.want_beauty)
         except Exception as exc:  # noqa: BLE001 - 停止按钮不是 Exception，照常传出去
             if _is_fatal(exc):
                 raise
@@ -1991,6 +2001,14 @@ class Narrator:
             self._progress(0.92 if identical else 0.93, "做「去杂音」版本，并比较哪个版本更像你……")
             variants, audio_by_name = self._make_variants(results, layout, audio_a, sr, mult, gains)
             final_name = next(v for v in variants if v["recommended"])["name"]
+        beauty: Optional[Dict[str, Any]] = None
+        if variants_on and self.want_beauty:
+            # 可选的第三个版本：在推荐出来的那个版本上做，同一套时间（文字、停顿、字幕完全一样）；不参与推荐
+            self._progress(0.99, "做「轻度美化」版本 C，并和原声逐句比较像不像你、错字有没有增加……")
+            entry, audio_c, beauty = self._make_beauty(results, layout, sr, mult, variants)
+            if entry is not None and audio_c is not None:
+                variants.append(entry)
+                audio_by_name[VARIANT_BEAUTY] = audio_c
         audio_main = audio_by_name[final_name] if final_name else audio_a
 
         # 文件名最后的模型名：写文件这一刻，按这一篇每一句实际用的模型定（老师的规定：模型名永远在最后；
@@ -2063,6 +2081,7 @@ class Narrator:
             "elapsed_sec": round(time.time() - t0, 1), "warnings": self.warnings, "flagged": flagged,
             "notes": notes, "variants": variants, "final": final_name, "segments": seg_report,
             "silence_check": silence, "english_precheck": getattr(self, "_en_precheck", None),
+            "beautify": beauty,
             "tries_avg": round(float(np.mean([r.tries for r in results if not r.cached])), 2)
             if any(not r.cached for r in results) else None,
         }
@@ -2298,9 +2317,19 @@ class Narrator:
         if k % 10 == 0 or k == n:
             self._progress(lo + (hi - lo) * k / max(n, 1), f"{msg} {k}/{n}")
 
+    def _score_one(self, wav: np.ndarray, r: SegmentResult, sr: int, mult: float, use_asr: bool = False) -> Score:
+        """一句话按挑版本时的同一个标准打分：「一模一样」用它自己的完整打分（声音两边补 0.3 秒静音）；别的档位用普通打分。
+        use_asr：同时识别查错字（版本 A / B 比较时不查；「轻度美化」要查，设计 G3）。"""
+        if self.quality == "identical" and hasattr(self.scorer, "full"):
+            pad = np.zeros(int(round(ANALYSIS_PAD * sr)), dtype=np.float32)
+            return self.scorer.full(np.concatenate([pad, np.asarray(wav, dtype=np.float32), pad]), sr,
+                                    r.segment.text, send_lang(r.segment.text, r.segment.lang), mult, use_asr=use_asr)
+        return self.scorer.score(wav, sr, r.segment.text, r.segment.lang, speed=mult, use_asr=use_asr,
+                                 check_pauses=False)
+
     def _version_score(self, wavs: List[np.ndarray], results: List[SegmentResult], sr: int, mult: float,
                        rng: Tuple[float, float] = (0.0, 0.0), label: str = "",
-                       reuse: Optional[Dict[int, Tuple[float, Optional[float]]]] = None
+                       reuse: Optional[Dict[int, Tuple[float, Optional[float]]]] = None, use_asr: bool = False
                        ) -> Tuple[float, Optional[float], List[Tuple[float, Optional[float]]]]:
         """同一个标准给整篇打分：每句（相似度为主 − 语速/音高偏差）按时长加权平均；同时给出整篇百分比。
         「一模一样」用它自己的完整打分（不查错字；声音两边补 0.3 秒静音，和挑版本时一样）。
@@ -2308,7 +2337,6 @@ class Narrator:
         直接用那个分数（同一段声音，打出来就是这个数）。返回 (整篇分, 整篇百分比, 每句的 (综合分, 百分比))。"""
         totals, weights, pcts = [], [], []
         rows: List[Tuple[float, Optional[float]]] = []
-        identical = self.quality == "identical"
         for k, (wav, r) in enumerate(zip(wavs, results), 1):
             _check_cancel()
             if label:
@@ -2316,14 +2344,7 @@ class Narrator:
             if reuse is not None and (k - 1) in reuse:
                 total, pct = reuse[k - 1]
             else:
-                if identical and hasattr(self.scorer, "full"):
-                    pad = np.zeros(int(round(ANALYSIS_PAD * sr)), dtype=np.float32)
-                    s = self.scorer.full(np.concatenate([pad, np.asarray(wav, dtype=np.float32), pad]), sr,
-                                         r.segment.text, send_lang(r.segment.text, r.segment.lang), mult,
-                                         use_asr=False)
-                else:
-                    s = self.scorer.score(wav, sr, r.segment.text, r.segment.lang, speed=mult, use_asr=False,
-                                          check_pauses=False)
+                s = self._score_one(wav, r, sr, mult, use_asr=use_asr)
                 total, pct = float(s.total), s.pct
             dur = len(wav) / sr
             totals.append(total)
@@ -2497,6 +2518,309 @@ class Narrator:
             except Exception:
                 pass
         return out
+
+    # ------------------------------------------------------------------ 「轻度美化」版本 C
+    def _beauty_calibration(self) -> Dict[str, Any]:
+        """一次性校准（设计 §4.1，结果存在声音文件夹里 models.json 旁边的 beautify_calib.json；她的录音、声纹打分标准、
+        处理链没变时直接读）。「一模一样」在准备阶段已经做过，这里读到的就是那一份；「完美」档第一次用时在这里做。"""
+        from voicetwin.synth.select import ensure_beautify_calibration
+
+        return ensure_beautify_calibration(self.cfg, self.project, self.judge,
+                                           progress=lambda f, m: self._progress(0.99, f"轻度美化的一次性校准：{m}"))
+
+    def _beautified(self, r: SegmentResult, wav: np.ndarray, sr: int, plan: Any, dynamics: bool, comp: bool,
+                    base: str) -> Tuple[np.ndarray, Dict[str, Any]]:
+        """这一句的「轻度美化」（缓存在这句旁边：.bt{采样率}.{计划的哈希}{动态处理开关}{原声是 A 还是 B}.wav，
+        计划的哈希里有 T(f)、s 和阈值；这句后来重新生成过（比缓存新）时不用旧的）。"""
+        from voicetwin.synth.beautify import beautify_sentence
+
+        tag = f".bt{sr}.{plan.sig}{'d' if dynamics else 's'}{'c' if comp else 'n'}" \
+              f"{'B' if base == VARIANT_DENOISED else 'A'}.wav"
+        cache = r.path.with_name(r.path.stem + tag) if r.path is not None else None
+        if cache is not None and cache.exists():
+            try:
+                fresh = not r.path.exists() or cache.stat().st_mtime >= r.path.stat().st_mtime
+                w, s = load_audio(cache)
+                if fresh and s == sr and len(w) == len(wav):
+                    return w, {"changed": True, "cached": True}
+            except Exception:
+                pass
+        out, info = beautify_sentence(wav, sr, plan, dynamics=dynamics, compress_on=comp)
+        if cache is not None and info.get("changed"):
+            try:
+                save_audio(cache, out, sr, subtype="FLOAT")
+            except Exception:
+                pass
+        return out, info
+
+    @staticmethod
+    def _f0_median(wav: np.ndarray, sr: int) -> Optional[float]:
+        try:
+            from voicetwin.style.twin_profile import f0_median_hz
+
+            return f0_median_hz(wav, sr)
+        except Exception:  # noqa: BLE001 - 没有 librosa 等：G4 只查长度
+            return None
+
+    def _make_beauty(self, results: List[SegmentResult], layout: List[Tuple[float, int]], sr: int, mult: float,
+                     variants: List[Dict[str, Any]]
+                     ) -> Tuple[Optional[Dict[str, Any]], Optional[np.ndarray], Dict[str, Any]]:
+        """版本 C「轻度美化」（设计第 2–4 节）：在推荐出来的版本（base，A 或 B）上逐句处理，每句都和 base 配对检查
+        （G1–G9），不过就整篇减半（1 → 0.5 → 0.25），减到 0 就如实说「和原声一样」、不输出 C 的文件。
+        - 强度从一次性校准的 s* 开始；校准没做成 / s* = 0 / 量不出「像你本人 %」时不做 C；
+        - G2、G3 不过的句子关掉去齿音和压缩（只留全篇一样的静态 EQ），G8 不过的句子关掉压缩；还不过就整篇减半；
+          G7 不过先关掉「空气感」；人声不到 2 秒的句子不比像不像，只做静态 EQ；
+        - G4、G5（长度、F0、对齐）不过 = 程序错误，G9（绝对静音）不过 = 硬失败：都不输出 C；
+        - 每句电平调回 base 这一句的说话响度（_match_levels，真峰值 ≤ −1 dBTP，只乘系数）。
+        返回 (C 的版本记录, C 的音轨, 报告里的 beautify 块)；不输出 C 时前两个是 None。"""
+        from voicetwin.synth import beautify as BT
+
+        block: Dict[str, Any] = {"enabled": True, "offered": False}
+        base_v = next((v for v in variants if v.get("recommended")), None)
+        base = str(base_v["name"]) if base_v else VARIANT_RAW
+        mix = self._variant_mix.get(base) or {}
+        wavs_b = list(mix.get("wavs") or [resample(r.wav, r.sr, sr) for r in results])
+        n = len(results)
+        gains_b = list(mix.get("gains") or [1.0] * n)
+        block["base"] = base
+
+        def no_c(why: str) -> Tuple[None, None, Dict[str, Any]]:
+            block["why"] = why
+            msg = f"版本 C（轻度美化）和原声一样，这次没有单独保存：{why}。"
+            self.notes.append(msg)
+            log.info(msg)
+            return None, None, block
+
+        if self.judge is None:
+            return no_c("这次量不出「像你本人 %」（精准声纹打分不可用），没法检查美化会不会让声音不像你")
+        try:
+            calib = self._beauty_calibration()
+        except Exception as exc:  # noqa: BLE001 - 停止按钮不是 Exception
+            if _is_fatal(exc):
+                raise
+            return no_c(f"一次性校准没做成（{_reason(exc)}）")
+        block["calibration"] = {k: calib.get(k) for k in ("s_star", "mu_null", "sigma_null", "n", "n_null", "floor",
+                                                          "strengths", "why", "evaluated_at")}
+        s = float(calib.get("s_star") or 0.0)
+        mu, sigma = calib.get("mu_null"), calib.get("sigma_null")
+        if s <= 0 or mu is None or sigma is None:
+            return no_c(str(calib.get("why") or "一次性校准里最轻的美化也没通过检查") + "，宁可不美化，也不让声音不像你")
+        mu, sigma = float(mu), float(sigma)
+        her = dict(calib.get("her") or {})
+        sigma_her = BT._num(her.get("sigma_her"))
+        block["s_star"] = s
+        spec_b = BT.speech_spectrum(wavs_b, sr, keep_noise=True)
+        ltas_b = BT.band_db(spec_b)
+        ltas_her = np.asarray([np.nan if v is None else float(v) for v in (her.get("ltas_db") or [])]
+                              or [np.nan] * len(BT.BAND_CENTERS), dtype=np.float64)
+        c_her = np.clip(BT._aligned_diff(ltas_her, ltas_b), -BT.C_HER_LIMIT_DB, BT.C_HER_LIMIT_DB)
+        snr_b = BT.air_snr_db(spec_b)
+        air = bool(her.get("air_ok")) and snr_b is not None and snr_b >= BT.AIR_SNR_DB
+        use_asr = bool(self.use_asr and self._checker is not None)
+        sc_b: List[Score] = []
+        for k, (w, r) in enumerate(zip(wavs_b, results), 1):
+            _check_cancel()
+            self._step(0.99, 0.99, k, n, "轻度美化：先给原声逐句打分")
+            sc_b.append(self._score_one(w, r, sr, mult, use_asr=use_asr))
+
+        def pct_of(sc: Score) -> Optional[float]:
+            return sc.pct_raw if sc.pct_raw is not None else sc.pct
+
+        pct_b = [pct_of(x) for x in sc_b]
+        secs = [x.speech_seconds for x in sc_b]
+        if not any(p is not None for p in pct_b):
+            return no_c("这次量不出「像你本人 %」，没法检查美化会不会让声音不像你")
+        short = sorted(i for i, x in enumerate(secs) if x is None or float(x) < BT.SV_MIN_SECONDS)
+        no_dyn, no_comp = set(short), set()  # 太短的句子比不了像不像：只做全篇一样的静态 EQ
+        f0_b = [self._f0_median(w, sr) for w in wavs_b]
+        f0_null = [self._f0_median(w * np.float32(10.0 ** (1.0 / 20.0)), sr) for w in wavs_b]
+        floors_b = [speech_noise_floor_db(w, sr) for w in wavs_b]
+        sib_b, hf_b = BT.sib_p95(wavs_b, sr), BT.hf_ratio_db(spec_b)
+        cer_null: Dict[int, List[Optional[float]]] = {}
+        scored: Dict[Tuple[int, str], Score] = {}
+        f0_c: Dict[Tuple[int, str], Optional[float]] = {}
+        rounds: List[Dict[str, Any]] = []
+        notes: List[str] = []
+        why_last = ""
+        final: Optional[Dict[str, Any]] = None
+        while s > 0:
+            plan = BT.make_plan(sr, s, her, c_her, air)
+            for _attempt in range(6):
+                wavs_c: List[np.ndarray] = []
+                for i, (w, r) in enumerate(zip(wavs_b, results)):
+                    out, _info = self._beautified(r, w, sr, plan, i not in no_dyn, i not in no_comp, base)
+                    wavs_c.append(out)
+                changed = [i for i in range(n) if not np.array_equal(wavs_c[i], wavs_b[i])]
+                gains_c, match = self._match_levels(wavs_b, wavs_c, gains_b, changed, sr)
+                gains_c = list(gains_c or gains_b)
+                lev = [wavs_c[i] * np.float32(gains_c[i] / gains_b[i]) if gains_b[i] else wavs_c[i] for i in range(n)]
+                # G4 / G5：长度、F0、对齐（线性滤波按原理不改这些：不过就是程序错误）
+                for i in changed:
+                    k2 = (i, f"{plan.sig}{i in no_dyn}{i in no_comp}")
+                    if k2 not in f0_c:
+                        f0_c[k2] = self._f0_median(wavs_c[i], sr)
+                    g4 = BT.gate_pitch(len(wavs_b[i]), len(wavs_c[i]), f0_b[i], f0_c[k2], [f0_null[i]])
+                    lag = BT.chain_lag(wavs_b[i], wavs_c[i], plan, sr) if g4["same_length"] else None
+                    if not g4["passed"] or lag != 0:
+                        block.update(program_error={"sentence": i + 1, "g4": g4, "lag": lag})
+                        return no_c(f"第 {i + 1} 句处理后{'长度' if not g4['same_length'] else '音高或时间'}变了"
+                                    "（按设计不会发生，是程序的错误），所以不输出版本 C")
+                sc_c = list(sc_b)
+                key = f"{plan.sig}"
+                for i in changed:
+                    k2 = (i, f"{key}{i in no_dyn}{i in no_comp}")
+                    if k2 not in scored:
+                        _check_cancel()
+                        scored[k2] = self._score_one(lev[i], results[i], sr, mult, use_asr=use_asr)
+                    sc_c[i] = scored[k2]
+                pct_c = [pct_of(x) for x in sc_c]
+                gi = BT.gate_identity(pct_b, pct_c, secs, mu, sigma, self.min_pct)
+                g3_fail: List[int] = []
+                for i in changed:
+                    cb, cc = sc_b[i].cer, sc_c[i].cer
+                    if cb is None or cc is None or float(cc) <= float(cb) + 1e-9:
+                        continue
+                    if i not in cer_null:  # 空白对照：原声这一句音量 ±1 dB 再识别一次
+                        cer_null[i] = [self._score_one(wavs_b[i] * np.float32(10.0 ** (d / 20.0)), results[i], sr,
+                                                       mult, use_asr=True).cer for d in (1.0, -1.0)]
+                    if BT.gate_content(cb, cc, cer_null[i]) is False:
+                        g3_fail.append(i)
+                g8_fail = []
+                for i in changed:
+                    fc = speech_noise_floor_db(lev[i], sr)
+                    tp = true_peak_db(wavs_c[i] * np.float32(gains_c[i]))
+                    if BT.gate_noise(floors_b[i], fc, tp)["passed"]:
+                        continue
+                    # 比 −60 和原声都高：和「只过静态 EQ」的底噪比（压缩不能再往上抬）
+                    lin, _ = self._beautified(results[i], wavs_b[i], sr, plan, False, False, base)
+                    feq = speech_noise_floor_db(BT.level_back(lin, wavs_b[i], sr)[0], sr)
+                    if not BT.gate_noise(floors_b[i], fc, tp, floor_eq=feq)["passed"]:
+                        g8_fail.append(i)
+                new_dyn = {i for i in set(gi["g2_fail"]) | set(g3_fail) if i not in no_dyn}
+                new_comp = {i for i in g8_fail if i not in no_comp and i not in no_dyn}
+                if new_dyn or new_comp:
+                    no_dyn |= new_dyn
+                    no_comp |= new_comp
+                    continue
+                spec_c = BT.speech_spectrum(lev, sr, masks=spec_b.masks)
+                g7 = BT.gate_hf(hf_b, BT.hf_ratio_db(spec_c), BT._num(her.get("hf_p05_db")),
+                                BT._num(her.get("hf_p95_db")), sib_b, BT.sib_p95(lev, sr),
+                                BT._num(her.get("sib_p95_db")))
+                if not g7["passed"] and plan.air:
+                    air = False
+                    plan = BT.make_plan(sr, s, her, c_her, air)
+                    continue
+                g6 = BT.gate_timbre(ltas_b, BT.band_db(spec_c), ltas_her, sigma_her or 0.0,
+                                    plan.expected_change(spec_b), s)
+                break
+            else:  # 关了 6 次动态处理还在关（按做法不会发生）：按没通过算
+                g6, g7 = {"passed": False, "why": "逐句关掉去齿音和压缩以后检查还没做完"}, {"passed": True}
+            g2_left = [i for i in gi["g2_fail"]]
+            ok = (gi["g1"] is not False and not g2_left and not g3_fail and not g8_fail and g7["passed"]
+                  and g6["passed"])
+            why = "" if ok else (g6.get("why") or self._beauty_why(gi, g2_left, g3_fail, g8_fail, g7, g6, pct_b, pct_c))
+            rounds.append({"s": s, "air": plan.air, "passed": ok, "why": why, "g1": {
+                k: gi.get(k) for k in ("g1", "mean_delta", "g1_floor", "g2_floor", "n")},
+                "g2_fail": [i + 1 for i in g2_left], "g3_fail": [i + 1 for i in g3_fail],
+                "g8_fail": [i + 1 for i in g8_fail], "g6": g6, "g7": g7,
+                "static_only": [i + 1 for i in sorted(no_dyn)], "no_compress": [i + 1 for i in sorted(no_comp)]})
+            if ok:
+                final = {"plan": plan, "wavs": wavs_c, "gains": gains_c, "match": match, "sc": sc_c, "gi": gi,
+                         "changed": changed}
+                break
+            why_last = why
+            s = BT.next_strength(s)
+            if s > 0:
+                notes.append(f"这次轻度美化没通过检查（{why}），已经自动减轻到{BT.strength_word(s)}。")
+        block["rounds"] = rounds
+        for line in notes:
+            self.notes.append(line)
+            log.info(line)
+        if final is None:
+            return no_c(f"减到最轻也没通过检查（{why_last}），宁可不美化，也不让声音不像你")
+        plan, wavs_c, gains_c, sc_c, gi = final["plan"], final["wavs"], final["gains"], final["sc"], final["gi"]
+        if not final["changed"]:
+            return no_c("每一句处理以后都和原声一模一样")
+        audio_c = self._render(layout, [(w, sr) for w in wavs_c], sr, gains_c)
+        g9 = silence_violations(audio_c, sentence_regions(layout, sr))
+        block["g9"] = {"outside_nonzero": int(g9["outside_nonzero"]), "edges_bad": list(g9["edges_bad"])}
+        if g9["outside_nonzero"] or g9["edges_bad"]:
+            return no_c("程序自检没通过：句子之间不是完全的数字静音（按设计不会发生），所以不输出版本 C")
+        durs = [len(w) / sr for w in wavs_c]
+
+        def art_pct(scores: Sequence[Score]) -> Optional[float]:
+            vals = [(x.pct, d) for x, d in zip(scores, durs) if x.pct is not None]
+            if not vals or sum(d for _, d in vals) <= 0:
+                return None
+            return round(float(np.average([p for p, _ in vals], weights=[d for _, d in vals])), 1)
+
+        pct_c_art, pct_b_art = art_pct(sc_c), art_pct(sc_b)
+        static_only = sorted(set(rounds[-1]["static_only"]) - {i + 1 for i in short})
+        cer_checked = use_asr and any(x.cer is not None for x in sc_b)
+        cer_why = "" if cer_checked else ("识别模型这次用不了" if use_asr else "这次没有开识别校验")
+        line = self._beauty_line(s, pct_c_art, pct_b_art, gi, cer_why, [i + 1 for i in short], static_only)
+        self.notes.append(line)
+        log.info(line)
+        self._variant_mix[VARIANT_BEAUTY] = {"wavs": wavs_c, "gains": gains_c, "loudness": final["match"]}
+        block.update(offered=True, s=s, strength=BT.strength_word(s), plan=plan.summary(),
+                     short_sentences=[i + 1 for i in short], static_only=static_only,
+                     no_compress=rounds[-1]["no_compress"], cer_checked=cer_checked,
+                     sentences=[{"index": i + 1, "pct_base": BT._r(pct_b[i]), "pct_c": BT._r(pct_of(sc_c[i])),
+                                 "seconds": BT._r(secs[i]), "cer_base": BT._r(sc_b[i].cer, 4),
+                                 "cer_c": BT._r(sc_c[i].cer, 4)} for i in range(n)])
+        entry = {"name": VARIANT_BEAUTY, "label": "版本 C：轻度美化", "pct": pct_c_art, "base_pct": pct_b_art,
+                 "base": base, "strength": s, "strength_word": BT.strength_word(s), "recommended": False,
+                 "beauty": True, "note": line, "lufs": round(float(measure_lufs(audio_c, sr)), 2)}
+        return entry, audio_c, block
+
+    def _beauty_why(self, gi: Dict[str, Any], g2: List[int], g3: List[int], g8: List[int], g7: Dict[str, Any],
+                    g6: Dict[str, Any], pct_b: Sequence[Optional[float]], pct_c: Sequence[Optional[float]]) -> str:
+        """这一轮没通过的原因（给老师看，第一个原因）。"""
+        if g2:
+            def drop(i: int) -> float:
+                return float(pct_b[i] or 0.0) - float(pct_c[i] or 0.0)
+
+            i = max(g2, key=drop)
+            if -drop(i) >= float(gi.get("g2_floor") or 0.0):  # 比原声低得不多，是掉到了 85% 以下
+                return f"第 {i + 1} 句美化后低于 {self.min_pct:.0f}%"
+            return f"第 {i + 1} 句像你本人比原声低了 {drop(i):.1f}%，超过测量误差"
+        if gi.get("g1") is False:
+            return (f"逐句比，像你本人平均变了 {float(gi['mean_delta']):+.1f} 个百分点，超过测量误差"
+                    f"（只改音量也就变到 {float(gi['g1_floor']):+.1f}）")
+        if g3:
+            return f"第 {g3[0] + 1} 句识别出来的错字比原声多"
+        if g8:
+            return f"第 {g8[0] + 1} 句的底噪变高了"
+        if not g7.get("passed", True):
+            return "8 kHz 以上的高频比你本人平时多" if not g7.get("hf_ok", True) else "齿音比你本人平时重"
+        if not g6.get("dist_ok", True):
+            return "音色离你本人的录音比原声更远（超过你自己不同时候录音之间的差别）"
+        wb = g6.get("worst_band") or {}
+        if wb:
+            return f"{wb.get('hz')} Hz 附近变了 {wb.get('dev_db')} dB，超出设计的范围"
+        return "检查没做完"
+
+    def _beauty_line(self, s: float, pct_c: Optional[float], pct_b: Optional[float], gi: Dict[str, Any],
+                     cer_why: str, short: List[int], static_only: List[int]) -> str:
+        """版本 C 通过检查以后给老师看的一句话（数字都是这次实测的）。"""
+        from voicetwin.synth.beautify import strength_word
+
+        parts = [f"版本 C 轻度美化（润色强度：{strength_word(s)}）"]
+        if pct_c is not None and pct_b is not None:
+            parts.append(f"：像你本人 {pct_c:.1f}%，原声 {pct_b:.1f}%")
+        out = "".join(parts)
+        if gi.get("mean_delta") is not None:
+            out += (f"；逐句比，平均变了 {float(gi['mean_delta']):+.1f} 个百分点，在测量误差以内"
+                    f"（只改音量也会变到 {float(gi['g1_floor']):+.1f}）")
+        else:
+            out += "；每一句的人声都不到 2 秒，没有单独比像不像"
+        out += f"；错字这次没查（{cer_why}）" if cer_why else "；错字没有增加"
+        if short:
+            out += (f"；第 {'、'.join(map(str, short[:20]))} 句太短（人声不到 2 秒），只做了和全篇一样的音色润色，"
+                    "没有单独比像不像")
+        if static_only:
+            out += f"；第 {'、'.join(map(str, static_only[:20]))} 句去齿音和压缩会让它不够像，只做了和全篇一样的音色润色"
+        return out + "。"
 
     # ------------------------------------------------------------------ 整篇再挑一遍（「一模一样」）
     def _delta_stats(self) -> Dict[str, Dict[str, Tuple[float, float]]]:

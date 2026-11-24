@@ -1643,13 +1643,15 @@ def identical_stale(project: Project, backend: Backend) -> bool:
 
 
 def prepare_identical(cfg: Dict[str, Any], project: Project, backend: Backend, progress: Optional[ProgressFn] = None,
-                      judge: Any = None, checker: Any = None, use_asr: Optional[bool] = None) -> Dict[str, Any]:
+                      judge: Any = None, checker: Any = None, use_asr: Optional[bool] = None,
+                      beautify: bool = False) -> Dict[str, Any]:
     """生成「一模一样」前的准备（设计方案 §1.4，进度条上的「准备「一模一样」」）：缺了或者旧了才做——
     1. 你本人的说话习惯（twin_profile.json，素材没变时不用重新量）；
     2. 参考录音库（带声纹；能进库的录音或者声纹模型变了才重新整理，声纹按片段缓存）；
     3. models.json 的 identical（语速、排序权重、试听参考录音）：以前的版本练的模型、标准方式练的模型、重新挑过模型以后
        都没有 / 旧了 → 用选定的这个模型做一次小校准：没参加训练的录音按「一模一样」生成时的方式各试 2 条参考 × 4 个，
        校准语速和排序权重，再试听参考录音。这样以前练的模型不用重新训练，也能按「一模一样」生成。
+    4. 勾了「轻度美化」（beautify）：美化的一次性校准（beautify_calib.json，ensure_beautify_calibration）。
     judge / checker：生成引擎已经加载好的声纹打分和识别模型（不再加载一遍）。返回 {"twin", "bank", "mini", "block"}。"""
     from voicetwin.style.twin_profile import build_twin_profile
 
@@ -1681,6 +1683,15 @@ def prepare_identical(cfg: Dict[str, Any], project: Project, backend: Backend, p
         out["bank"] = bank is not None
     except Exception as exc:  # noqa: BLE001
         log.warning(f"参考录音库这次没整理好（{_first_line(exc)}），用以前挑好的参考录音")
+    if beautify and judge is not None:
+        try:
+            calib = ensure_beautify_calibration(cfg, project, judge,
+                                                progress=lambda f, m: _p(0.30, f"准备「一模一样」：轻度美化的一次性校准：{m}"))
+            out["beautify"] = calib.get("s_star")
+        except Exception as exc:  # noqa: BLE001 - 校准没做成：生成时再试一次（不成就不做版本 C，原声照常）
+            if _fatal(exc):
+                raise
+            log.warning(f"「轻度美化」的一次性校准这次没做成（{_first_line(exc)}），生成时再试一次")
     if not identical_stale(project, backend):
         return out
     sel_ck = backend.selected_checkpoint()
@@ -1743,3 +1754,70 @@ def _mini_calibration(cfg: Dict[str, Any], project: Project, backend: Backend, s
     sp_text = f"语速 {speed}" if speed else f"语速没测（没参加训练的录音不到 {SPEED_MIN_ITEMS} 句），照旧用挑模型时的语速"
     log.info(f"准备「一模一样」：小校准做完了（{sp_text}；{_cal_note(cal)}）")
     return block
+
+
+def ensure_beautify_calibration(cfg: Dict[str, Any], project: Project, judge: Any,
+                                progress: Optional[ProgressFn] = None) -> Dict[str, Any]:
+    """「轻度美化」的一次性校准（research/V5极致/轻度美化设计.md §4.1）：用同一份 100% 锚点（她没参加训练的真实录音
+    验证集）量空白对照（只改音量）和 s = 1、0.5、0.25 的处理链对「像你本人 %」的影响，定出 s*；同时量她本人的
+    LTAS、齿音、电平、高频、F0（处理链的阈值和 G6、G7 的范围）。
+    结果写在声音文件夹里 models.json 旁边的 beautify_calib.json。它只取决于她的录音、声纹打分的标准和处理链本身
+    （和合成模型无关：处理的是她的真实录音），所以这三样都没变时直接读，变了才重做（设计写「每个新模型做一次」，
+    换了模型而这三样没变时重做出来是同一个结果，没必要）。"""
+    from voicetwin.eval.speaker import spread_sample
+    from voicetwin.synth import beautify as BT
+    from voicetwin.utils import atomic
+
+    if judge is None or not getattr(judge, "available", False) or not getattr(judge, "calibrated", False):
+        return {"s_star": 0.0, "why": "「像你本人 %」的精准打分不可用（或者还没校准好），没法量美化会不会让声音不像你"}
+    recs = project.load_manifest(only_kept=True)
+    val = spread_sample(sorted((r for r in recs if r.get("split") == "val"), key=lambda r: str(r["id"])),
+                        BT.MAX_CALIB_ITEMS)
+    her_recs = spread_sample(sorted(recs, key=lambda r: str(r["id"])), BT.MAX_HER_CLIPS)
+    sig = BT.calib_signature(str(judge.signature()), [r["id"] for r in val], [r["id"] for r in her_recs])
+    old = BT.load_calibration(project.root)
+    if old and old.get("sig") == sig and old.get("version") == BT.CHAIN_VERSION:
+        return old
+
+    def load(rec: Dict[str, Any]) -> Optional[Tuple[np.ndarray, int]]:
+        try:
+            return load_audio(project.abspath(str(rec.get("path") or "")))
+        except Exception as exc:  # noqa: BLE001 - 读不了的录音跳过
+            log.debug(f"轻度美化校准：读不了 {rec.get('path')}：{exc}")
+            return None
+
+    def f0_fn(w: np.ndarray, sr: int) -> np.ndarray:
+        from voicetwin.style.prosody import f0_track
+
+        return f0_track(w, sr)
+
+    def p(frac: float, msg: str) -> None:
+        if progress is not None:
+            try:
+                progress(max(0.0, min(1.0, frac)), msg)
+            except Exception:  # noqa: BLE001
+                pass
+
+    p(0.0, "量你本人录音的频谱、齿音和音量")
+    clips = []
+    for r in her_recs:
+        got = load(r)
+        if got is not None:
+            clips.append((got[0], got[1], str(r.get("source") or "")))
+    her = BT.her_stats(clips, f0_fn=f0_fn)
+    items = [got for got in (load(r) for r in val) if got is not None]
+
+    def pct_fn(w: np.ndarray, sr: int) -> Tuple[Optional[float], Optional[float]]:
+        res = judge.judge(w, sr) or {}
+        v = res.get("pct_raw")
+        return (v if v is not None else res.get("pct")), res.get("seconds")
+
+    calib = BT.calibrate(items, her, pct_fn, progress=lambda f, m: p(0.1 + 0.9 * f, m))
+    calib.update(sig=sig, judge=str(judge.signature()), items=[str(r["id"]) for r in val])
+    atomic.write_text(Path(project.root) / BT.CALIB_FILE, json.dumps(calib, ensure_ascii=False, indent=1))
+    st = calib.get("strengths") or {}
+    detail = "；".join(f"强度 {BT.strength_word(float(k))}：平均变 {v.get('mean_delta')} 个百分点"
+                      f"{'（通过）' if v.get('passed') else '（没通过）'}" for k, v in st.items())
+    log.info(f"轻度美化的一次性校准做完了：{calib['n']} 段没参加训练的录音；只改音量 μ={calib.get('mu_null')}、"
+             f"σ={calib.get('sigma_null')}；{detail or calib.get('why', '')}；s* = {calib.get('s_star')}")
+    return calib
