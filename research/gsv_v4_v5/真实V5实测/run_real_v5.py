@@ -6,7 +6,7 @@
   3. 训练：和老师用的默认设置一样，只练 V5（v5dev 的 LoRA，官方 s2_train_v3_lora.py）+ GPT，练完自动挑；
   4. 生成一段讲稿（快速档）；
   5. 「一次请求同时生成好几个版本」在 V5 上能不能用：同一句话同时生成 3 个，能不能按数字静音切开、
-     每个版本和单独生成的长度差多少、用时多少（程序现在只对 v2 / v2Pro / v2ProPlus 这么做）。
+     每个版本和单独生成的长度差多少、用时多少（和一个一个生成对照）。
 
 用法：python run_real_v5.py --gsv <整合包解压的文件夹> --out <结果文件夹> [--work <工作文件夹>]
 """
@@ -216,18 +216,22 @@ def main() -> int:
         b.start()
         try:
             ver = b._batch_version()
-            report = {"model_version": ver, "batch_versions_now": list(g.BATCH_VERSIONS),
-                      "why_one_by_one_before": b._single_reason(req, 3)}
+            orig = tuple(g.BATCH_VERSIONS)
+            report = {"model_version": ver, "batch_versions_in_program": list(orig)}
+            g.BATCH_VERSIONS = tuple(v for v in orig if v != ver)   # 先一个一个生成（对照）
             t0 = time.time()
             single = b.synthesize_many(req, 3, work / "一个一个")
             report["one_by_one"] = {"seconds": round(time.time() - t0, 1), "count": len(single),
                                     "durations": [wav_info(p)["seconds"] for p, _ in single], "sr": wav_info(single[0][0])["sr"]}
-            g.BATCH_VERSIONS = tuple(g.BATCH_VERSIONS) + (ver,)  # 只在这次实测里把 V5 也当成能同时生成的
+            g.BATCH_VERSIONS = orig if ver in orig else orig + (ver,)   # 再同时生成（程序现在的做法）
+            n_req = int(b.batch_stats.get("requests") or 0)
             t0 = time.time()
             many = b.synthesize_many(req, 3, work / "同时生成")
             report["batched"] = {"seconds": round(time.time() - t0, 1), "count": len(many),
                                  "durations": [wav_info(p)["seconds"] for p, _ in many]}
             report["why_not_batched"] = b._single_reason(req, 3)
+            report["batched_requests"] = int(b.batch_stats.get("requests") or 0) - n_req
+            report["last_many"] = b.last_many
             report["batch_stats"] = {k: v for k, v in (b.batch_stats or {}).items() if k != "last_many"}
             for p, k in many:
                 (out / f"同时生成_{k}.wav").write_bytes(Path(p).read_bytes())
