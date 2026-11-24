@@ -1183,7 +1183,8 @@ class _DeepSelect:
     def audition(self, ckpt: Optional[Dict[str, Any]], lo: float, hi: float, label: str) -> Dict[str, Any]:
         """试听参考录音：原来分数最高的 24 条（同一个视频最多 3 条）× 6 句没参加训练的录音（均匀挑，不用参考自己的录音）
         × 一次请求同时生成 4 个；真实答案 = R_real − 2·错字率 − 0.8·|ln 长短比|，每句取 4 个里最好的，再对 6 句取平均
-        = 这条参考的「先验」。没参加训练的录音不到 6 句时不做。"""
+        = 这条参考的「先验」。没参加训练的录音不到 6 句时不做。最后 5 秒有问题的参考（tail_bad，见
+        data/references.reference_tail）挑参考时排在干净的后面，试听名额也先给干净的。"""
         from voicetwin.eval.speaker import spread_sample
         from voicetwin.synth import search as S
 
@@ -1194,7 +1195,7 @@ class _DeepSelect:
         bank = [e for e in self.pool if e.get("_bank")] or list(self.pool)
         refs: List[Dict[str, Any]] = []
         per_src: Dict[str, int] = {}
-        for e in sorted(bank, key=lambda e: (-float(e.get("base") or 0.0), str(e["id"]))):
+        for e in sorted(bank, key=lambda e: (bool(e.get("tail_bad")), -float(e.get("base") or 0.0), str(e["id"]))):
             src = str(e.get("source") or "")
             if per_src.get(src, 0) >= AUDITION_PER_SOURCE:
                 continue

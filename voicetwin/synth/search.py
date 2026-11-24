@@ -1,8 +1,9 @@
 """「一模一样」档每句话怎么找（设计方案 research/一模一样/设计方案原文.md §1.5、§1.7、§1.8）。
 
 1. 挑参考录音（shortlist_refs）：从参考录音库（refs_bank.json）里按句型、长短、英文比例、是不是一段话的开头、
-   试听 / 原来的分数打分，挑 R 条（第二条尽量来自别的视频）；和这句话文字一样的录音不用。每条主参考再配几条
-   辅助参考（aux_set：同语言、陈述句、别的视频、4~9.8 秒）。
+   试听 / 原来的分数打分，挑 R 条（第二条尽量来自别的视频）；和这句话文字一样的录音不用。最后 5 秒有长停顿、
+   或者结尾不是说话声的录音（V5 只用参考录音最后 5 秒、接着结尾往下说；data/references.reference_tail）排在
+   所有干净的后面，干净的不够 R 条时才用。每条主参考再配几条辅助参考（aux_set：同语言、陈述句、别的视频、4~9.8 秒）。
 2. 组合（Arm）= 参考录音 × 生成设置（P0 / P1，读错时加更稳的 P2）× 辅助参考几条（3 / 0）[× 语速]。
 3. 第 1 轮每种组合发一次请求（同一条参考的排在一起，引擎可以接着用算好的参考特征）；读错太多就加更稳的设置，
    语速整体偏了就加一个改了语速的组合；第 2 轮最好的两种组合各一次；之后最好的组合一次一次地试。
@@ -106,7 +107,7 @@ def pool_from_refs(refs: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
                     "kind": r.get("kind", "statement"), "syllables": syllable_count(text),
                     "en_ratio": round(en_share(text), 4), "source": str(r.get("source") or ""),
                     "dur": r.get("duration"), "para_initial": False, "max_pause": 0.0,
-                    "base": float(r.get("score") or 0.0), "_bank": False})
+                    "base": float(r.get("score") or 0.0), "tail_bad": bool(r.get("tail_bad")), "_bank": False})
     return out
 
 
@@ -174,13 +175,14 @@ def _norm_text(entry: Dict[str, Any]) -> str:
 def shortlist_refs(seg: Any, bank: Sequence[Dict[str, Any]], prior: Dict[str, float], R: int,
                    forced: Optional[Dict[str, Any]] = None, para_initial: bool = False) -> List[Dict[str, Any]]:
     """给这句话挑 R 条参考录音：最合适的；再挑一条别的视频里的（不比第一名差 1.0 以上）；再按顺序往下挑。
+    最后 5 秒有问题的录音（tail_bad：最后 5 秒有长停顿、结尾不是说话声）排在所有干净的后面：干净的不够时才用。
     这句话里英文占 15% 以上时，至少有一条参考里英文也占 15% 以上（有的话）。老师自己指定的参考优先（只用它）。"""
     if forced is not None:
         return [forced]
     norm = normalize_for_cer(seg.text)
     feats = _seg_features(seg, para_initial)
     scored = sorted(((match_score(e, seg, prior, feats=feats), e) for e in bank if _norm_text(e) != norm),
-                    key=lambda p: (-p[0], str(p[1]["id"])))
+                    key=lambda p: (bool(p[1].get("tail_bad")), -p[0], str(p[1]["id"])))
     if not scored:
         return []
     R = max(1, int(R))
@@ -188,7 +190,7 @@ def shortlist_refs(seg: Any, bank: Sequence[Dict[str, Any]], prior: Dict[str, fl
     picks = [top]
     if R >= 2:
         other = next((e for m, e in scored[1:] if e.get("source") and e.get("source") != top.get("source")
-                      and m >= top_m - 1.0), None)
+                      and m >= top_m - 1.0 and (not e.get("tail_bad") or top.get("tail_bad"))), None)
         if other is not None:
             picks.append(other)
     for _, e in scored[1:]:

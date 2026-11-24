@@ -9,14 +9,14 @@ from __future__ import annotations
 import math
 import threading
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import numpy as np
 
 from voicetwin.project import Project
-from voicetwin.utils.audio import load_audio, save_audio, trim_silence
+from voicetwin.utils.audio import frame_rms_db, load_audio, save_audio, trim_silence
 from voicetwin.utils.log import get_logger
-from voicetwin.utils.textutil import ends_sentence, normalize_for_cer, sentence_kind
+from voicetwin.utils.textutil import ends_sentence, normalize_for_cer, sentence_kind, short_hash
 
 log = get_logger("references")
 
@@ -33,6 +33,99 @@ def _score(r: Dict[str, Any], med_rate: float) -> float:
     dur_pref = 1.0 - min(abs(dur - 6.5) / 6.5, 1.0)
     long_pause = 1.0 if max(r.get("pauses") or [0.0]) > 0.9 else 0.0
     return 3.0 * sim + 1.0 * snr + 0.6 * lp_n - 2.5 * rate_dev + 0.6 * dur_pref - 0.6 * long_pause
+
+
+# ============================================================================ V5 真正用到的那一段：参考录音的最后 5 秒
+#: V5 只拿参考录音最后 500 帧梅尔谱（每秒 100 帧，也就是最后 5.0 秒）当声学提示（官方 models_v5.py L11、L55-57），
+#: GPT 接着整条参考录音的结尾往下说。所以最后 5 秒里有长停顿、或者结尾不是你说话的声音（呼吸声、停了一下以后的杂音），
+#: 生成出来的开头和音色都会被带偏：这样的录音只在别的都不合适时才当参考
+PROMPT_SECONDS = 5.0
+
+
+def pause_limit(project: Project, records: Sequence[Dict[str, Any]]) -> Optional[float]:
+    """最后 5 秒里的停顿多长算「长停顿」：你自己录音句中停顿的 p97（twin_profile.json 的 inner_pause_p97，
+    「一模一样」打分时判断异常停顿用的也是它）。还没量出来时（第一次准备素材：说话习惯在挑完参考以后才量）用素材准备时
+    每段量的句中停顿算 p97（一样只算 0.12~4 秒的）；不到 8 个停顿时是 None：不查这一项（不瞎猜）。"""
+    from voicetwin.style import twin_profile as tp
+
+    value = ((tp.load_twin_profile(project) or {}).get("inner_pause_p97") or {}).get("value")
+    try:
+        if value is not None and math.isfinite(float(value)) and float(value) > 0:
+            return float(value)
+    except (TypeError, ValueError):
+        pass
+    vals = [float(p) for r in records if r.get("keep", True) and not r.get("deleted")
+            for p in (r.get("pauses") or []) if isinstance(p, (int, float)) and tp.PAUSE_MIN <= p <= tp.PAUSE_MAX]
+    return float(np.percentile(vals, 97)) if len(vals) >= tp.MIN_N else None
+
+
+def _periodicity(x16: np.ndarray, idx: np.ndarray) -> np.ndarray:
+    """16 kHz 的声音里第 idx 帧（和逐帧电平一样：10 毫秒一帧、40 毫秒窗、帧中心在 i×10 毫秒）有多像周期信号：
+    60~500 Hz 的音高范围里归一化自相关的最大值。说话的元音接近 1，呼吸声、杂音这种噪声低得多。"""
+    hop, win = 160, 640
+    lo, hi = 16000 // 500, 16000 // 60
+    x = np.pad(np.asarray(x16, dtype=np.float64), (win // 2, win))
+    frames = x[np.asarray(idx)[:, None] * hop + np.arange(win)[None, :]]
+    frames = frames - frames.mean(axis=1, keepdims=True)
+    ac = np.fft.irfft(np.abs(np.fft.rfft(frames, n=2 * win, axis=1)) ** 2, n=2 * win, axis=1)[:, lo:hi + 1]
+    sq = np.cumsum(frames ** 2, axis=1)
+    lags = np.arange(lo, hi + 1)
+    head = sq[:, win - 1 - lags]                 # 前 win−τ 个样本的能量
+    tail = sq[:, -1:] - sq[:, lags - 1]          # 从第 τ 个样本到最后的能量
+    return (ac / np.sqrt(np.maximum(head * tail, 1e-20))).max(axis=1)
+
+
+def reference_tail(wav: Optional[np.ndarray], sr: int, start: int, end: int, gaps: Sequence[Sequence[float]],
+                   limit: Optional[float], ending: Optional[str] = None) -> Dict[str, Any]:
+    """量参考录音（片段 wav 的第 start~end 个样本：去掉首尾静音以后真正发给引擎的那一段）的最后 5 秒。
+
+    - tail_pause：最后 5 秒里最长的停顿（秒；跨进来的停顿只算落在这 5 秒里的那一截）。gaps 是片段里的停顿
+      [(开始秒, 结束秒)]（片段里的时间），和量你句中停顿 p97 用的是同一种（twin_profile：至少 120 毫秒、比自动静音阈值低）；
+    - tail_end：结尾是不是你说话的声音（tail_ending；ending 给了就直接用，这时 wav 可以是 None）；
+    - tail_bad：tail_pause 超过 limit（你句中停顿的 p97；None 时不查这一项），或者 tail_end 是 "not_voice"。"""
+    start = max(0, int(start))
+    end = int(end) if wav is None else min(len(wav), int(end))
+    s0, s1 = start / sr, end / sr
+    w0 = max(s0, s1 - PROMPT_SECONDS)
+    pause = 0.0
+    for s, e in gaps:
+        pause = max(pause, min(float(e), s1) - max(float(s), w0))
+    if ending is None:
+        ending = tail_ending(wav, sr, start, end, gaps) if wav is not None else "voice"
+    bad = ending != "voice" or (limit is not None and pause > float(limit))
+    return {"tail_pause": round(pause, 3), "tail_end": ending, "tail_bad": bool(bad)}
+
+
+def tail_ending(wav: np.ndarray, sr: int, start: int, end: int, gaps: Sequence[Sequence[float]]) -> str:
+    """参考录音（片段 wav 的第 start~end 个样本）的结尾是不是你说话的声音："voice" 或 "not_voice"。
+
+    参考录音本来就去掉了首尾静音（只留 80 毫秒），一大段静音不会留在最后；会留下的是「停了一下，后面又有一点声音」：
+    呼吸声、杂音比自动静音阈值响，去静音时就把它和前面的停顿一起留下了。所以看最后一个停顿（gaps 里落在这一段里的）
+    后面的那一段：它最像说话的那一帧（_periodicity：元音有音高、是周期信号；呼吸、杂音不是），离你在这条录音里停顿时的样子
+    （不到静音阈值的那些帧的中位数）比离你说话时的样子（最后一个停顿前面说话的那些帧的中位数）还近 → "not_voice"。
+    比的两头都是这条录音里你自己的声音，不用另定门槛。没有停顿、量不出来时是 "voice"。
+    紧贴着最后一个字、中间没有停顿的呼吸声这里分不出来（和说话连在一起了）。"""
+    from voicetwin.utils.audio import resample, silence_threshold_from_db
+
+    start, end = max(0, int(start)), min(len(wav), int(end))
+    s0, s1 = start / sr, end / sr
+    inside = [(float(s) - s0, float(e) - s0) for s, e in gaps if float(s) >= s0 and float(e) <= s1]
+    if not inside or end <= start:
+        return "voice"
+    last_s, last_e = max(inside, key=lambda g: g[1])
+    x16 = resample(np.nan_to_num(np.asarray(wav[start:end], dtype=np.float32)), sr, 16000)
+    db = frame_rms_db(x16, 16000)
+    t = np.arange(len(db)) * 0.01
+    speech = db >= silence_threshold_from_db(db)
+    # 每种最多均匀取 100 帧（中位数、最大值够准了，处理器只要几毫秒）
+    before, final, quiet = (idx[::max(1, -(-idx.size // 100))] for idx in (
+        np.flatnonzero(speech & (t < last_s)), np.flatnonzero(speech & (t >= last_e)), np.flatnonzero(~speech)))
+    if not (before.size and final.size and quiet.size):
+        return "voice"
+    per = _periodicity(x16, np.concatenate([before, quiet, final]))
+    talk = float(np.median(per[:before.size]))
+    rest = float(np.median(per[before.size:before.size + quiet.size]))
+    return "not_voice" if float(per[before.size + quiet.size:].max()) < (talk + rest) / 2.0 else "voice"
 
 
 #: 同时挑参考音频（例如两个保存同时做完）时一个一个来，不会互相删掉对方刚写的文件
@@ -67,16 +160,22 @@ def _select_references(project: Project, records: List[Dict[str, Any]], pcfg: Di
     total = sum(len(v) for v in by_lang.values()) or 1
 
     # 去掉首尾静音以后的长度要在 min_d-0.3 ~ max_d+0.3 秒（合成引擎要求参考音频 3~10 秒）：挑的时候就查，
-    # 不合格的换下一条（以前挑完才查，最好的那条疑问句太长就直接没有疑问句的参考，明明还有别的问句）
+    # 不合格的换下一条（以前挑完才查，最好的那条疑问句太长就直接没有疑问句的参考，明明还有别的问句）。
+    # 同时量最后 5 秒（reference_tail）：先只挑最后 5 秒干净的；某一种（问句、陈述句……）不够时才用别的
+    from voicetwin.style.twin_profile import source_gaps
+
+    limit = pause_limit(project, records)
     trimmed_cache: Dict[str, Any] = {}
 
-    def fits(r: Dict[str, Any]) -> bool:
+    def fits(r: Dict[str, Any], strict: bool = True) -> bool:
         if r["id"] not in trimmed_cache:
             wav, sr = load_audio(project.abspath(r["path"]))
-            trimmed, _, _ = trim_silence(wav, sr, pad_ms=80)
+            trimmed, a, b = trim_silence(wav, sr, pad_ms=80)
             dur = len(trimmed) / sr
-            trimmed_cache[r["id"]] = (trimmed, sr, dur) if min_d - 0.3 <= dur <= max_d + 0.3 else None
-        return trimmed_cache[r["id"]] is not None
+            trimmed_cache[r["id"]] = ((trimmed, sr, dur, reference_tail(wav, sr, a, b, source_gaps(wav, sr), limit))
+                                      if min_d - 0.3 <= dur <= max_d + 0.3 else None)
+        got = trimmed_cache[r["id"]]
+        return got is not None and not (strict and got[3]["tail_bad"])
 
     chosen: List[Dict[str, Any]] = []
     for lang, items in by_lang.items():
@@ -89,30 +188,32 @@ def _select_references(project: Project, records: List[Dict[str, Any]], pcfg: Di
         used_sources: Dict[str, int] = {}
         seen_texts: set = set()  # 同一句话（例如每节课都说的开场白）只选一次，让参考语气更多样
         for kind in ("question", "exclaim"):  # 各挑一条疑问句 / 感叹句
-            best = next((r for r in items if sentence_kind(r["text"]) == kind and fits(r)), None)
+            same = [r for r in items if sentence_kind(r["text"]) == kind]
+            best = next((r for r in same if fits(r)), None) or next((r for r in same if fits(r, strict=False)), None)
             if best is not None:
                 picked.append(best)
                 seen_texts.add(normalize_for_cer(best["text"]))
         statements = [r for r in items if sentence_kind(r["text"]) == "statement"]
-        for r in statements:  # 陈述句优先分散到不同视频
-            if len([p for p in picked if sentence_kind(p["text"]) == "statement"]) >= quota:
-                break
-            if used_sources.get(r.get("source", ""), 0) >= 2 and len(statements) > quota * 2:
-                continue
-            key = normalize_for_cer(r["text"])
-            if key in seen_texts or not fits(r):
-                continue
-            seen_texts.add(key)
-            picked.append(r)
-            used_sources[r.get("source", "")] = used_sources.get(r.get("source", ""), 0) + 1
+        for strict in (True, False):  # 先只挑最后 5 秒干净的，不够时才用别的
+            for r in statements:  # 陈述句优先分散到不同视频
+                if len([p for p in picked if sentence_kind(p["text"]) == "statement"]) >= quota:
+                    break
+                if used_sources.get(r.get("source", ""), 0) >= 2 and len(statements) > quota * 2:
+                    continue
+                key = normalize_for_cer(r["text"])
+                if key in seen_texts or not fits(r, strict):
+                    continue
+                seen_texts.add(key)
+                picked.append(r)
+                used_sources[r.get("source", "")] = used_sources.get(r.get("source", ""), 0) + 1
         chosen += picked
 
     refs: List[Dict[str, Any]] = []
     project.refs_dir.mkdir(parents=True, exist_ok=True)
     for r in chosen:
-        if not fits(r):  # 太长就从句中停顿处截短不可靠，直接跳过；太短也跳过（挑的时候已经查过）
+        if not fits(r, strict=False):  # 太长就从句中停顿处截短不可靠，直接跳过；太短也跳过（挑的时候已经查过）
             continue
-        trimmed, sr, dur = trimmed_cache[r["id"]]
+        trimmed, sr, dur, tail = trimmed_cache[r["id"]]
         path = project.refs_dir / f"{r['id']}.wav"
         if not path.exists():  # 同一句的参考音频内容一样：已经有了就不重写（可能正被生成用着）
             from voicetwin.utils import atomic
@@ -137,10 +238,12 @@ def _select_references(project: Project, records: List[Dict[str, Any]], pcfg: Di
             "score": round(float(r.get("_ref_score", 0.0)), 3),
             "source": r.get("source", ""),
             "rate": r.get("rate"),
+            **tail,
         })
     for r in records:
         r.pop("_ref_score", None)
-    refs.sort(key=lambda x: (x["lang"], x["kind"] != "statement", -x["score"]))
+    # 同一种语言、句型里最后 5 秒干净的排在前面（生成时按顺序拿第一条）
+    refs.sort(key=lambda x: (x["lang"], x["kind"] != "statement", x["tail_bad"], -x["score"]))
     project.write_json(project.references_path, refs)
     if cleanup:  # 准备素材时：不再用的旧参考音频删掉（这时不会有生成在跑）
         keep = {Path(x["path"]).name for x in refs}
@@ -157,6 +260,9 @@ def _select_references(project: Project, records: List[Dict[str, Any]], pcfg: Di
             best = next((x for x in refs if x["lang"] == lang), None)
             if best:
                 log.info(f"  主参考（{lang}）：{best['text']}（{best['duration']} 秒）")
+        n_bad = sum(1 for x in refs if x["tail_bad"])
+        if n_bad:
+            log.info(f"  其中 {n_bad} 条参考音频最后 5 秒有长停顿、或者结尾不是说话声（呼吸、停顿）：同一种句子里没有更好的才用了它们")
     return refs
 
 
@@ -191,7 +297,7 @@ def aux_references(refs: List[Dict[str, Any]], main: Dict[str, Any], n: int) -> 
 BANK_FILE = "refs_bank.json"
 BANK_EMB_FILE = "bank_emb.npz"          # 在 cache/ 里：库里每条录音的声纹（按片段 id + 文件大小 + 修改时间）
 BANK_DIR = "bank"                        # references/bank/
-BANK_VERSION = 1
+BANK_VERSION = 2                         # 2：每条多了最后 5 秒的检查（tail_*）
 BANK_RAW_SECONDS = (3.0, 11.0)           # 片段本身的长度
 BANK_SECONDS = (3.2, 9.8)                # 去掉首尾静音（留 80 ms）以后：合成引擎要求参考音频 3~10 秒
 
@@ -322,6 +428,8 @@ def build_reference_bank(project: Project, records: List[Dict[str, Any]], judge:
     - 条件见 bank_eligible；去掉首尾静音（留 80 ms）以后还要是 3.2~9.8 秒；
     - 特征：音节数、英文比例、句型、语速、长度、来自哪个视频、在视频里的位置、前面停了多久、是不是一段话的开头
       （前面的停顿 ≥ 你句号处停顿的 p85）、里面最长的停顿、原来挑参考的分数（_score）、音高；
+    - 最后 5 秒（V5 真正用到的那一段，见 reference_tail）：里面最长的停顿、结尾是什么、算不算有问题（tail_bad）。
+      长停顿 = 超过你句中停顿的 p97（pause_limit，记在库里的 tail_limit）；有问题的只在别的都不合适时才当参考；
     - judge（精准声纹打分）有的话：每条算声纹（缓存在 cache/bank_emb.npz，按 id + 文件大小 + 修改时间）、
       自己和你的平均声纹有多像（self_pct），并填 twin_profile.json 里前后两句的音色变化；没有就不算（这几项是 null）；
     - 库里的音频不在这里写（第一次要用时 bank_wav 才写），references.json 不动。"""
@@ -345,9 +453,13 @@ def build_reference_bank(project: Project, records: List[Dict[str, Any]], judge:
         if r.get("rate"):
             rates.setdefault(r["lang"], []).append(float(r["rate"]))
     med_rate = {lang: float(np.median(v)) for lang, v in rates.items()}
+    limit = pause_limit(project, records)
+    # 结尾是不是说话声要读音频（每条约 10 毫秒）：片段文件、去静音的位置、里面的停顿都没变时用上次库里量的
+    old = {str(e.get("id")): e for e in (load_reference_bank(project) or {}).get("entries") or [] if isinstance(e, dict)}
 
     entries: List[Dict[str, Any]] = []
     for r in pool:
+        check_cancel()
         c = clips.get(str(r["id"]))
         if c is None:
             continue
@@ -365,6 +477,21 @@ def build_reference_bank(project: Project, records: List[Dict[str, Any]], judge:
         rate = r.get("rate") or (syl / voiced if syl and voiced >= 0.3 else None)
         gap_before = c.get("gap_before") if c.get("mode") == "raw" else r.get("gap_before")
         gaps = [float(e) - float(s) for s, e in feat.get("gaps") or []]
+        # 最后 5 秒的停顿用和你句中停顿 p97 同一种量法（c["inner"]：有原始录音时在原始录音上量的）
+        inner = [(float(s), float(e)) for s, e in c.get("inner") or []]
+        tail_key = short_hash(_emb_base(project, r), [a, b, sr], [[round(s, 4), round(e, 4)] for s, e in inner], n=12)
+        prev = old.get(str(r["id"])) or {}
+        tail: Dict[str, Any] = {"tail_pause": None, "tail_end": None, "tail_bad": False}
+        try:
+            if prev.get("tail_key") == tail_key and prev.get("tail_end") in ("voice", "not_voice"):
+                tail = reference_tail(None, sr, a, b, inner, limit, ending=prev["tail_end"])
+            else:
+                wav, wsr = load_audio(project.abspath(r["path"]))
+                ta, tb = (a, b) if wsr == sr else (int(round(a * wsr / sr)), int(round(b * wsr / sr)))
+                tail = reference_tail(wav, wsr, ta, tb, inner, limit)
+        except Exception as exc:  # noqa: BLE001 - 读不了：这一条量不了最后 5 秒，按没问题算（和以前一样）
+            log.debug(f"参考录音 {r['id']} 的最后 5 秒没量出来：{exc}")
+        tail["tail_key"] = tail_key
         entries.append({
             "id": str(r["id"]),
             "path": r["path"],
@@ -385,6 +512,7 @@ def build_reference_bank(project: Project, records: List[Dict[str, Any]], judge:
             "base": tp._r(_score(r, med_rate.get(r["lang"], 4.5)), 4),
             "f0_med": feat.get("f0_med_hz"),
             "self_pct": None,
+            **tail,
         })
 
     judge_sig, models = "", []
@@ -435,9 +563,16 @@ def build_reference_bank(project: Project, records: List[Dict[str, Any]], judge:
             except OSError as exc:  # 缓存写不了：这次照样算完，下次再算一遍
                 log.debug(f"参考录音库的声纹缓存写不了：{exc}")
 
+    n_bad = sum(1 for e in entries if e["tail_bad"])
+    if n_bad:
+        why = "结尾不是说话声（停了一下以后的呼吸声、杂音）"
+        if limit is not None:
+            why = f"最后 5 秒里有超过 {limit:.2f} 秒的停顿（比你自己 97% 的句中停顿都长）、或者{why}"
+        log.info(f"参考录音库 {len(entries)} 条里有 {n_bad} 条{why}：V5 只用参考录音的最后 5 秒、接着它的结尾往下说，"
+                 "这些录音只在别的都不合适时才当参考")
     data = {"version": BANK_VERSION, "bank_sig": bank_signature(entries), "judge_sig": judge_sig,
             "judge_models": models, "n": len(entries), "seconds": list(BANK_SECONDS), "entries": entries,
-            "eligible_sig": eligible_signature(project, records)}
+            "eligible_sig": eligible_signature(project, records), "tail_limit": tp._r(limit, 3)}
     from voicetwin.utils import atomic
 
     atomic.write_text(bank_path(project), tp.dumps(data))

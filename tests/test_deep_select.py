@@ -498,6 +498,26 @@ def test_audition_request_count_and_skip(tmp_path, fast):
     assert res2["prior"] is None and b2.calls == [] and "至少要 6 句" in res2["skipped"]
 
 
+def test_audition_gives_slots_to_clean_tails_first(tmp_path, fast):
+    """V5 只用参考录音的最后 5 秒（research/V5极致/统一计划.md A6）：最后 5 秒有问题的参考（tail_bad）挑参考时排在干净的后面，
+    试听名额也先给干净的（以前按原来的分数，试听了也用不上）。"""
+    from voicetwin.data import references as R
+
+    cfg, project = _project(tmp_path, n_val=8, n_train=12, sources=3)
+    b = FakeQualityBackend(project, sovits=(8,), gpt=(6,))
+    project.update_models("gptsovits", {"selected": b.checkpoints()[0]})
+    sim = sel._Sim(cfg, project, judge=_judge())
+    first = sel.audition_references(cfg, project, b, sim=sim, use_asr=False)
+    entries = R.load_reference_bank(project)["entries"]
+    bad = sorted(first["prior"])[0]
+    assert len(entries) == 12 and first["n_refs"] == 9  # 每个视频 4 条，试听 3 条
+    bank = [dict(e, tail_bad=e["id"] == bad) for e in entries]
+    res = sel.audition_references(cfg, project, b, sim=sim, use_asr=False, bank=bank)
+    assert res["n_refs"] == 9 and bad not in res["prior"]
+    src = next(e["source"] for e in entries if e["id"] == bad)
+    assert sum(1 for e in entries if e["source"] == src and e["id"] in res["prior"]) == 3  # 同一个视频换上干净的那条
+
+
 # ============================================================================ 出错时改用标准的挑法
 @pytest.fixture
 def gsv_project(prepared, tmp_path, monkeypatch):
