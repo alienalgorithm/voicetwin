@@ -408,6 +408,57 @@ def measure_lufs(wav: np.ndarray, sr: int) -> float:
     return float(20 * np.log10(rms) - 0.691 + 3.0)
 
 
+def true_peak_db(wav: np.ndarray, oversample: int = 4) -> float:
+    """真峰值（dBTP）：4 倍过采样（scipy.signal.resample_poly）以后的最大绝对值。
+    采样峰值只看采到的那些点，两个采样点之间还原出来的波形可能更高（例如 fs/4 的正弦、相位 45° 时高 3.01 dB）；
+    播放器、平台（Apple Podcasts 要求 ≤ −1 dBTP）看的是真峰值。没有声音（全是 0 / 空的）时是 −inf。
+    一句一句量（整篇几十分钟一次过采样很占内存）。"""
+    x = np.asarray(wav, dtype=np.float64).reshape(-1)
+    if x.size == 0 or not np.any(x):
+        return float("-inf")
+    peak = float(np.max(np.abs(x)))
+    if oversample > 1:
+        peak = max(peak, float(np.max(np.abs(signal.resample_poly(x, int(oversample), 1)))))
+    return float(20.0 * np.log10(peak))
+
+
+def silence_violations(audio: np.ndarray, regions: Sequence[Tuple[int, int]]) -> dict:
+    """绝对静音自检：regions 是每句在整篇里的 (起点采样, 采样数)。量出来
+    - outside_nonzero：句子以外（开头、停顿、结尾）不是 0 的采样有几个（应该是 0 个）；
+    - outside_samples：句子以外一共有几个采样（都查了）；
+    - first_at：第一个不是 0 的采样在第几个（没有是 None）；
+    - edges_bad：第一个或最后一个采样不是 0 的句子（从 1 数）。
+    只看数，不改音频；句子超出整篇末尾（被截断）时按截断处的最后一个采样查。"""
+    x = np.asarray(audio).reshape(-1)
+    total = len(x)
+    spans = sorted((max(0, int(a)), min(total, int(a) + max(0, int(n))), k)
+                   for k, (a, n) in enumerate(regions))
+    nonzero, outside, first_at = 0, 0, None
+    edges_bad: List[int] = []
+    cur = 0
+
+    def gap(lo: int, hi: int) -> None:
+        nonlocal nonzero, outside, first_at
+        if hi <= lo:
+            return
+        seg = x[lo:hi]
+        outside += hi - lo
+        c = int(np.count_nonzero(seg))
+        if c:
+            nonzero += c
+            if first_at is None:
+                first_at = lo + int(np.flatnonzero(seg)[0])
+
+    for lo, hi, k in spans:
+        gap(cur, lo)
+        cur = max(cur, hi)
+        if hi > lo and (x[lo] != 0 or x[hi - 1] != 0):
+            edges_bad.append(k + 1)
+    gap(cur, total)
+    return {"outside_nonzero": nonzero, "outside_samples": outside, "first_at": first_at,
+            "edges_bad": sorted(edges_bad)}
+
+
 def peak_limit(wav: np.ndarray, ceiling_db: float = -1.0) -> np.ndarray:
     ceiling = 10 ** (ceiling_db / 20.0)
     peak = float(np.max(np.abs(wav))) if wav.size else 0.0

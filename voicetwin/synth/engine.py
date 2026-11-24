@@ -61,10 +61,12 @@ from voicetwin.utils.audio import (
     normalize_lufs,
     resample,
     save_audio,
+    silence_violations,
     silent_runs,
     speech_level_db,
     speech_noise_db,
     speech_noise_floor_db,
+    true_peak_db,
 )
 from voicetwin.utils.ffmpeg import encode
 from voicetwin.utils.log import get_logger
@@ -504,8 +506,14 @@ FIT_PASSES = 2
 #: 一句话里说话部分的底噪（有声音的那一段里每个频率的 p10 的中位数，见 utils.audio.speech_noise_floor_db）高于这个
 #: 才做去杂音；不高于时 B 版本这一句和 A 一模一样
 DENOISE_FLOOR_DB = -60.0
-#: 每句音量调好以后，哪一句的最高点超过 −1 dBFS 就把这一句单独调低（不用限幅器，不整篇压）
+#: 每句音量调好以后，哪一句的最高点超过 −1 dB 就把这一句单独调低（不用限幅器，不整篇压）。
+#: 最高点按真峰值量（utils.audio.true_peak_db，4 倍过采样，dBTP）：采样峰值看不到两个采样之间更高的地方
+#: （美化设计 A2：合成信号实测真峰值比采样峰值高 0.18 dB；Apple Podcasts 要求 ≤ −1 dBTP）
 PEAK_CEILING_DB = -1.0
+#: 有损压缩的格式：停顿里留不住精确的 0（合成信号实测：MP3 192k 停顿里 4,412 个采样不是 0、最大 −94.5 dBFS；
+#: AAC 192k 5,184 个、最大 −64.0 dBFS，见 research/V5极致/调研_美化_mastering.md）。wav / flac 是精确的 0
+LOSSY_FORMATS = (".mp3", ".m4a")
+LOSSY_NOTE = "mp3 / m4a 是压缩格式，停顿里会有极小的数值，不再是完全的 0；要绝对静音请选 wav 或 flac。"
 
 
 def model_tag(models: Sequence[Dict[str, Any]], weights: Optional[Sequence[float]] = None) -> str:
@@ -543,6 +551,11 @@ def models_used(results: Sequence["SegmentResult"]) -> List[Dict[str, Any]]:
             if f not in row["files"]:
                 row["files"].append(f)
     return sorted(rows.values(), key=lambda d: (-d["seconds"], -d["sentences"], d["name"]))
+
+
+def sentence_regions(layout: Sequence[Tuple[float, int]], sr: int) -> List[Tuple[int, int]]:
+    """每句在整篇里的位置：(起点是第几个采样, 采样数)。拼接（Narrator._render）和绝对静音自检用的是同一个算法。"""
+    return [(int(round(float(start) * sr)), int(n)) for start, n in layout]
 
 
 def out_parts(out_path: Union[str, Path], default_fmt: str = "wav") -> Tuple[Path, str, str]:
@@ -1951,6 +1964,9 @@ class Narrator:
             self.warnings.append(unknown)
             log.warning(unknown)
 
+        # 写任何文件之前：每个要写的版本都查一遍绝对静音（句子以外每个采样都是 0、每句首尾是 0），哪个版本不过都不写
+        written = [(v["name"], audio_by_name[v["name"]]) for v in variants] if variants_on else [(VARIANT_RAW, audio_a)]
+        silence = self._check_silence(written, layout, sr)
         out_dir.mkdir(parents=True, exist_ok=True)
         loud = not identical  # 「一模一样」每句的音量已经调好（_levels），不再整篇调
         if variants_on:
@@ -1987,6 +2003,8 @@ class Narrator:
                                           wavs=mix.get("wavs"), version=final_name or VARIANT_RAW,
                                           version_loudness=mix.get("loudness"))
         notes = list(self.notes) + self._summary_lines(results, flagged, overall, nums=nums or None)
+        if ext in LOSSY_FORMATS:  # 选了 mp3 / m4a：如实说停顿里不再是精确的 0（放最前面，网页只显示前 10 行）
+            notes.insert(0, LOSSY_NOTE)
         for line in notes:
             log.info(line)
         judge = self.judge
@@ -2001,6 +2019,7 @@ class Narrator:
             "similarity": judge.info() if judge is not None else {"models": [], "note": HONEST_NOTE},
             "elapsed_sec": round(time.time() - t0, 1), "warnings": self.warnings, "flagged": flagged,
             "notes": notes, "variants": variants, "final": final_name, "segments": seg_report,
+            "silence_check": silence,
             "tries_avg": round(float(np.mean([r.tries for r in results if not r.cached])), 2)
             if any(not r.cached for r in results) else None,
         }
@@ -2377,7 +2396,7 @@ class Narrator:
         """「去杂音」版本每句的音量系数：去杂音会让说话的声音变小（去掉噪声，也伤到一点声音；开发机上用合成的声音实测小 2~5 dB），
         以前 B 照搬 A 的系数、写文件时也不再整篇调，B 就比你原来的响度低好几 dB（审查意见）。
         现在去过杂音的句子各自调回 A 里这一句说话时的响度（同一个算法 speech_level_db），没去杂音的句子系数不变
-        （和 A 一模一样）；调完最高点超过 −1 dBFS 的这一句单独调低（不用限幅器，不整篇压）。只乘系数：0 还是 0。
+        （和 A 一模一样）；调完真峰值超过 −1 dBTP 的这一句单独调低（不用限幅器，不整篇压）。只乘系数：0 还是 0。
         设置里关掉了音量调整（gains 是 None）时不调。返回 (B 每句的系数, 记录)。"""
         if gains is None:
             return None, None
@@ -2389,10 +2408,9 @@ class Narrator:
             if la is not None and lb is not None:
                 gain_db[i] += la - lb
                 restored[i + 1] = round(la - lb, 2)
-            w = wavs_b[i]
-            peak = float(np.max(np.abs(w))) if w.size else 0.0
-            if peak > 0 and 20.0 * math.log10(peak) + gain_db[i] > PEAK_CEILING_DB:
-                gain_db[i] = PEAK_CEILING_DB - 20.0 * math.log10(peak)
+            tp = true_peak_db(wavs_b[i])  # 真峰值（4 倍过采样），不是采样峰值
+            if math.isfinite(tp) and tp + gain_db[i] > PEAK_CEILING_DB:
+                gain_db[i] = PEAK_CEILING_DB - tp
                 lowered.append(i + 1)
         out = list(gains)  # 没去杂音的句子用 A 原来的系数（一个比特都不差）
         for i in changed:
@@ -2780,7 +2798,7 @@ class Narrator:
         2. 按你本人句子之间的音量差（twin_profile.json 的 loudness）缩小：乘 min(1, 你本人的标准差 / 这次的标准差)，
            再限制在你本人的 p05~p95 之间；
         3. 整篇的响度调到你原来录音的响度（和以前的目标一样）；
-        4. 哪一句的最高点会超过 −1 dBFS，就把这一句单独调低——不用限幅器，也不整篇压。
+        4. 哪一句的真峰值（4 倍过采样）会超过 −1 dBTP，就把这一句单独调低——不用限幅器，也不整篇压。
         只乘系数：停顿里的 0 还是 0。返回 (每句的系数, 记录)；设置里关掉了音量调整时返回 (None, …)。"""
         target = self._target_lufs()
         if target is None:
@@ -2814,9 +2832,9 @@ class Narrator:
         lowered = []
         for i, w in enumerate(wavs):
             g = gain_db[i] + glob
-            peak = float(np.max(np.abs(w))) if w.size else 0.0
-            if peak > 0 and 20.0 * math.log10(peak) + g > PEAK_CEILING_DB:
-                g = PEAK_CEILING_DB - 20.0 * math.log10(peak)
+            tp = true_peak_db(w)  # 真峰值（4 倍过采样），不是采样峰值
+            if math.isfinite(tp) and tp + g > PEAK_CEILING_DB:
+                g = PEAK_CEILING_DB - tp
                 lowered.append(i + 1)
             gain_db[i] = g
         info = {"applied": True, "her_sd": None if her_sd is None else round(float(her_sd), 2),
@@ -2824,8 +2842,8 @@ class Narrator:
                 "shrink": round(shrink, 4), "target_lufs": round(float(target), 2), "global_db": round(glob, 2),
                 "gains_db": [round(g, 2) for g in gain_db], "peak_lowered": lowered}
         if lowered:
-            log.info(f"第 {'、'.join(str(i) for i in lowered)} 句调到目标音量会超过 −1 dBFS，这几句单独调低了一点"
-                     "（不用限幅器，整篇的响度可能比目标低一点，报告里写着实测的数）")
+            log.info(f"第 {'、'.join(str(i) for i in lowered)} 句调到目标音量，最高点（真峰值）会超过 −1 dB，"
+                     "这几句单独调低了一点（不用限幅器，整篇的响度可能比目标低一点，报告里写着实测的数）")
         return [10.0 ** (g / 20.0) for g in gain_db], info
 
     def _render(self, layout: List[Tuple[float, int]], pieces: List[Tuple[np.ndarray, int]], sr: int,
@@ -2835,15 +2853,40 @@ class Narrator:
         gains：每句乘一个固定的系数（「一模一样」调每句音量，只乘系数：0 还是 0）。"""
         total = (max((start + n / sr for start, n in layout), default=0.0)) + float(getattr(self, "_tail", LEAD_OUT))
         out = np.zeros(int(total * sr) + 1, dtype=np.float32)
-        for k, ((start, n), (wav, wsr)) in enumerate(zip(layout, pieces)):
+        for k, ((a, n), (wav, wsr)) in enumerate(zip(sentence_regions(layout, sr), pieces)):
             w = resample(wav, wsr, sr) if wsr != sr else np.asarray(wav, dtype=np.float32)
             w = fade(w[:n], sr, in_ms=4.0, out_ms=8.0)
             if gains is not None and k < len(gains) and float(gains[k]) != 1.0:
                 w = w * np.float32(gains[k])
-            a = int(round(start * sr))
             w = w[: max(0, len(out) - a)]
             out[a:a + len(w)] += w
         return out
+
+    @staticmethod
+    def _check_silence(versions: Sequence[Tuple[str, np.ndarray]], layout: List[Tuple[float, int]], sr: int
+                       ) -> Dict[str, Any]:
+        """绝对静音自检（老师的规定第 3 条，美化设计 A3）：写文件之前，每个版本都查
+        - 句子以外（开头、句子之间、结尾）不是 0 的采样数必须是 0；
+        - 每句第一个和最后一个采样必须是 0。
+        量的是写进 WAV 的那条音轨（mp3 / m4a 是在它的基础上再压缩）。写文件时「完美」等档位整篇只再乘一个系数，0 还是 0。
+        有一个版本不过就报错、一个文件都不写（按做法不会发生，发生了就是程序的错误）。返回记录（写进报告）。"""
+        regions = sentence_regions(layout, sr)
+        rows: Dict[str, Any] = {}
+        for name, audio in versions:
+            info = silence_violations(audio, regions)
+            if info["outside_nonzero"] or info["edges_bad"]:
+                where = []
+                if info["outside_nonzero"]:
+                    where.append(f"句子以外有 {info['outside_nonzero']} 个采样不是 0"
+                                 f"（第一个在第 {info['first_at'] / sr:.3f} 秒）")
+                if info["edges_bad"]:
+                    nums = "、".join(str(k) for k in info["edges_bad"][:20])
+                    where.append(f"第 {nums} 句的开头或结尾不是 0")
+                raise RuntimeError(
+                    f"程序自检没通过：「{name}」版本{'；'.join(where)}。按规定句子之间必须是绝对的数字静音（每个采样都是 0），"
+                    "所以这次一个文件都没有保存。这是程序的错误，不是你操作的问题：请把「详细过程」里的文字发给帮你的人。")
+            rows[name] = {"outside_nonzero": 0, "outside_samples": int(info["outside_samples"]), "edges_bad": []}
+        return {"passed": True, "sentences": len(regions), "versions": rows}
 
     def _target_lufs(self) -> Optional[float]:
         opt = self.scfg.get("loudness", "profile")

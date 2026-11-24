@@ -166,7 +166,7 @@ synth:
   fixed_pauses: { clause: 0.25, sentence: 0.55, paragraph: 1.1 }
   # 句子之间、开头和结尾永远是绝对的数字静音（全是 0），没有底噪；每句首尾的杂音会被切掉并淡入淡出
   loudness: profile           # profile: 匹配你原始录音的响度 | 具体数值如 -16 | off
-  output_format: wav          # wav | mp3（mp3 压缩后静音处可能有极小的杂讯；要绝对静音请用 wav）
+  output_format: wav          # wav | mp3 | m4a | flac（mp3 / m4a 是压缩格式，停顿里不再是完全的 0；要绝对静音请用 wav 或 flac）
   subtitles: true             # 同时输出 .srt 字幕
   skip_code_blocks: true      # Markdown 讲稿里的 ``` 代码块不朗读
   asr_check: auto             # auto: quality=best/max/perfect/identical 时开启；用识别模型检查有没有漏字/多字
