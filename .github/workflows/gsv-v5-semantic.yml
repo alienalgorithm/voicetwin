@@ -70,6 +70,11 @@ jobs:
                       diff.append(f"{k}（最大差 {d:.3g}）")
               verdict = "一模一样" if len(same) == len(keys) else "不一样"
               lines.append(f"{n} 和 v2ProPlus：{verdict}（一样 {len(same)} 个，不一样 {len(diff)} 个，没有 {len(missing)} 个）")
+              # 3-get-semantic.py 在显卡上会把模型变成半精度（is_half）：这时两边是不是一模一样
+              half = [k for k in keys if k in w and tuple(w[k].shape) == tuple(ref[k].shape)
+                      and torch.equal(w[k].half(), ref[k].half())]
+              lines.append(f"  都变成半精度以后（显卡上提取时就是这样）：一样 {len(half)}/{len(keys)} 个"
+                           + ("，一模一样" if len(half) == len(keys) else "：" + "、".join(k for k in keys if k not in half)))
               for x in diff + [m + "（没有）" for m in missing]:
                   lines.append("  - " + x)
           out = "research/gsv_v4_v5/官方资料/语义token对比.txt"
