@@ -51,6 +51,7 @@ def main() -> int:
     ap.add_argument("--rows", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--work", default="/tmp/align")
+    ap.add_argument("--text-field", default="定稿", help="rows 里文字那一栏的名字（逐句文字.json 是「文字」）")
     a = ap.parse_args()
     out, work = Path(a.out), Path(a.work)
     out.mkdir(parents=True, exist_ok=True)
@@ -64,10 +65,19 @@ def main() -> int:
         dst = work / name
         if not dst.exists():
             urllib.request.urlretrieve(u, dst)
-        x, sr = sf.read(str(dst), dtype="float32", always_2d=True)
-        x = torch.from_numpy(x.mean(axis=1))
-        audio[name] = torchaudio.functional.resample(x, sr, 16000)
-        print("读入", name, round(len(audio[name]) / 16000, 1), "秒", flush=True)
+        if name.lower().endswith(".zip"):   # 以前的录音打在一个 zip 里：里面的 wav 都读进来（按文件名）
+            import zipfile
+            with zipfile.ZipFile(dst) as z:
+                members = [m for m in z.namelist() if m.lower().endswith(".wav")]
+                z.extractall(work, members)
+            paths = [work / m for m in members]
+        else:
+            paths = [dst]
+        for pth in paths:
+            x, sr = sf.read(str(pth), dtype="float32", always_2d=True)
+            x = torch.from_numpy(x.mean(axis=1))
+            audio[pth.name] = torchaudio.functional.resample(x, sr, 16000)
+            print("读入", pth.name, round(len(audio[pth.name]) / 16000, 1), "秒", flush=True)
 
     bundle = torchaudio.pipelines.MMS_FA
     model = bundle.get_model(with_star=False).eval()
@@ -78,7 +88,7 @@ def main() -> int:
         wav = audio[r["录音"]]
         s0, dur = float(r["开始秒"]), float(r["秒"])
         seg = wav[int(s0 * 16000):int((s0 + dur) * 16000)]
-        ws = words_of(r["定稿"])
+        ws = words_of(r[a.text_field])
         if not ws or len(seg) < 1600:
             per_row.append({"行": r["行"], "问题": "没有字或录音太短"})
             continue

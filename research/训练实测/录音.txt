@@ -1,0 +1,4 @@
+# 训练实测用的全部录音（老师 11-24 传到 Release「录音文件」）：以前的 15 个（voice68.zip）+ 新录的两段
+https://github.com/alienalgorithm/voicetwin/releases/download/%E5%BD%95%E9%9F%B3%E6%96%87%E4%BB%B6/voice68.zip
+https://github.com/alienalgorithm/voicetwin/releases/download/%E5%BD%95%E9%9F%B3%E6%96%87%E4%BB%B6/001.1.1.1.-.wav
+https://github.com/alienalgorithm/voicetwin/releases/download/%E5%BD%95%E9%9F%B3%E6%96%87%E4%BB%B6/1.wav
