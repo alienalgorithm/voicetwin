@@ -1,0 +1,796 @@
+name: train-real
+
+# 由 research/训练实测/train_exp.py workflow 生成（改那里，再运行
+#   python research/训练实测/train_exp.py workflow > .github/workflows/train-real.yml），不要直接改这个文件。
+#
+# 老师自己的录音（research/训练实测/录音.txt，约 2.5 小时，文字逐句核对过）在 GitHub 的处理器上真的训练 V5，
+# 再用声音分身自己的打分实测比较不同的设置；实测最好的设置以后当程序的默认设置。
+# 一台机器最多 6 小时，所以：准备素材 → 训练（一台接一台：快到时间就在存完一轮以后停下、打包，下一台接着练；
+# 练完写 DONE.json，后面的跳过）→ 准备打分（下载声纹模型、整理参考录音库、校准，试生成一句）→ 第一轮打分（几台同时）→
+# 第二轮（按第一轮的排名定：cfg_rate、补一个轮数）→ 汇总，提交到 research/训练实测/结果/。
+# 每一步结束时把进度和日志提交到结果文件夹（边做边备份）。
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "训练方式：default / app_cpu / lora16 / rank64（见 train_exp.py 的 VARIANTS）"
+        default: default
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "research/训练实测/train_exp.py"
+      - "research/训练实测/ci.sh"
+      - ".github/workflows/train-real.yml"
+
+permissions:
+  contents: write
+
+# 一次要跑一两天：别的推送不能把它取消（新的一次排在后面）
+concurrency:
+  group: train-real-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VARIANT: ${{ inputs.variant || 'default' }}
+  OUT: ${{ (inputs.variant && inputs.variant != 'default') && format('research/训练实测/结果/{0}', inputs.variant) || 'research/训练实测/结果' }}
+  EXP: research/训练实测/train_exp.py
+  CI_SH: research/训练实测/ci.sh
+
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" prep-env
+      - run: python "$EXP" prep --variant "$VARIANT" --pack /mnt/w/pack/prep
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prep
+          path: /mnt/w/pack/prep
+          compression-level: 0
+          retention-days: 5
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-prep
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job prep && bash "$CI_SH" commit "记录：训练实测 prep（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-1:
+    needs: prep
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: prep
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-1 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-1
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-1
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-1 && bash "$CI_SH" commit "记录：训练实测 train-1（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-2:
+    needs: train-1
+    if: needs.train-1.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-1
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-2 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-2
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-2
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-2 && bash "$CI_SH" commit "记录：训练实测 train-2（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-3:
+    needs: train-2
+    if: needs.train-2.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-2
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-3 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-3
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-3
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-3 && bash "$CI_SH" commit "记录：训练实测 train-3（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-4:
+    needs: train-3
+    if: needs.train-3.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-3
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-4 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-4
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-4
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-4 && bash "$CI_SH" commit "记录：训练实测 train-4（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-5:
+    needs: train-4
+    if: needs.train-4.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-4
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-5 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-5
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-5
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-5 && bash "$CI_SH" commit "记录：训练实测 train-5（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-6:
+    needs: train-5
+    if: needs.train-5.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-5
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-6 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-6
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-6
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-6 && bash "$CI_SH" commit "记录：训练实测 train-6（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-7:
+    needs: train-6
+    if: needs.train-6.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-6
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-7 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-7
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-7
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-7 && bash "$CI_SH" commit "记录：训练实测 train-7（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-8:
+    needs: train-7
+    if: needs.train-7.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-7
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-8 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-8
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-8
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-8 && bash "$CI_SH" commit "记录：训练实测 train-8（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-9:
+    needs: train-8
+    if: needs.train-8.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-8
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-9 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-9
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-9
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-9 && bash "$CI_SH" commit "记录：训练实测 train-9（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-10:
+    needs: train-9
+    if: needs.train-9.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-9
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-10 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-10
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-10
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-10 && bash "$CI_SH" commit "记录：训练实测 train-10（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-11:
+    needs: train-10
+    if: needs.train-10.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-10
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-11 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-11
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-11
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-11 && bash "$CI_SH" commit "记录：训练实测 train-11（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  train-12:
+    needs: train-11
+    if: needs.train-11.outputs.done == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    outputs:
+      done: ${{ steps.train.outputs.done }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env train
+      - uses: actions/download-artifact@v4
+        with:
+          name: state-11
+          path: /mnt/w/dl
+      - id: train
+        run: python "$EXP" train --variant "$VARIANT" --job train-12 --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'false'
+        with:
+          name: state-12
+          path: /mnt/w/pack/state
+          compression-level: 0
+          retention-days: 4
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.train.outputs.done == 'true'
+        with:
+          name: models
+          path: /mnt/w/pack/models
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: log-train-12
+          path: /mnt/w/vt/exp/*.json
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - if: always()
+        run: (python "$EXP" progress --variant "$VARIANT" --out "$OUT" --job train-12 && bash "$CI_SH" commit "记录：训练实测 train-12（GitHub 自动运行）" "$OUT") || echo "::warning::进度没能提交"
+
+  warm:
+    needs: [train-1, train-2, train-3, train-4, train-5, train-6, train-7, train-8, train-9, train-10, train-11, train-12]
+    if: ${{ !cancelled() && contains(needs.*.outputs.done, 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env eval
+      - uses: actions/download-artifact@v4
+        with:
+          name: models
+          path: /mnt/w/dl
+      - run: python "$EXP" eval --warm --variant "$VARIANT" --restore /mnt/w/dl --drop-restored --pack /mnt/w/pack/warm --eval-out /mnt/w/out/warm --since "$T0" --budget-min 300
+      - uses: actions/upload-artifact@v4
+        with:
+          name: models-warm
+          path: /mnt/w/pack/warm
+          compression-level: 0
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-warm
+          path: /mnt/w/out
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+
+  eval1:
+    needs: warm
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env eval
+      - uses: actions/download-artifact@v4
+        with:
+          name: models-warm
+          path: /mnt/w/dl
+      - run: python "$EXP" eval --round 1 --shard ${{ matrix.shard }} --shards 18 --variant "$VARIANT" --restore /mnt/w/dl --drop-restored --eval-out /mnt/w/out/r1 --since "$T0" --budget-min 320
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-r1-${{ matrix.shard }}
+          path: /mnt/w/out
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+
+  plan2:
+    needs: eval1
+    if: ${{ !cancelled() && needs.eval1.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      has: ${{ steps.plan.outputs.has }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" light-env
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: eval-r1-*
+          merge-multiple: true
+          path: /mnt/w/res
+      - id: plan
+        run: python "$EXP" plan --variant "$VARIANT" --results /mnt/w/res
+
+  eval2:
+    needs: plan2
+    if: needs.plan2.outputs.has == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan2.outputs.matrix) }}
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" gsv-env eval
+      - uses: actions/download-artifact@v4
+        with:
+          name: models-warm
+          path: /mnt/w/dl
+      - run: python "$EXP" eval --round 2 --shard ${{ matrix.shard }} --cands "${{ matrix.cands }}" --variant "$VARIANT" --restore /mnt/w/dl --drop-restored --eval-out /mnt/w/out/r2 --since "$T0" --budget-min 320
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-r2-${{ matrix.shard }}
+          path: /mnt/w/out
+          retention-days: 10
+          overwrite: true
+          if-no-files-found: ignore
+
+  report:
+    needs: [prep, train-1, train-2, train-3, train-4, train-5, train-6, train-7, train-8, train-9, train-10, train-11, train-12, warm, eval1, plan2, eval2]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - run: echo "T0=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash "$CI_SH" light-env
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: eval-*
+          path: /mnt/w/res
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: log-*
+          path: /mnt/w/res
+      - run: python "$EXP" report --variant "$VARIANT" --results /mnt/w/res --out "$OUT"
+      - run: bash "$CI_SH" commit "记录：训练实测结果（GitHub 自动运行）" "$OUT"
