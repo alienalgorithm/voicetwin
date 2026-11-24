@@ -25,6 +25,15 @@ def _v5cfg(project, root, port, version="v5dev", **train):
     }})
 
 
+def _own_project(project, tmp_path):
+    """这个测试自己的一份声音（复制出来）：练出来的 V5 模型不留在别的测试共用的那份声音里。"""
+    import shutil
+
+    ws = tmp_path / "ws"
+    shutil.copytree(project.root, ws / project.voice)
+    return wf.open_project(make_cfg(ws), project.voice, must_exist=True)
+
+
 def test_shipped_default_is_v5dev_only():
     cfg = load_config(user_config=False)
     assert cfg["backends"]["gptsovits"]["version"] == "v5dev" == g.DEFAULT_VERSION == g.LATEST_VERSION
@@ -77,7 +86,7 @@ def test_compare_versions_setting(prepared, tmp_path):
 def test_compare_setting_trains_v5dev_and_v2proplus_then_picks_by_measurement(prepared, tmp_path, monkeypatch, no_users_pth):
     monkeypatch.setenv("FAKE_GSV_CLIP_SLEEP", "0.03")
     monkeypatch.setenv("EXPECT_VERSION", "v5dev")    # 1A 处理文字时和官方 webui 一样传 v5dev
-    _, project, _ = prepared
+    project = _own_project(prepared[1], tmp_path)
     root = build_fake_root(tmp_path / "GPT-SoVITS-v5")
     gcfg = _v5cfg(project, root, 19891, sovits_epochs=8, gpt_epochs=10, batch_size=2, lora_epochs=4,
                   compare_versions="v2ProPlus")
@@ -130,7 +139,7 @@ def test_v5_only_default_uses_the_same_page_settings(prepared, tmp_path, monkeyp
     """默认只练 V5：网页高级设置里的「音色训练轮数」「每批数量」照样管用（用在 V5 的 LoRA 上），不练 v2ProPlus、不要声纹。"""
     monkeypatch.setenv("FAKE_GSV_CLIP_SLEEP", "0.03")
     monkeypatch.setenv("EXPECT_VERSION", "v5dev")
-    _, project, _ = prepared
+    project = _own_project(prepared[1], tmp_path)
     root = build_fake_root(tmp_path / "GPT-SoVITS-v5only")
     gcfg = _v5cfg(project, root, 19895, gpt_epochs=4)
     confirm_material(gcfg, project.voice)
@@ -156,3 +165,18 @@ def test_v5_only_default_uses_the_same_page_settings(prepared, tmp_path, monkeyp
     res = wf.run_narrate(gcfg, project.voice, "大家好，这是只用 V5 生成的一句话。", out=str(tmp_path / "v5only.wav"),
                          backend_name="gptsovits", quality="fast")
     assert res.audio_path.exists() and res.audio_path.name.endswith("_v5dev.wav")
+
+
+def test_v5_does_not_use_aux_refs(prepared, tmp_path, monkeypatch):
+    """官方 V5 合成时只用第一条参考录音：不发辅助参考，「一模一样」也不把「带 3 条 / 不带」当成两种试法。
+    按正在用的模型文件判断（_batch_version 读模型文件本身），不看设置。"""
+    from voicetwin.synth import search as S
+
+    _, project, _ = prepared
+    b = get_backend("gptsovits", _v5cfg(project, build_fake_root(tmp_path / "GSV-aux"), 19897), project)
+    for ver, want in (("v5dev", False), ("v5turbo", False), ("v4", False), ("v2ProPlus", True), ("v2Pro", True)):
+        monkeypatch.setattr(b, "_batch_version", lambda ver=ver: ver)
+        assert b.supports_aux_refs is want, ver
+    refs = [{"id": "r1"}, {"id": "r2"}]
+    arms = S.plan_arms("mid", refs, {"r1": [], "r2": []}, n_presets=2, aux_options=(3, 0))  # 不支持：一条都不给
+    assert len(arms) == len(set((a.ref_id, a.preset_idx, a.aux_n) for a in arms)) and all(a.aux_n == 0 for a in arms)

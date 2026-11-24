@@ -97,6 +97,8 @@ VOCODER = {
 LORA_SELECT_FROM = 2
 #: 扩散路线（V4 / V5）：音色用 LoRA 微调（官方 webui.py 的 v3v4set：s2_train_v3_lora.py、没有 s2D、每批 显存 // 8 条）
 LORA_VERSIONS = ("v4", "v5dev", "v5turbo")
+#: 用另一套声码器合成的版本（官方 TTS.py 的 using_vocoder_synthesis）：只用第一条参考录音，辅助参考不起作用
+VOCODER_VERSIONS = ("v3", "v4", "v5dev", "v5turbo")
 BERT_DIR = "GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large"
 HUBERT_DIR = "GPT_SoVITS/pretrained_models/chinese-hubert-base"
 SV_PATH = "GPT_SoVITS/pretrained_models/sv/pretrained_eres2netv2w24s4ep4.ckpt"
@@ -1593,7 +1595,6 @@ class GPTSoVITSBackend(Backend):
     display_name = "GPT-SoVITS"
     supports_training = True
     supports_speed = True
-    supports_aux_refs = True
     supports_batch = True
     train_stages: List[Stage] = [
         (0.00, "检查显卡、整理训练素材"),
@@ -3955,6 +3956,16 @@ class GPTSoVITSBackend(Backend):
         w = self._weights_to_use()
         ver = detect_sovits_version(w["sovits"], self.root).get("version") if w.get("sovits") else None
         return str(ver or self.version)
+
+    @property
+    def supports_aux_refs(self) -> bool:  # type: ignore[override]
+        """辅助参考录音（几条参考的音色平均一下）只有 v2 / v2Pro / v2ProPlus 用得上：官方 TTS.py 里 V3 / V4 / V5
+        合成时只用第一条参考（using_vocoder_synthesis 取 refer_spec[0]），发了辅助参考也不起作用。
+        按正在用的模型文件判断（_batch_version）；「一模一样」就不会把「带 3 条 / 不带」当成两种不同的试法。"""
+        try:
+            return self._batch_version() not in VOCODER_VERSIONS
+        except Exception:  # noqa: BLE001  读不出来时按以前的做法
+            return True
 
     def _single_reason(self, req: SynthRequest, n: int) -> str:
         """要 n 个版本时，为什么只能一个一个生成（中文原因）；能同时生成时返回空字符串。"""
