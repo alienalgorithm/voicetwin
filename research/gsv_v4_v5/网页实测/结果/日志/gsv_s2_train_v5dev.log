@@ -1,5 +1,5 @@
 
-===== 2026-11-24 17:21:56 训练音色（v5dev） =====
+===== 2026-11-24 17:54:04 训练音色（v5dev） =====
 命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/s2_train_v3_lora.py --config /tmp/vt/workspace/网页实测/models/gptsovits/tmp_s2.json
 目录：/tmp/vt/GPT-SoVITS
 phoneme_data_len: 27
