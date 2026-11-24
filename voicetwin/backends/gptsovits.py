@@ -2187,6 +2187,16 @@ class GPTSoVITSBackend(Backend):
             plan["audit_lines"] = list(material_audit(self.project).get("lines") or [])
         except Exception:
             plan["audit_lines"] = []
+        try:  # 英文读音预检：训练素材里的英文会按什么读音去学（文字照原样，只列出来）
+            from voicetwin.utils.textutil import count_cjk
+
+            # 标准方式（官方 1-get-text.py）整句按中文处理，句子里夹着的英文根本不参加训练：只看没有汉字的句子
+            texts = [str(r.get("text") or "") for r in recs if mode == "identical" or not count_cjk(str(r.get("text") or ""))]
+            line = self.english_precheck(texts, training=True).training_line() if texts else ""
+            if line:
+                plan["audit_lines"].append(line)
+        except Exception as exc:  # noqa: BLE001 - 预检出错不影响训练预览
+            log.debug(f"英文读音预检没做成：{exc}")
         return plan
 
     # ---------------------------------------------------------------- 素材有没有变（决定从头练 / 接着练 / 不重新练）
@@ -4089,9 +4099,34 @@ class GPTSoVITSBackend(Backend):
             ver = str(self.version)
         return cfg if ver in VOCODER_VERSIONS else None
 
+    # ---------------------------------------------------------------- 英文读音（gsv_english.py）
+    def engine_text(self, text: str) -> str:
+        """发给 api_v2 的文字：英文里引擎会读错、能确定怎么改的几种写法改掉（; : → 逗号、Dr. → Doctor、
+        1990s → nineteen nineties……，见 gsv_english.engine_text）。字幕、查错字的参考文字还是原来的。"""
+        from voicetwin.backends.gsv_english import engine_text
+
+        return engine_text(text)
+
+    def _engine_req(self, req: SynthRequest) -> SynthRequest:
+        text = self.engine_text(req.text)
+        return req if text == req.text else dataclasses.replace(req, text=text)
+
+    def english_dictionary(self) -> Any:
+        """整合包自己的英文词典（GPT_SoVITS/text/cmudict.rep 等）；找不到时 None。"""
+        from voicetwin.backends.gsv_english import load_dictionary
+
+        return load_dictionary(self.root / "GPT_SoVITS" / "text") if self.root else None
+
+    def english_precheck(self, texts: List[str], training: bool = False) -> Any:
+        """英文读音预检（gsv_english.precheck）：生成前（自动改的算改好了）/ 训练前（文字照原样，都列出来）。"""
+        from voicetwin.backends.gsv_english import precheck
+
+        return precheck(texts, self.english_dictionary(), auto_fix=not training)
+
     def synthesize(self, req: SynthRequest, out_path: Path) -> Path:
         if not self._alive():
             self.start()
+        req = self._engine_req(req)
         data = self._tts_answer(self._payload(req))
         out_path = Path(out_path)
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -4285,6 +4320,7 @@ class GPTSoVITSBackend(Backend):
         out_dir.mkdir(parents=True, exist_ok=True)
         if not self._alive():
             self.start()
+        req = self._engine_req(req)  # 下面算能不能同时生成、复制几份，都按真正发给引擎的文字
         why = self._single_reason(req, n)
         if why:
             if n > 1:

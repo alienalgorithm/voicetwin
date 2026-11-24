@@ -1,0 +1,111 @@
+# 英文读音预检实测结果（实测.py 生成，不要手改）
+GPT_SoVITS 文件夹：text/english.py 9803 字节，en_normalization/expend.py 10879 字节，cmudict.rep 3731285 字节
+词典：VoiceTwin 读到 143199 个词、19929 个人名；english.py 自己的 _g2p.cmu 有 143199 个词；两边一样：True
+
+## 1. 母本 core_corpus.tsv：1209 句，705 句有英文，2610 个英文词（371 个不同的）
+### auto_fix=True（生成）
+- 可能读错 caps AND ×10：全是大写，会一个字母一个字母地读成 A-N-D；想读成单词就写成小写 and；句子 and-revised_db6f95_0004, and-revised_db6f95_0006, and-revised_db6f95_0011, and-revised_db6f95_0013, and-revised_db6f95_0014, and-revised_db6f95_0020 ……
+- 可能读错 fixed_reading live ×2：引擎总是读成 /laɪv/（活的、现场的），读不出 /lɪv/（住、生活）；句子 level_2_2beceb_0127
+- 自动改好 abbr Dr. ×1：Dr. → Doctor；句子 or-revised_fa8bba_0006
+- 全大写的缩写 acronym AI ×2：全是大写，会按字母读；句子 05_27d31c_0108, 05_27d31c_0109
+- 全大写的缩写 acronym VR ×5：全是大写，会按字母读；句子 05_27d31c_0110, 05_27d31c_0111, 05_27d31c_0112
+- 全大写的缩写 acronym PPT ×2：全是大写，会按字母读；句子 level_2_2beceb_0074, level_2_2beceb_0098
+给老师看的话：
+  英文读音预检（生成前查的）：这些英文可能读错：AND（第 647、649、654、656、657…… 句，共 10 处：全是大写，会一个字母一个字母地读成 A-N-D；想读成单词就写成小写 and）；live（第 902 句，共 2 处：引擎总是读成 /laɪv/（活的、现场的），读不出 /lɪv/（住、生活））。想换读法：在讲稿里改写（例如全大写的 AND 写成小写 and），或者在声音文件夹的 lexicon.txt 里加一行「AND => and」（只改读法，字幕不变）。多音词暂时没法在这里选读法，生成以后听一下这几句。
+  英文读音预检：已经自动改好（只改发给引擎的文字，字幕和你看到的文字都不变）：Dr. → Doctor（第 958 句）。全是大写的缩写 AI、VR、PPT 会按字母读（一般就是对的）。
+
+### auto_fix=False（训练）
+- 可能读错 caps AND ×10：全是大写，会一个字母一个字母地读成 A-N-D；想读成单词就写成小写 and；句子 and-revised_db6f95_0004, and-revised_db6f95_0006, and-revised_db6f95_0011, and-revised_db6f95_0013, and-revised_db6f95_0014, and-revised_db6f95_0020 ……
+- 可能读错 fixed_reading live ×2：引擎总是读成 /laɪv/（活的、现场的），读不出 /lɪv/（住、生活）；句子 level_2_2beceb_0127
+- 可能读错 abbr Dr. ×1：会读成 drive；句子 or-revised_fa8bba_0006
+- 全大写的缩写 acronym AI ×2：全是大写，会按字母读；句子 05_27d31c_0108, 05_27d31c_0109
+- 全大写的缩写 acronym VR ×5：全是大写，会按字母读；句子 05_27d31c_0110, 05_27d31c_0111, 05_27d31c_0112
+- 全大写的缩写 acronym PPT ×2：全是大写，会按字母读；句子 level_2_2beceb_0074, level_2_2beceb_0098
+给老师看的话：
+  英文读音预检：训练素材里这些英文会按下面的读法去学，可能和你说的不一样：AND（10 处：全是大写，会一个字母一个字母地读成 A-N-D；想读成单词就写成小写 and）；Dr.（1 处：会读成 drive）；live（2 处：引擎总是读成 /laɪv/（活的、现场的），读不出 /lɪv/（住、生活））。训练用的文字照原样不改；想让它按你说的学，可以在校对表里改成你实际读的写法（例如全大写的 AND 改成 and、Dr. 改成 Doctor）。
+
+## 2. 每一处在引擎里实际的音素（改之前 → 改之后）
+- 05_27d31c_0108「AI field」（AI）
+    引擎：EY1 AY1 F IY1 L D
+- 05_27d31c_0110「VR」（VR）
+    引擎：V IY1 AA1 R
+- 05_27d31c_0112「In Ready Player One, VR, where people can do many things, feels quite real.」（VR）
+    引擎：IH0 N R EH1 D IY0 P L EY1 ER0 W AH1 N , V IY1 AA1 R , W EH1 R P IY1 P AH0 L K AE1 N D UW1 M EH1 N IY0 TH IH1 NG Z , F IY1 L Z K W AY1 T R IY1 L .
+- and-revised_db6f95_0004「AND」（AND）
+    引擎：EY1 EH1 N D IY1
+- level_2_2beceb_0074「PPT」（PPT）
+    引擎：P IY1 P IY1 T IY1
+- level_2_2beceb_0127「live」（live）
+    引擎：L AY1 V
+- or-revised_fa8bba_0006「You can call him Dr.Banner or Hulk.」（Dr.）
+    引擎：Y UW1 K AE1 N K AO1 L HH IH1 M D R AY1 V . B AE1 N ER0 AO1 R HH AH1 L K .
+    改后「You can call him Doctor Banner or Hulk.」：Y UW1 K AE1 N K AO1 L HH IH1 M D AA1 K T ER0 B AE1 N ER0 AO1 R HH AH1 L K .
+
+## 3. 自动改的每一种写法（改之前 → 改之后，引擎实际的音素）
+- 「However, the data show otherwise; we must act.」：HH AW2 EH1 V ER0 , DH AH0 D EY1 T AH0 SH OW1 AH1 DH ER0 W AY2 Z W IY1 M AH1 S T AE1 K T .
+  「However, the data show otherwise, we must act.」：HH AW2 EH1 V ER0 , DH AH0 D EY1 T AH0 SH OW1 AH1 DH ER0 W AY2 Z , W IY1 M AH1 S T AE1 K T .
+- 「Note: this is important.」：N OW1 T DH IH1 S IH1 Z IH2 M P AO1 R T AH0 N T .
+  「Note, this is important.」：N OW1 T , DH IH1 S IH1 Z IH2 M P AO1 R T AH0 N T .
+- 「as follows:」：AE1 Z F AA1 L OW0 Z
+  「as follows.」：AE1 Z F AA1 L OW0 Z .
+- 「You can call him Dr.Banner or Hulk.」：Y UW1 K AE1 N K AO1 L HH IH1 M D R AY1 V . B AE1 N ER0 AO1 R HH AH1 L K .
+  「You can call him Doctor Banner or Hulk.」：Y UW1 K AE1 N K AO1 L HH IH1 M D AA1 K T ER0 B AE1 N ER0 AO1 R HH AH1 L K .
+- 「Mr. Smith and Mrs. Lee」：M IH1 S T ER0 . S M IH1 TH AH0 N D M IH1 S IH0 Z . L IY1
+  「Mr Smith and Mrs Lee」：M IH1 S T ER0 S M IH1 TH AH0 N D M IH1 S IH0 Z L IY1
+- 「He is No. 1 in the class.」：HH IY1 IH1 Z N OW1 . W AH1 N IH0 N DH AH0 K L AE1 S .
+  「He is number 1 in the class.」：HH IY1 IH1 Z N AH1 M B ER0 W AH1 N IH0 N DH AH0 K L AE1 S .
+- 「the U.S. government」：DH AH0 Y UW1 . EH1 S . G AH1 V ER0 N M AH0 N T
+  「the U S government」：DH AH0 Y UW1 EH1 S G AH1 V ER0 N M AH0 N T
+- 「at 9 a.m. every day」：AE1 T N AY1 N AH0 . EH1 M . EH1 V ER0 IY0 D EY1
+  「at 9 A M every day」：AE1 T N AY1 N EY1 EH1 M EH1 V ER0 IY0 D EY1
+- 「Tom vs. Jerry」：T AA1 M V ER1 S AH0 Z . JH EH1 R IY0
+  「Tom versus Jerry」：T AA1 M V ER1 S AH0 S JH EH1 R IY0
+- 「in the 1990s」：IH0 N DH AH0 N AY1 N T IY1 N N AY1 N T IY0 S EH1 K AH0 N D Z
+  「in the nineteen nineties」：IH0 N DH AH0 N AY1 N T IY1 N N AY1 N T IY0 Z
+- 「the 1900s」：DH AH0 N AY1 N T IY1 N HH AH1 N D R AH0 D S EH1 K AH0 N D Z
+  「the nineteen hundreds」：DH AH0 N AY1 N T IY1 N HH AH1 N D R AH0 D Z
+- 「the 2000s」：DH AH0 T UW1 TH AW1 Z AH0 N D S EH1 K AH0 N D Z
+  「the two thousands」：DH AH0 T UW1 TH AW1 Z AH0 N D Z
+- 「the 2010s」：DH AH0 T W EH1 N T IY0 T EH1 N S EH1 K AH0 N D Z
+  「the twenty tens」：DH AH0 T W EH1 N T IY0 T EH1 N Z
+- 「back in the ’90s」：B AE1 K IH0 N DH AH0 N AY1 N T IY0 S EH1 K AH0 N D Z
+  「back in the nineties」：B AE1 K IH0 N DH AH0 N AY1 N T IY0 Z
+- 「I’m sure it’s fine.」：IH1 M SH UH1 R IH1 T S F AY1 N .
+  「I'm sure it's fine.」：AY1 M SH UH1 R IH1 T S F AY1 N .
+- 「don’t go」：D AA1 N T G OW1
+  「don't go」：D OW1 N T G OW1
+
+## 4. 多音词：词典的第一个读音、g2p_en 的同形词（按词性）
+- lead：第一个读音 L EH1 D；其它 ['L IY1 D']；不是同形词（总是第一个读音）
+- live：第一个读音 L AY1 V；其它 ['L IH1 V']；不是同形词（总是第一个读音）
+- wind：第一个读音 W AY1 N D；其它 ['W IH1 N D']；不是同形词（总是第一个读音）
+- wound：第一个读音 W AW1 N D；其它 ['W UW1 N D']；不是同形词（总是第一个读音）
+- tear：第一个读音 T EH1 R；其它 ['T IH1 R']；不是同形词（总是第一个读音）
+- bow：第一个读音 B AW1；其它 ['B OW1']；不是同形词（总是第一个读音）
+- bass：第一个读音 B AE1 S；其它 ['B EY1 S']；不是同形词（总是第一个读音）
+- sow：第一个读音 S AW1；其它 ['S OW1']；不是同形词（总是第一个读音）
+- object：第一个读音 AA1 B JH EH0 K T；其它 ['AH0 B JH EH1 K T']；同形词 (['AA1', 'B', 'JH', 'EH0', 'K', 'T'], ['AH0', 'B', 'JH', 'EH1', 'K', 'T'], 'V')
+- rebel：第一个读音 R EH1 B AH0 L；其它 ['R IH0 B EH1 L']；同形词 (['R', 'EH1', 'B', 'AH0', 'L'], ['R', 'IH0', 'B', 'EH1', 'L'], 'V')
+- read：第一个读音 R EH1 D；其它 ['R IY1 D']；同形词 (['R', 'IY1', 'D'], ['R', 'EH1', 'D'], 'VBP')
+- lives：第一个读音 L IH1 V Z；其它 ['L AY1 V Z']；不是同形词（总是第一个读音）
+- does：第一个读音 D AH1 Z；其它 ['D IH0 Z']；不是同形词（总是第一个读音）
+- minute：第一个读音 M IH1 N AH0 T；其它 ['M AY0 N UW1 T', 'M AY0 N Y UW1 T']；不是同形词（总是第一个读音）
+- dove：第一个读音 D AH1 V；其它 ['D OW1 V']；不是同形词（总是第一个读音）
+- 「This will lead to a crisis.」：DH IH1 S W IH1 L L EH1 D T UW1 AH0 K R AY1 S AH0 S .
+- 「live本身属于是不及物动词」：L AY1 V
+- 「I live in Beijing.」：AY1 L AY1 V IH0 N B EY2 ZH IH1 NG .
+- 「The wind is strong.」：DH AH0 W AY1 N D IH1 Z S T R AO1 NG .
+- 「a tear in her eye」：AH0 T EH1 R IH0 N HH ER1 AY1
+- 「I object to this plan.」：AY1 AA1 B JH EH0 K T T UW1 DH IH1 S P L AE1 N .
+- 「an object」：AE1 N AH0 B JH EH1 K T
+- 「Please read it.」：P L IY1 Z R EH1 D IH1 T .
+- 「I have read the book.」：AY1 HH AE1 V R EH1 D DH AH0 B UH1 K .
+- 「I read books every day.」：AY1 R IY1 D B UH1 K S EH1 V ER0 IY0 D EY1 .
+- 「read」：R EH1 D
+- 「They rebel against the rules.」：DH EY1 R EH1 B AH0 L AH0 G EH1 N S T DH AH0 R UW1 L Z .
+- 「He is a rebel.」：HH IY1 IH1 Z AH0 R IH0 B EH1 L .
+- 「She lives in a small city.」：SH IY1 L IH1 V Z IH0 N AH0 S M AO1 L S IH1 T IY0 .
+- 「A good student works hard.」：EY1 G UH1 D S T UW1 D AH0 N T W ER1 K S HH AA1 R D .
+- 「a good student」：AH0 G UH1 D S T UW1 D AH0 N T
+- 「Tomorrow I'm going to McDonald's.」：T AH0 M AA1 R OW2 AY1 M G OW1 IH0 NG T UW1 M IH0 K D AA1 N AH0 L D Z .
+- 「That boy who is talking is JimWho is talking」：DH AE1 T B OY1 HH UW1 IH1 Z T AO1 K IH0 NG IH1 Z JH IH1 M HH UW1 IH1 Z T AO1 K IH0 NG

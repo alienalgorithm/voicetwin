@@ -237,6 +237,16 @@ def _per_tier(value: Any, tier: str, default: int) -> int:
     return v if v > 0 else int(default)
 
 
+def parse_for_narration(scfg: Dict[str, Any], project: Project, source: Union[str, Path]) -> List[ScriptSegment]:
+    """讲稿切成句子，和生成时完全一样（读音词典、每句最长多少、太短合并……按设置里的 synth）：
+    句子编号和结果表的「#」一样（网页点「生成」时先做英文读音预检也用它）。"""
+    return parse_script(
+        source, lexicon=project.load_lexicon(),
+        max_units_zh=int(scfg.get("max_units_zh", 50)), max_units_en=int(scfg.get("max_units_en", 45)),
+        min_units=int(scfg.get("min_units", 6)), skip_code_blocks=bool(scfg.get("skip_code_blocks", True)),
+    )
+
+
 def tier_preset(quality: str, scfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """档位的参数 = 自带的值，再盖上 config.yaml 的 synth.tiers.<档位>（写 auto / 没写的不算）。
     两边都是表的（按显卡分档的 {high, mid, low, none}、错字门槛的 {strong, weak}）只换写了的那几项：
@@ -879,6 +889,11 @@ class Narrator:
         # 参考音频的文字也算进去：老师在校对表里改了这条参考的文字以后，不能再用改之前生成的缓存
         parts: List[Any] = [CACHE_VERSION, self.backend.model_id(), seg.text, seg.lang, ref["id"], ref.get("text", ""),
                             [a["id"] for a in aux], round(speed, 3), self._tier_sig(), self.base_seed]
+        eng = self._engine_text(seg.text)
+        if eng != seg.text:
+            # 发给引擎的文字改过（英文读音预检自动改的，例如 Dr. → Doctor）：旧缓存是按原来的文字生成的，不能再用。
+            # 只有这种句子的缓存键变了，其它句子一个字节都不变
+            parts.append(f"engine_text={eng}")
         lang_eff = send_lang(seg.text, seg.lang)
         if lang_eff != seg.lang:
             # 英文单词多、以前按 en 发给引擎的中文句子（里面的汉字被丢掉了）：现在按 zh 发，旧缓存不能再用。
@@ -1050,6 +1065,9 @@ class Narrator:
         speed = self._speed_for(seg.lang)
         common = ["i1", sorted([self.backend.model_id()]), seg.text, send_lang(seg.text, seg.lang), ctx["bank_sig"],
                   ctx["prior_version"], self._arm_sig(refs, aux_by_ref, arms)]
+        eng = self._engine_text(seg.text)
+        if eng != seg.text:  # 同 _plan：只有发给引擎的文字改过的句子缓存键变了
+            common.append(f"engine_text={eng}")
         tail = [(self.min_candidates, self.max_candidates, self.plateau, self.plateau_eps), round(speed, 3),
                 self.base_seed]
         key = short_hash(*common, ctx["weights_version"], *tail, n=16)
@@ -1632,11 +1650,7 @@ class Narrator:
     def _segments(self, source: Union[str, Path, Sequence[ScriptSegment]]) -> List[ScriptSegment]:
         if isinstance(source, (list, tuple)):
             return list(source)
-        segments = parse_script(
-            source, lexicon=self.project.load_lexicon(),
-            max_units_zh=int(self.scfg.get("max_units_zh", 50)), max_units_en=int(self.scfg.get("max_units_en", 45)),
-            min_units=int(self.scfg.get("min_units", 6)), skip_code_blocks=bool(self.scfg.get("skip_code_blocks", True)),
-        )
+        segments = parse_for_narration(self.scfg, self.project, source)
         for seg in segments:
             mark = seg.extra.get("unread_mark")
             if mark:  # 写了停顿、却认不出来（例如【停顿一下】）：会被当成文字读出来，要告诉老师
@@ -1644,7 +1658,36 @@ class Narrator:
                        "（2 是停几秒，【停顿=2】也可以）；不想读出来就把它删掉")
                 self.warnings.append(msg)
                 log.warning(msg)
+        self._english_precheck(segments)
         return segments
+
+    def _engine_text(self, text: str) -> str:
+        """这句话真正发给引擎的文字（GPT-SoVITS 的英文读音会读错、能确定怎么改的写法改掉，见 gsv_english.py）。"""
+        fn = getattr(self.backend, "engine_text", None)
+        try:
+            return str(fn(text)) if callable(fn) else text
+        except Exception:  # noqa: BLE001 - 改不了就原样发
+            return text
+
+    def _english_precheck(self, segments: Sequence[ScriptSegment]) -> None:
+        """生成前的英文读音预检（只有 GPT-SoVITS 有）：可能读错的词写进提醒（网页结果区、日志），
+        自动改好的写进小结；结果也记进报告的 english_precheck。只读文字和整合包的词典，很快。"""
+        fn = getattr(self.backend, "english_precheck", None)
+        if not callable(fn):
+            return
+        try:
+            rep = fn([s.text for s in segments])
+        except Exception as exc:  # noqa: BLE001 - 预检出错不影响生成
+            log.debug(f"英文读音预检没做成：{exc}")
+            return
+        self._en_precheck = rep.to_json()
+        warn, fixed = rep.risk_line(), rep.fix_line()
+        if warn:
+            self.warnings.append(warn)
+            log.warning(warn)
+        if fixed:
+            self.notes.append(fixed)
+            log.info(fixed)
 
     def _desc(self) -> str:
         if self.quality == "identical":
@@ -2019,7 +2062,7 @@ class Narrator:
             "similarity": judge.info() if judge is not None else {"models": [], "note": HONEST_NOTE},
             "elapsed_sec": round(time.time() - t0, 1), "warnings": self.warnings, "flagged": flagged,
             "notes": notes, "variants": variants, "final": final_name, "segments": seg_report,
-            "silence_check": silence,
+            "silence_check": silence, "english_precheck": getattr(self, "_en_precheck", None),
             "tries_avg": round(float(np.mean([r.tries for r in results if not r.cached])), 2)
             if any(not r.cached for r in results) else None,
         }
@@ -2078,6 +2121,9 @@ class Narrator:
                 "pct": r.pct, "status": r.status, "hint": r.hint, "flagged": r.flagged, "tries": r.tries,
                 "met": r.met, "candidates": r.candidates, "model": (r.model or {}).get("name"),
             }
+            eng = self._engine_text(r.segment.text)
+            if eng != r.segment.text:
+                entry["engine_text"] = eng  # 真正发给引擎的文字（英文读音预检自动改过）
             if r.unchecked:
                 entry["asr_checked"] = False  # 要做识别校验、却没做成
             if r.path is not None:

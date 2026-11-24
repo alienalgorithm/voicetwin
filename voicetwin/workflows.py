@@ -1216,6 +1216,28 @@ def run_narrate(cfg: Config, voice: str, source: str, out: Optional[str] = None,
                 backend.stop()
 
 
+def english_precheck_note(cfg: Config, voice: str, source: str, backend_name: Optional[str] = None) -> Tuple[str, str]:
+    """网页点「生成」时马上显示的英文读音预检（只有 GPT-SoVITS 有；生成本身也会再查一遍，写进结果和报告）：
+    返回 (可能读错的英文词, 自动改好的)，自动改的只改发给引擎的文字。只读讲稿和整合包的英文词典，不启动引擎。
+    没有要说的、或者查不了（讲稿读不了、引擎不是 GPT-SoVITS）时是空字符串。"""
+    from voicetwin.backends.base import get_backend
+    from voicetwin.synth.engine import parse_for_narration
+
+    try:
+        project = open_project(cfg, voice, must_exist=True)
+        backend = get_backend(backend_name or cfg.get("backend"), cfg, project)
+        fn = getattr(backend, "english_precheck", None)
+        if not callable(fn) or not str(source or "").strip():
+            return "", ""
+        src_path = _script_file(str(source))
+        segments = parse_for_narration(dict(cfg.get("synth", {}) or {}), project, src_path or str(source))
+        rep = fn([s.text for s in segments])
+        return rep.risk_line(), rep.fix_line()
+    except Exception as exc:  # noqa: BLE001 - 预检出错不影响生成（生成时还会再查一遍）
+        log.debug(f"英文读音预检没做成：{exc}")
+        return "", ""
+
+
 def _script_file(source: str) -> Optional[Path]:
     """讲稿框里填的是文件路径（.txt / .docx）就返回路径，否则（是讲稿文字）返回 None。
 

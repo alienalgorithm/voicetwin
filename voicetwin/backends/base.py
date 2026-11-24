@@ -248,6 +248,10 @@ class Backend:
         self.stop()
 
     # ------------------------------------------------------------------ 合成
+    def engine_text(self, text: str) -> str:
+        """真正发给引擎的文字（引擎读某些写法会读错时在这里改；字幕、查错字的参考文字不变）。通用的引擎原样发。"""
+        return text
+
     def synthesize(self, req: SynthRequest, out_path: Path) -> Path:
         raise NotImplementedError
 

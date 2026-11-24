@@ -4137,6 +4137,11 @@ class WebUI:
         q = str(quality or "identical")  # 没选（网页刚打开还没收到显卡检查的结果）：用默认的「一模一样」
         factor = _speed_factor(speed)
         log.info(f"质量 {q}（{QUALITY_SHORT.get(q, q)}），语速系数 {factor}")
+        # 英文读音预检：生成之前就在结果区说（「一模一样」要生成很久，老师可以先停下来改讲稿）
+        risk, fixed = ("", "") if attach else wf.english_precheck_note(self.cfg, v, source,
+                                                                        str(backend or self.default_synth))
+        pre = [f"> ⚠️ {_md_text(risk)}" if risk else "", f"<small>{_md_text(fixed)}</small>" if fixed else ""]
+        pre_md = {"gen_md": "\n\n".join(x for x in pre if x)} if risk or fixed else {}
         stream = stream_task("generate", "生成讲课音频", v, _attach_missed if attach else wf.run_narrate, self.cfg, v, source,
                              out=str(out),
                              backend_name=str(backend or self.default_synth), quality=q, speed=factor,
@@ -4149,7 +4154,8 @@ class WebUI:
                 return
             if not st.get("done"):
                 yield self._o(O, gen_bar=st.get("bar", ""), gen_log=logs, gen_btn=self._busy_btn(GEN_BUSY),
-                              gen_stop=stop_once(), speed_try=_upd(interactive=False))
+                              gen_stop=stop_once(), speed_try=_upd(interactive=False), **pre_md)
+                pre_md = {}  # 只发一次：没给的输出是「不变」
                 continue
             if self._missed(attach, st):
                 yield self._o(O, gen_bar=st.get("bar", ""), gen_log=logs, gen_md=ATTACH_MISSED_MD, **idle)
