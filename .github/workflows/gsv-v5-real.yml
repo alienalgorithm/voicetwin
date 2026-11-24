@@ -41,7 +41,7 @@ jobs:
           cd /mnt/w
           curl -fL --retry 5 -o "$PKG" "https://huggingface.co/lj1995/GPT-SoVITS-windows-package/resolve/main/$PKG?download=true"
           echo "$SHA  $PKG" | sha256sum -c
-          7z x -y -o/mnt/w/g "$PKG" -xr!Lib -xr!uvr5 -xr!AP_BWE_main >/dev/null
+          7z x -y -o/mnt/w/g "$PKG" -xr!Lib -xr!uvr5 >/dev/null
           rm -f "$PKG"
           G=$(ls -d /mnt/w/g/GPT-SoVITS-*)
           ls "$G" "$G/runtime" | head -40
@@ -77,6 +77,9 @@ jobs:
           cp -r /mnt/w/vt/workspace/*/logs /tmp/logs/voicetwin 2>/dev/null || true
           find "$GSV/logs" -maxdepth 3 \( -name '*.log' -o -name '*.json' -o -name '*.yaml' \) -exec cp --parents {} /tmp/logs \; 2>/dev/null || true
           ls -R /tmp/logs | head -50
+          # 日志也提交（素材是程序合成的讲课录音，没有私人信息）：Artifacts 在这个沙盒里下载不了
+          mkdir -p "$OUT/日志" && cp -r /tmp/logs/. "$OUT/日志/" 2>/dev/null || true
+          find "$OUT/日志" -type f -size +2M -delete || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
