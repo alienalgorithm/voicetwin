@@ -1,5 +1,5 @@
 
-===== 2026-11-24 14:28:05 训练语气和节奏 =====
+===== 2026-11-24 15:42:29 训练语气和节奏 =====
 命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/s1_train.py --config_file /tmp/vt/workspace/网页实测/models/gptsovits/tmp_s1.yaml
 目录：/tmp/vt/GPT-SoVITS
 semantic_data_len: 27
