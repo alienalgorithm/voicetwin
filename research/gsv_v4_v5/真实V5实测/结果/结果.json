@@ -2,12 +2,12 @@
  "steps": {
   "合成讲课录音（espeak-ng）": {
    "ok": true,
-   "seconds": 1.8,
+   "seconds": 1.7,
    "result": "/mnt/w/vt/素材/第1课.wav"
   },
   "准备素材 + 确认训练素材": {
    "ok": true,
-   "seconds": 46.0,
+   "seconds": 35.1,
    "result": {
     "clips": null,
     "kept": null,
@@ -46,7 +46,7 @@
   },
   "环境检查": {
    "ok": true,
-   "seconds": 0.2,
+   "seconds": 1.8,
    "result": [
     {
      "item": "Python",
@@ -100,8 +100,8 @@
     },
     {
      "item": "gradio（网页界面）",
-     "status": "⚠️",
-     "detail": "未安装"
+     "status": "✅",
+     "detail": "4.44.1"
     },
     {
      "item": "noisereduce（降噪、「一模一样」「完美」档的去杂音版本，可选）",
@@ -161,25 +161,57 @@
    ]
   },
   "训练（V5：v5dev 的 LoRA + GPT）并自动挑选": {
-   "ok": false,
-   "seconds": 13.8,
-   "error": "TrainStepError: 「处理文字」这一步出错了：缺少「网页界面（gradio）」组件\ngsv_1a_text 失败（退出码 1）。详细日志：/mnt/w/vt/workspace/实测声音/logs/gsv_1a_text.log\n最后的日志：\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/prepare_datasets/1-get-text.py\", line 22, in <module>\n    from tools.my_utils import clean_path\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/tools/my_utils.py\", line 7, in <module>\n    import gradio as gr\nModuleNotFoundError: No module named 'gradio'",
-   "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 139, in step\n    got = fn()\n          ^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 184, in train\n    info = wf.run_train(cfg, voice, \"gptsovits\", select=True, progress=rec, mode=\"standard\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py\", line 898, in run_train\n    info = backend.train(progress=_sub(progress, 0.0, split) if select else progress, **opts)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3207, in train\n    feats = self._prepare_features(list_path, wav_dir, progress, n_clips=n, feat=feat, changed=state == \"fresh\",\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 2517, in _prepare_features\n    frontend, en = self._run_text(opt_dir, base, n, progress, pos, parts)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 2675, in _run_text\n    self._run_parts([self.python, \"-s\", \"GPT_SoVITS/prepare_datasets/1-get-text.py\"], env, parts, \"gsv_1a_text\",\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 2605, in _run_parts\n    run_one(0)\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 2599, in run_one\n    self.run_logged(cmd, self.root, {**env, \"i_part\": str(i), \"all_parts\": str(parts)},\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/base.py\", line 501, in run_logged\n    raise self._step_error(log_name, step_name, code, tail, log_path, oom)\nvoicetwin.backends.base.TrainStepError: 「处理文字」这一步出错了：缺少「网页界面（gradio）」组件\ngsv_1a_text 失败（退出码 1）。详细日志：/mnt/w/vt/workspace/实测声音/logs/gsv_1a_text.log\n最后的日志：\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/prepare_datasets/1-get-text.py\", line 22, in <module>\n    from tools.my_utils import clean_path\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/tools/my_utils.py\", line 7, in <module>\n    import gradio as gr\nModuleNotFoundError: No module named 'gradio'\n"
+   "ok": true,
+   "seconds": 819.9,
+   "result": {
+    "versions": [
+     "v5dev"
+    ],
+    "timing": {},
+    "sovits": [
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s96_l32.pth",
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s192_l32.pth"
+    ],
+    "gpt": [
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt",
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt"
+    ],
+    "selected": {
+     "id": "s2-g2",
+     "sovits": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s192_l32.pth",
+     "gpt": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt"
+    },
+    "params_lora": {
+     "version": "v5dev",
+     "batch_size": 1,
+     "epochs": 2,
+     "save_every": 1,
+     "rank": 32,
+     "auto": {
+      "lora_batch_size": true,
+      "lora_epochs": false,
+      "lora_save_every": true
+     },
+     "summary": "v5dev 音色（LoRA 微调，官方的练法）：每批 1 条、2 轮、每轮存一个，练完用你没参加训练的录音实测挑最像的那一轮",
+     "batch_size_used": 1
+    },
+    "results": []
+   }
   },
   "生成一段讲稿（快速档）": {
    "ok": false,
-   "seconds": 6.3,
-   "error": "RuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'matplotlib'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 09:46:51（端口 9880，模型 pretrained）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 29, in <module>\n    from AR.models.t2s_lightning_module import Text2SemanticLightningModule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/models/t2s_lightning_module.py\", line 14, in <module>\n    from AR.modules.lr_schedulers import WarmupCosineLRSchedule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/modules/lr_schedulers.py\", line 6, in <module>\n    from matplotlib import pyplot as plt\nModuleNotFoundError: No module named 'matplotlib'",
-   "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 139, in step\n    got = fn()\n          ^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 203, in narrate\n    r = wf.run_narrate(cfg, voice, NARRATE, out=str(out / \"生成_快速档.wav\"), backend_name=\"gptsovits\",\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py\", line 1213, in run_narrate\n    return narrator.narrate(src_path if is_file else source, out_path, redo=redo, subtitles=subtitles)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1905, in narrate\n    results = self.synthesize_all(segments, redo)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1684, in synthesize_all\n    self._ensure_started(min(0.06, lo) if identical else 0.0)\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1101, in _ensure_started\n    self.backend.start()  # 已经在运行的服务也要调用：它会切换到这个声音的模型\n    ^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3772, in start\n    raise RuntimeError(f\"GPT-SoVITS 推理服务启动失败（退出码 {code}）：\\n\" + report)\nRuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'matplotlib'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 09:46:51（端口 9880，模型 pretrained）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 29, in <module>\n    from AR.models.t2s_lightning_module import Text2SemanticLightningModule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/models/t2s_lightning_module.py\", line 14, in <module>\n    from AR.modules.lr_schedulers import WarmupCosineLRSchedule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/modules/lr_schedulers.py\", line 6, in <module>\n    from matplotlib import pyplot as plt\nModuleNotFoundError: No module named 'matplotlib'\n"
+   "seconds": 6.1,
+   "error": "RuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'datasets1'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 10:18:13（端口 9880，模型 s2-g2）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 39, in <module>\n    from tools.audio_sr import AP_BWE\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/tools/audio_sr.py\", line 12, in <module>\n    from datasets1.dataset import amp_pha_stft, amp_pha_istft\nModuleNotFoundError: No module named 'datasets1'",
+   "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 139, in step\n    got = fn()\n          ^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 203, in narrate\n    r = wf.run_narrate(cfg, voice, NARRATE, out=str(out / \"生成_快速档.wav\"), backend_name=\"gptsovits\",\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py\", line 1213, in run_narrate\n    return narrator.narrate(src_path if is_file else source, out_path, redo=redo, subtitles=subtitles)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1905, in narrate\n    results = self.synthesize_all(segments, redo)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1684, in synthesize_all\n    self._ensure_started(min(0.06, lo) if identical else 0.0)\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1101, in _ensure_started\n    self.backend.start()  # 已经在运行的服务也要调用：它会切换到这个声音的模型\n    ^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3777, in start\n    raise RuntimeError(f\"GPT-SoVITS 推理服务启动失败（退出码 {code}）：\\n\" + report)\nRuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'datasets1'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 10:18:13（端口 9880，模型 s2-g2）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 39, in <module>\n    from tools.audio_sr import AP_BWE\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/tools/audio_sr.py\", line 12, in <module>\n    from datasets1.dataset import amp_pha_stft, amp_pha_istft\nModuleNotFoundError: No module named 'datasets1'\n"
   },
   "同时生成好几个版本（V5）": {
    "ok": false,
    "seconds": 6.0,
-   "error": "RuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'matplotlib'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 09:46:57（端口 9880，模型 pretrained）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 29, in <module>\n    from AR.models.t2s_lightning_module import Text2SemanticLightningModule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/models/t2s_lightning_module.py\", line 14, in <module>\n    from AR.modules.lr_schedulers import WarmupCosineLRSchedule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/modules/lr_schedulers.py\", line 6, in <module>\n    from matplotlib import pyplot as plt\nModuleNotFoundError: No module named 'matplotlib'",
-   "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 139, in step\n    got = fn()\n          ^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 216, in batch_test\n    b.start()\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3772, in start\n    raise RuntimeError(f\"GPT-SoVITS 推理服务启动失败（退出码 {code}）：\\n\" + report)\nRuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'matplotlib'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 09:46:57（端口 9880，模型 pretrained）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 29, in <module>\n    from AR.models.t2s_lightning_module import Text2SemanticLightningModule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/models/t2s_lightning_module.py\", line 14, in <module>\n    from AR.modules.lr_schedulers import WarmupCosineLRSchedule\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/AR/modules/lr_schedulers.py\", line 6, in <module>\n    from matplotlib import pyplot as plt\nModuleNotFoundError: No module named 'matplotlib'\n"
+   "error": "RuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'datasets1'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 10:18:19（端口 9880，模型 s2-g2）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 39, in <module>\n    from tools.audio_sr import AP_BWE\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/tools/audio_sr.py\", line 12, in <module>\n    from datasets1.dataset import amp_pha_stft, amp_pha_istft\nModuleNotFoundError: No module named 'datasets1'",
+   "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 139, in step\n    got = fn()\n          ^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 216, in batch_test\n    b.start()\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3777, in start\n    raise RuntimeError(f\"GPT-SoVITS 推理服务启动失败（退出码 {code}）：\\n\" + report)\nRuntimeError: GPT-SoVITS 推理服务启动失败（退出码 1）：\n自动诊断：\n- 引擎报错：ModuleNotFoundError: No module named 'datasets1'\n引擎记录（gptsovits_api.log 最后一次启动的部分，重复的已合并）：\n===== 声音分身 18.6 启动推理服务 2026-11-24 10:18:19（端口 9880，模型 s2-g2）=====\nTraceback (most recent call last):\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/api_v2.py\", line 128, in <module>\n    from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/__init__.py\", line 1, in <module>\n    from . import TTS, text_segmentation_method\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_SoVITS/TTS_infer_pack/TTS.py\", line 39, in <module>\n    from tools.audio_sr import AP_BWE\n  File \"/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/tools/audio_sr.py\", line 12, in <module>\n    from datasets1.dataset import amp_pha_stft, amp_pha_istft\nModuleNotFoundError: No module named 'datasets1'\n"
   }
  },
- "started": "2026-11-24 09:45:48",
+ "started": "2026-11-24 10:03:54",
  "env": {
   "python": "3.12.16",
   "torch": "2.7.1+cpu",
@@ -194,305 +226,309 @@
  },
  "progress_messages": [
   [
-   0.0489,
-   "处理文字 5/63",
-   "09:46:44"
-  ],
-  [
-   0.0499,
-   "处理文字 6/63",
-   "09:46:44"
-  ],
-  [
-   0.0508,
-   "处理文字 7/63",
-   "09:46:44"
-  ],
-  [
-   0.0518,
-   "处理文字 8/63",
-   "09:46:44"
-  ],
-  [
-   0.0528,
-   "处理文字 9/63",
-   "09:46:44"
-  ],
-  [
-   0.0538,
-   "处理文字 10/63",
-   "09:46:44"
-  ],
-  [
-   0.0548,
-   "处理文字 11/63",
-   "09:46:44"
-  ],
-  [
-   0.0557,
-   "处理文字 12/63",
-   "09:46:44"
-  ],
-  [
-   0.0567,
-   "处理文字 13/63",
-   "09:46:44"
-  ],
-  [
-   0.0577,
-   "处理文字 14/63",
-   "09:46:44"
-  ],
-  [
-   0.0587,
-   "处理文字 15/63",
-   "09:46:44"
-  ],
-  [
-   0.0596,
-   "处理文字 16/63",
-   "09:46:44"
-  ],
-  [
-   0.0606,
-   "处理文字 17/63",
-   "09:46:44"
-  ],
-  [
-   0.0616,
-   "处理文字 18/63",
-   "09:46:47"
-  ],
-  [
-   0.0626,
-   "处理文字 19/63",
-   "09:46:47"
-  ],
-  [
-   0.0636,
-   "处理文字 20/63",
-   "09:46:47"
-  ],
-  [
-   0.0645,
-   "处理文字 21/63",
-   "09:46:47"
-  ],
-  [
-   0.0655,
-   "处理文字 22/63",
-   "09:46:47"
-  ],
-  [
-   0.0665,
-   "处理文字 23/63",
-   "09:46:47"
-  ],
-  [
-   0.0675,
-   "处理文字 24/63",
-   "09:46:47"
-  ],
-  [
-   0.0684,
-   "处理文字 25/63",
-   "09:46:47"
-  ],
-  [
-   0.0694,
-   "处理文字 26/63",
-   "09:46:47"
-  ],
-  [
-   0.0704,
-   "处理文字 27/63",
-   "09:46:47"
-  ],
-  [
-   0.0714,
-   "处理文字 28/63",
-   "09:46:47"
-  ],
-  [
-   0.0724,
-   "处理文字 29/63",
-   "09:46:47"
-  ],
-  [
-   0.0733,
-   "处理文字 30/63",
-   "09:46:47"
-  ],
-  [
-   0.0743,
-   "处理文字 31/63",
-   "09:46:47"
-  ],
-  [
-   0.0753,
-   "处理文字 32/63",
-   "09:46:47"
-  ],
-  [
-   0.0763,
-   "处理文字 33/63",
-   "09:46:47"
-  ],
-  [
-   0.0772,
-   "处理文字 34/63",
-   "09:46:47"
-  ],
-  [
-   0.0782,
-   "处理文字 35/63",
-   "09:46:47"
-  ],
-  [
-   0.0792,
-   "处理文字 36/63",
-   "09:46:47"
-  ],
-  [
-   0.0802,
-   "处理文字 37/63",
-   "09:46:47"
-  ],
-  [
-   0.0812,
-   "处理文字 38/63",
-   "09:46:47"
-  ],
-  [
-   0.0821,
-   "处理文字 39/63",
-   "09:46:47"
-  ],
-  [
-   0.0831,
-   "处理文字 40/63",
-   "09:46:47"
-  ],
-  [
-   0.0841,
-   "处理文字 41/63",
-   "09:46:47"
-  ],
-  [
-   0.0851,
-   "处理文字 42/63",
-   "09:46:47"
-  ],
-  [
-   0.086,
-   "处理文字 43/63",
-   "09:46:47"
-  ],
-  [
-   0.087,
-   "处理文字 44/63",
-   "09:46:47"
-  ],
-  [
-   0.088,
-   "处理文字 45/63",
-   "09:46:47"
-  ],
-  [
-   0.089,
-   "处理文字 46/63",
-   "09:46:47"
-  ],
-  [
-   0.09,
-   "处理文字 47/63",
-   "09:46:47"
-  ],
-  [
    0.0909,
    "处理文字 48/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0919,
    "处理文字 49/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0929,
    "处理文字 50/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0939,
    "处理文字 51/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0948,
    "处理文字 52/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0958,
    "处理文字 53/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0968,
    "处理文字 54/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0978,
    "处理文字 55/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0988,
    "处理文字 56/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.0997,
    "处理文字 57/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.1007,
    "处理文字 58/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.1017,
    "处理文字 59/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.1027,
    "处理文字 60/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.1036,
    "处理文字 61/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.1046,
    "处理文字 62/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
    0.1056,
    "处理文字 63/63",
-   "09:46:47"
+   "10:04:52"
   ],
   [
-   0.044,
-   "中英文一起训练的新方法这次没成功（原因：只处理好 16/63 句（不到 98%）），已改用官方的方法（英文部分不参加训练），训练照常进行。",
-   "09:46:48"
+   0.1056,
+   "提取声音特征（比较慢，素材多时要十几分钟）",
+   "10:04:53"
+  ],
+  [
+   0.1056,
+   "提取声音特征 0/63",
+   "10:04:55"
+  ],
+  [
+   0.109,
+   "提取声音特征 4/63",
+   "10:05:01"
+  ],
+  [
+   0.1115,
+   "提取声音特征 7/63",
+   "10:05:03"
+  ],
+  [
+   0.1148,
+   "提取声音特征 11/63",
+   "10:05:05"
+  ],
+  [
+   0.1165,
+   "提取声音特征 13/63",
+   "10:05:07"
+  ],
+  [
+   0.1207,
+   "提取声音特征 18/63",
+   "10:05:09"
+  ],
+  [
+   0.124,
+   "提取声音特征 22/63",
+   "10:05:11"
+  ],
+  [
+   0.1274,
+   "提取声音特征 26/63",
+   "10:05:13"
+  ],
+  [
+   0.1299,
+   "提取声音特征 29/63",
+   "10:05:15"
+  ],
+  [
+   0.1324,
+   "提取声音特征 32/63",
+   "10:05:17"
+  ],
+  [
+   0.1349,
+   "提取声音特征 35/63",
+   "10:05:19"
+  ],
+  [
+   0.14,
+   "提取声音特征 41/63",
+   "10:05:21"
+  ],
+  [
+   0.1425,
+   "提取声音特征 44/63",
+   "10:05:23"
+  ],
+  [
+   0.145,
+   "提取声音特征 47/63",
+   "10:05:25"
+  ],
+  [
+   0.1475,
+   "提取声音特征 50/63",
+   "10:05:27"
+  ],
+  [
+   0.1509,
+   "提取声音特征 54/63",
+   "10:05:29"
+  ],
+  [
+   0.1534,
+   "提取声音特征 57/63",
+   "10:05:31"
+  ],
+  [
+   0.1576,
+   "提取声音特征 62/63",
+   "10:05:33"
+  ],
+  [
+   0.176,
+   "提取语义（大约 1~3 分钟）",
+   "10:05:34"
+  ],
+  [
+   0.22,
+   "训练音色（v5dev，LoRA 微调），共 2 轮……",
+   "10:05:41"
+  ],
+  [
+   0.22,
+   "训练音色：第 1/2 轮（0%）",
+   "10:05:54"
+  ],
+  [
+   0.2523,
+   "训练音色：第 1/2 轮（21%）",
+   "10:06:43"
+  ],
+  [
+   0.2847,
+   "训练音色：第 1/2 轮（42%）",
+   "10:07:33"
+  ],
+  [
+   0.3155,
+   "训练音色：第 1/2 轮（62%）",
+   "10:08:25"
+  ],
+  [
+   0.3478,
+   "训练音色：第 1/2 轮（83%）",
+   "10:09:14"
+  ],
+  [
+   0.374,
+   "训练音色：第 1/2 轮完成",
+   "10:09:51"
+  ],
+  [
+   0.3802,
+   "训练音色：第 2/2 轮（4%）",
+   "10:10:04"
+  ],
+  [
+   0.4125,
+   "训练音色：第 2/2 轮（25%）",
+   "10:10:54"
+  ],
+  [
+   0.4448,
+   "训练音色：第 2/2 轮（46%）",
+   "10:11:44"
+  ],
+  [
+   0.4772,
+   "训练音色：第 2/2 轮（67%）",
+   "10:12:35"
+  ],
+  [
+   0.5095,
+   "训练音色：第 2/2 轮（88%）",
+   "10:13:26"
+  ],
+  [
+   0.528,
+   "训练音色：第 2/2 轮完成",
+   "10:14:04"
+  ],
+  [
+   0.528,
+   "训练语气和节奏（GPT），共 2 轮……",
+   "10:14:05"
+  ],
+  [
+   0.836,
+   "保存模型……",
+   "10:16:40"
+  ],
+  [
+   0.836,
+   "实际参加训练：音色 48 条、语气 16 条（一共 63 条）。",
+   "10:16:40"
+  ],
+  [
+   0.836,
+   "有 47 条没参加训练（原因：文字处理的结果里没有这条 47 条），一般是文字和声音对不上或者太短；不影响使用，训练程序没有记下是哪几条。",
+   "10:16:40"
+  ],
+  [
+   0.836,
+   "用时（实测）：处理文字和提取特征 1.1 分钟、语气每轮 78 秒。",
+   "10:16:40"
+  ],
+  [
+   0.88,
+   "GPT-SoVITS 训练完成",
+   "10:16:40"
+  ],
+  [
+   0.88,
+   "训练完成，开始自动挑选最像你的模型",
+   "10:16:40"
+  ],
+  [
+   0.88,
+   "挑选方式：标准——从早到晚均匀挑几个版本比（大约 5~15 分钟，估计）",
+   "10:16:40"
+  ],
+  [
+   0.88,
+   "加载声纹和识别模型（第一次使用会先下载）……",
+   "10:16:40"
+  ],
+  [
+   0.886,
+   "启动合成引擎（要先加载模型）……",
+   "10:18:07"
+  ],
+  [
+   1.0,
+   "训练完成",
+   "10:18:13"
   ]
  ],
- "finished": "2026-11-24 09:47:03"
+ "detected": {
+  "vt_419cd8_e1_s96_l32.pth": "v5dev",
+  "vt_419cd8_e2_s192_l32.pth": "v5dev"
+ },
+ "finished": "2026-11-24 10:18:25"
 }
