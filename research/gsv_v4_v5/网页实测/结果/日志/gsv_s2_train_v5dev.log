@@ -1,0 +1,43 @@
+
+===== 2026-11-24 11:53:37 训练音色（v5dev） =====
+命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/s2_train_v3_lora.py --config /tmp/vt/workspace/网页实测/models/gptsovits/tmp_s2.json
+目录：/tmp/vt/GPT-SoVITS
+phoneme_data_len: 27
+wav_data_len: 81
+skipped_phone:  0 , skipped_dur:  0
+total left:  81
+INFO:vt_f3c23e:{'train': {'fp16_run': True, 'batch_size': 1, 'epochs': 8, 'text_low_lr_rate': 0.4, 'pretrained_s2G': '/tmp/vt/GPT-SoVITS/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth', 'pretrained_s2D': '', 'if_save_latest': True, 'if_save_every_weights': True, 'save_every_epoch': 1, 'gpu_numbers': '0', 'grad_ckpt': False, 'lora_rank': 32, 'log_interval': 20}, 'model': {'version': 'v5dev'}, 'data': {'exp_dir': '/tmp/vt/GPT-SoVITS/logs/vt_f3c23e'}, 's2_ckpt_dir': '/tmp/vt/GPT-SoVITS/logs/vt_f3c23e', 'save_weight_dir': 'SoVITS_weights_v5dev', 'name': 'vt_f3c23e', 'version': 'v5dev'}
+start training from epoch 1
+INFO:vt_f3c23e:Train Epoch: 1 [0%]
+INFO:vt_f3c23e:Train Epoch: 1 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e1:Success.
+INFO:vt_f3c23e:====> Epoch: 1
+INFO:vt_f3c23e:Train Epoch: 2 [0%]
+INFO:vt_f3c23e:Train Epoch: 2 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e2:Success.
+INFO:vt_f3c23e:====> Epoch: 2
+INFO:vt_f3c23e:Train Epoch: 3 [0%]
+INFO:vt_f3c23e:Train Epoch: 3 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e3:Success.
+INFO:vt_f3c23e:====> Epoch: 3
+INFO:vt_f3c23e:Train Epoch: 4 [0%]
+INFO:vt_f3c23e:Train Epoch: 4 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e4:Success.
+INFO:vt_f3c23e:====> Epoch: 4
+INFO:vt_f3c23e:Train Epoch: 5 [0%]
+INFO:vt_f3c23e:Train Epoch: 5 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e5:Success.
+INFO:vt_f3c23e:====> Epoch: 5
+INFO:vt_f3c23e:Train Epoch: 6 [0%]
+INFO:vt_f3c23e:Train Epoch: 6 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e6:Success.
+INFO:vt_f3c23e:====> Epoch: 6
+INFO:vt_f3c23e:Train Epoch: 7 [0%]
+INFO:vt_f3c23e:Train Epoch: 7 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e7:Success.
+INFO:vt_f3c23e:====> Epoch: 7
+INFO:vt_f3c23e:Train Epoch: 8 [0%]
+INFO:vt_f3c23e:Train Epoch: 8 [50%]
+INFO:vt_f3c23e:saving ckpt vt_f3c23e_e8:Success.
+INFO:vt_f3c23e:====> Epoch: 8
+training done

@@ -1,0 +1,39 @@
+
+===== 2026-11-24 11:53:36 处理文字 =====
+命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s /home/runner/work/voicetwin/voicetwin/voicetwin/backends/gsv_scripts/get_text_mixed.py
+目录：/tmp/vt/GPT-SoVITS
+Traceback (most recent call last):
+  File "/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gsv_scripts/get_text_mixed.py", line 82, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'
+
+===== 2026-11-24 11:53:37 处理文字 =====
+命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/prepare_datasets/1-get-text.py
+目录：/tmp/vt/GPT-SoVITS
+第1课_be3997_0001.wav
+第1课_be3997_0002.wav
+第1课_be3997_0003.wav
+第1课_be3997_0005.wav
+第1课_be3997_0006.wav
+第1课_be3997_0007.wav
+第1课_be3997_0008.wav
+第1课_be3997_0009.wav
+第1课_be3997_0010.wav
+第1课_be3997_0011.wav
+第1课_be3997_0012.wav
+第1课_be3997_0013.wav
+第1课_be3997_0014.wav
+第1课_be3997_0015.wav
+第1课_be3997_0016.wav
+第1课_be3997_0017.wav
+第1课_be3997_0018.wav
+第1课_be3997_0019.wav
+第1课_be3997_0020.wav
+第1课_be3997_0021.wav
+第1课_be3997_0022.wav
+第1课_be3997_0023.wav
+第1课_be3997_0024.wav
+第1课_be3997_0025.wav
+第1课_be3997_0026.wav
+第1课_be3997_0027.wav
+第1课_be3997_0029.wav
