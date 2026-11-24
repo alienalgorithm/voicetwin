@@ -3,7 +3,8 @@
 
   1. 准备素材：切成一句一句，faster-whisper large-v3（通用，中英文都行）识别；
   2. 自动查错字（proofcheck: on）：FunASR paraformer（中文专用）把每一句再听一遍，两边对不上的地方标红；
-  3. 一键全部文字校正：按老师的母本标准库（程序自带）改确定的错字、采用有把握的建议。
+  3. 第三个引擎 SenseVoiceSmall（中英文混说）每一句再听一遍；
+  4. 一键全部文字校正：按老师的母本标准库（程序自带）改确定的错字、采用有把握的建议。
 
 用法：python transcribe.py --list 要转录.txt --work <临时目录> --out <结果目录>
 """
@@ -79,6 +80,24 @@ def main() -> int:
             for k, v in items.items():
                 fun.setdefault(k, {"engine": name[11:-5], "text": (v or {}).get("text", "")})
     recs = project.load_manifest()   # 查错字以后的（带 suspect）
+    # 第三个引擎：SenseVoiceSmall（阿里，中英文混说都能认），每一句都听一遍；三个引擎都一样的句子基本不会错，
+    # 不一样的地方再逐句核对
+    t = time.time()
+    sv = {}
+    try:
+        from funasr import AutoModel
+        from funasr.utils.postprocess_utils import rich_transcription_postprocess
+
+        m = AutoModel(model="iic/SenseVoiceSmall", device="cpu", disable_update=True)
+        for i, r in enumerate(recs):
+            res = m.generate(input=str(project.abspath(r["path"])), language="auto", use_itn=True)
+            sv[r["id"]] = rich_transcription_postprocess(res[0]["text"]) if res else ""
+            if i % 20 == 0:
+                say(i / max(1, len(recs)), f"SenseVoice {i}/{len(recs)}")
+    except Exception as exc:  # noqa: BLE001
+        info["sensevoice_error"] = f"{type(exc).__name__}: {exc}"
+        say(1, f"SenseVoice 没做成：{exc}")
+    info["timing_s"]["SenseVoice 再听一遍"] = round(time.time() - t)
     t = time.time()
     fix = wf.run_transcript_fix(cfg, voice, adopt_all=True)
     info["timing_s"]["一键全部文字校正"] = round(time.time() - t)
@@ -95,6 +114,7 @@ def main() -> int:
             "语言": r.get("lang"), "用来训练": int(bool(r.get("keep", True))), "不用的原因": r.get("drop_reason") or "",
             "whisper识别": asr_text.get(cid, ""),
             "第二个引擎": (fun.get(cid) or {}).get("text", ""), "第二个引擎是": (fun.get(cid) or {}).get("engine", ""),
+            "SenseVoice": sv.get(cid, ""),
             "查错字标红的原因": "；".join(sus.get("reasons") or []), "查错字的建议": sus.get("alt") or "",
             "一键校正以后": d.get("text", asr_text.get(cid, "")),
         })
