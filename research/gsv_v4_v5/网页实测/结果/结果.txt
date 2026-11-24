@@ -1,0 +1,7 @@
+FAIL 网页操作没有出错 — TimeoutError: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "http://127.0.0.1:7860/", waiting until "networkidle"
+
+PASS 网页脚本没有报错（pageerror）
+INFO 浏览器控制台的报错（只记下来）：Element is not in the DOM | Element is not in the DOM | Element is not in the DOM | Element is not in the DOM
+1 通过，1 没通过
