@@ -94,7 +94,12 @@ with sync_playwright() as p:
         # GitHub 的机器没有显卡：顶上「❌ 显卡没有正常工作」的提示是对的，不算训练出错
         bad = [x for x in re.findall(r"❌[^\n]*", text) if "显卡没有正常工作" not in x]
         ok("训练没有报错", not bad, bad[:3])
-        m = re.search(r"模型：[^\n]*", text)
+        # 右上角的型号在训练完以后几秒钟才刷新（截图里是对的）：最多等 60 秒
+        for _ in range(30):
+            m = re.search(r"模型：[^\n]*", body(pg))
+            if m and "v5dev" in m.group(0):
+                break
+            pg.wait_for_timeout(2000)
         ok("训练好以后右上角的模型型号是 v5dev", m and "v5dev" in m.group(0), m.group(0) if m else "没找到")
         shot(pg, "4_训练完成")
 
