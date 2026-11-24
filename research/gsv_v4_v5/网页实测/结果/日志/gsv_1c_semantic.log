@@ -1,4 +1,4 @@
 
-===== 2026-11-24 12:59:05 提取语义 =====
+===== 2026-11-24 14:28:05 提取语义 =====
 命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/prepare_datasets/3-get-semantic.py
 目录：/tmp/vt/GPT-SoVITS

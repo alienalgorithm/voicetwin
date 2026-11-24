@@ -1,14 +1,6 @@
 
-===== 2026-11-24 12:59:05 处理文字 =====
+===== 2026-11-24 14:28:04 处理文字 =====
 命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s /home/runner/work/voicetwin/voicetwin/voicetwin/backends/gsv_scripts/get_text_mixed.py
-目录：/tmp/vt/GPT-SoVITS
-Traceback (most recent call last):
-  File "/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gsv_scripts/get_text_mixed.py", line 82, in <module>
-    import torch
-ModuleNotFoundError: No module named 'torch'
-
-===== 2026-11-24 12:59:05 处理文字 =====
-命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/prepare_datasets/1-get-text.py
 目录：/tmp/vt/GPT-SoVITS
 第1课_be3997_0001.wav
 第1课_be3997_0002.wav
@@ -37,3 +29,5 @@ ModuleNotFoundError: No module named 'torch'
 第1课_be3997_0026.wav
 第1课_be3997_0027.wav
 第1课_be3997_0029.wav
+VT_EN_PHONES 4
+VT_EN_LINES 2
