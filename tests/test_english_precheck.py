@@ -223,11 +223,12 @@ def test_teacher_corpus_measured_findings():
     got = {(it.kind, it.word): it.count for it in rep.items}
     assert got == {("caps", "AND"): 10, ("caps", "VR"): 5, ("caps", "AI"): 2, ("caps", "PPT"): 2,
                    ("split", "McDonald's"): 2, ("split", "JimWho"): 1, ("fixed_reading", "live"): 2}
-    assert [(it.kind, it.word, it.count) for it in rep.fixes] == [("abbr", "Dr.", 1)]
+    # 英文后面的「，」「、」→「,」28 处（11-24 整合包实测这些全被引擎删掉），Dr. → Doctor 1 处
+    assert [(it.kind, it.word, it.count) for it in rep.fixes] == [("comma", "", 28), ("abbr", "Dr.", 1)]
     banner = next(t for t in texts if "Dr.Banner" in t)
     assert "Doctor Banner" in G.engine_text(banner) and "Dr" not in G.engine_text(banner)
-    # 发给引擎的文字只有这一句变了（其它 1208 句一个字都不改，旧缓存照常能用）
-    assert sum(G.engine_text(t) != t for t in texts) == 1
+    # 发给引擎的文字变了的句子：Dr.Banner 那一句 + 英文后面有「，」「、」的 26 句（一共 27 句；别的句子一个字都不改，旧缓存照常能用）
+    assert sum(G.engine_text(t) != t for t in texts) == 27
     train = G.precheck(texts, auto_fix=False).training_line()
     assert "AND（10 处：" in train and "Dr.（1 处：会读成 drive）" in train
 

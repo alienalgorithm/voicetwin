@@ -15,6 +15,9 @@ on:
       - ".github/workflows/v5-text-check.yml"
       - "research/V5极致/文字处理实测/run_text_check.py"
       - "voicetwin/data/lexicon/core_corpus.tsv"
+      - "voicetwin/backends/gsv_english.py"
+      - "voicetwin/backends/gsv_mixed_text.py"
+      - "voicetwin/backends/gsv_scripts/get_text_mixed.py"
 
 permissions:
   contents: write

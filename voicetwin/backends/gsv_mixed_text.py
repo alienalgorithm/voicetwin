@@ -89,3 +89,17 @@ def has_cjk(text: str) -> bool:
 
 def has_latin(text: str) -> bool:
     return bool(LATIN_RE.search(text or ""))
+
+#: 紧跟在英文后面的全角「，」和「、」：V5 的文字处理把它丢掉，停顿就没了，「、」连着的英文词也会丢
+#: （11-24 用整合包真的文字处理实测，research/V5极致/文字处理实测/结果/结果.md 第 5 节：英文后面的「，」25 处全丢、
+#: 「、」3 处全丢，「when who、what」里的 who、what 训练和生成都丢了；同样位置的半角「,」159 处全留下）。
+#: 换成半角「,」（后面紧跟英文字母时补一个空格）。训练（get_text_mixed.py）和生成（gsv_english.engine_text）用同一个规则。
+_EN_FULL_COMMA = re.compile(r"(?<=[A-Za-z])[ \t]*[，、]")
+
+
+def english_commas(text: str) -> str:
+    """英文后面的「，」「、」→「,」；别的地方一个字都不动。"""
+    def one(m: "re.Match[str]") -> str:
+        nxt = m.string[m.end():m.end() + 1]
+        return ", " if re.match(r"[A-Za-z]", nxt) else ","
+    return _EN_FULL_COMMA.sub(one, text or "")

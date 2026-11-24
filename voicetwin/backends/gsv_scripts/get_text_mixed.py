@@ -150,6 +150,8 @@ for line in lines[int(i_part)::int(all_parts)]:
     print(name, flush=True)
     try:
         text = re.sub(" {2,}", " ", text)
+        if hasattr(mixed, "english_commas"):   # 英文后面的「，」「、」→「,」（不然 V5 把它丢掉，见 gsv_mixed_text.english_commas）
+            text = mixed.english_commas(text)
         if lang == "zh" or (lang == "en" and mixed.has_cjk(text)):
             results = []
             for seg, seg_lang in mixed.merge_segments(LangSegmenter.getTexts(text)):

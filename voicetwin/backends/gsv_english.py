@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Sequence, Tuple
+from voicetwin.backends.gsv_mixed_text import english_commas
 
 # ============================================================================ 只改发给引擎的文字
 #: 不是英文字母（判断「英文词的边界」用；不能用 \b：汉字也算 \w，「是Dr.」里 D 前面没有 \b）
@@ -116,6 +117,12 @@ def rewrite(text: str) -> Tuple[str, List[Fix]]:
     if not text or not re.search(r"[A-Za-z]", text):
         return text, fixes
     t = _fix_punct(text, fixes)
+    # 英文后面的「，」「、」→「,」（训练时 get_text_mixed.py 用同一个规则，见 gsv_mixed_text.english_commas）
+    commas = english_commas(t)
+    if commas != t:
+        for ch in re.findall(r"(?<=[A-Za-z])[ \t]*([，、])", t):
+            fixes.append(Fix("comma", ch, ","))
+        t = commas
     t = _sub(_DR_RE, "Doctor ", t, "abbr", fixes)
     t = _sub(_MR_RE, r"\1 ", t, "abbr", fixes)
     t = _sub(_NO_RE, "number ", t, "abbr", fixes)
@@ -326,14 +333,16 @@ def find(text: str, dictionary: Optional[EnglishDict] = None) -> List[Finding]:
 
 # ============================================================================ 整篇的结果、给老师看的话
 _FIX_LABEL = {"punct": "英文里的分号、冒号改成逗号（句子最后的冒号改成句号；不改的话引擎会把它们删掉，该停的地方不停）",
-              "apostrophe": "英文词中间的弯引号 ’ 改成 '（不改的话会被删掉，I’m 会读成 Im）"}
+              "apostrophe": "英文词中间的弯引号 ’ 改成 '（不改的话会被删掉，I’m 会读成 Im）",
+              "comma": "英文后面的「，」「、」改成「,」（不改的话引擎会把它们删掉，该停的地方不停，"
+                       "「when who、what」这样用顿号连着的英文词也会丢）"}
 #: 训练时（不自动改）带点的缩写要说的话
 _ABBR_TRAIN = {"Dr": "会读成 drive", "Mr": "点会变成句号，中间停一下", "Mrs": "点会变成句号，中间停一下",
                "Ms": "点会变成句号，中间停一下", "No": "会读成 no 并停一下", "vs": "点会变成句号，中间停一下"}
 #: 最多列几个词（网页上一条提醒不能太长）
 MAX_ITEMS = 6
 #: 列出来的先后：一定会读错的在前（全大写的单词、带点的缩写、标点……），引擎自己猜的、多音词在后；同一种按出现次数
-_ORDER = ("caps", "abbr", "punct", "apostrophe", "num_s", "letter_a", "swapped", "fixed_reading", "read", "split",
+_ORDER = ("caps", "abbr", "punct", "comma", "apostrophe", "num_s", "letter_a", "swapped", "fixed_reading", "read", "split",
           "short", "guess", "street")
 
 
@@ -454,6 +463,8 @@ def precheck(texts: Sequence[str], dictionary: Optional[EnglishDict] = None, aut
         text = str(text or "")
         new, done = rewrite(text)
         for fx in done:
+            if fx.kind == "comma" and not auto_fix:
+                continue   # 训练时 get_text_mixed.py 自己就改（同一个规则），不用提醒
             if not auto_fix:
                 _add(book, items, *_train_item(fx), n)
             elif fx.kind in _FIX_LABEL:
