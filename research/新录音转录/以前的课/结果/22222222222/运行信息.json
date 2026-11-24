@@ -1,0 +1,101 @@
+{
+ "started": "2026-11-24 12:56:27",
+ "files": [
+  {
+   "name": "22222222222.wav",
+   "bytes": 119513166,
+   "sha256": "84cbcab9ab068bc060ee59522cf1b8dd5134b2e8a6450fd484d54adec0cfe0e5"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 1730,
+  "SenseVoice 再听一遍": 115,
+  "一键全部文字校正": 1
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 86,
+  "clips_kept": 86,
+  "minutes_kept": 10.4,
+  "val_clips": 10,
+  "references": [
+   {
+    "no": 1,
+    "id": "22222222222_fedcba_0018",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "所以说，如果我们发现一个句子里面没有引导词的话，那说明这个句子它肯定不是一个从句，必然是一个主句。"
+   },
+   {
+    "no": 2,
+    "id": "22222222222_fedcba_0065",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "比如说这个句子I would like to study English where it's quiet就是由主句I would like to study English和从句where it's quiet的构成。"
+   },
+   {
+    "no": 3,
+    "id": "22222222222_fedcba_0019",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "既然我们已经了解了从具最主要的特点，那接下来我们就了解一下从具的种类和它们的主要作用。"
+   },
+   {
+    "no": 4,
+    "id": "22222222222_fedcba_0017",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "从句最为明显的特点永远都是句子的最前面有一个引导词来引导这个句子。"
+   },
+   {
+    "no": 5,
+    "id": "22222222222_fedcba_0031",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "具体文物馆名词用从句叫什么，取决于这个从句所做的句子成分。"
+   }
+  ],
+  "warnings": [
+   "素材里有 24 句夹着英文（共 151 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 49 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 26.3,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 86,
+  "flagged": 49,
+  "fixed_rows": 48,
+  "fixes": 97,
+  "found": 0,
+  "aligned": 86,
+  "cleared": 0,
+  "kept_auto": 1,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 1,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 85,
+  "mother_fixes": 97,
+  "truncated": false,
+  "seconds": 1.3
+ },
+ "finished": "2026-11-24 13:27:13",
+ "counts": {
+  "句子": 86,
+  "用来训练": 86,
+  "第二个引擎听过": 86,
+  "查错字标红": 49,
+  "一键校正改过": 48
+ }
+}

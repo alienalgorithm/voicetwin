@@ -1,0 +1,40 @@
+2026-11-24 12:59:12,169 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 12:59:12,169 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：level 2.wav（189 MB）
+2026-11-24 12:59:12,822 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 12:59:14,739 | INFO | voicetwin.enhance |   估计信噪比 23.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:59:25,377 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 12:59:26,650 | INFO | voicetwin.prepare |   切出 142 段
+2026-11-24 12:59:26,658 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:59:26,712 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 12:59:50,740 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 142 段）
+2026-11-24 13:00:09,210 | INFO | voicetwin.prepare | 识别 1/142：关于定语重句的引导词可以分为两大类，关系
+2026-11-24 13:05:53,722 | INFO | voicetwin.prepare | 识别 21/142：也就是说home这个关系代词只能在定语丛
+2026-11-24 13:11:49,720 | INFO | voicetwin.prepare | 识别 41/142：那问题来了，我们需要用什么来补充这个句子
+2026-11-24 13:17:38,054 | INFO | voicetwin.prepare | 识别 61/142：因为户和户母这两个关系代词的属性都是定语
+2026-11-24 13:23:27,368 | INFO | voicetwin.prepare | 识别 81/142：既然关系代词户和户母都可以在定语从语中去
+2026-11-24 13:29:22,446 | INFO | voicetwin.prepare | 识别 101/142：如果我们再重新观察一下这个定语从句，以及
+2026-11-24 13:35:27,852 | INFO | voicetwin.prepare | 识别 121/142：这里给大家提供了几个借词和关系代词一起被
+2026-11-24 13:41:24,007 | INFO | voicetwin.prepare | 识别 141/142：好，以上这些就是借词的主要作用和性质。
+2026-11-24 13:41:39,514 | INFO | voicetwin.prepare | 识别 142/142：接下来，我们学习一下可以代指物的关系代词
+2026-11-24 13:41:39,520 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 142 段）……
+2026-11-24 13:41:40,349 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 13:41:40,811 | INFO | voicetwin.prepare | 计算声纹 1/142
+2026-11-24 13:41:44,648 | INFO | voicetwin.prepare | 计算声纹 51/142
+2026-11-24 13:41:48,591 | INFO | voicetwin.prepare | 计算声纹 101/142
+2026-11-24 13:41:51,850 | INFO | voicetwin.prepare | 计算声纹 142/142
+2026-11-24 13:41:51,870 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 13:41:51,947 | INFO | voicetwin.references |   主参考（zh）：通过这种方式，我们就可以得到定语从句的原型，以此来解决我们对定语从句所有的不解和困惑。（6.84 秒）
+2026-11-24 13:41:51,951 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 13:41:51,973 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 13:41:56,204 | INFO | voicetwin.profile |   中文语速：6.02 音节/秒（不含停顿）
+2026-11-24 13:41:56,204 | INFO | voicetwin.profile |   中文音高：106 Hz，起伏 4.3 半音
+2026-11-24 13:41:56,204 | INFO | voicetwin.profile |   停顿习惯：逗号 0.24s / 句号 0.32s / 段落 0.57s
+2026-11-24 13:42:02,467 | INFO | voicetwin.workflow | 查找可能的错字（用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红）……
+2026-11-24 13:42:06,241 | INFO | voicetwin.proofcheck | 查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……
+2026-11-24 13:43:54,263 | INFO | voicetwin.proofcheck | 查错字：已加载 FunASR（cpu）paraformer-zh
+2026-11-24 13:45:13,500 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 142 条，母本里找到了差不多的句子 136 条（母本优先）；直接改好 0 处（0 条，存成没保存的修改，其中按母本 0 处），另外 94 条标红给了建议；1 条原来的标红被母本证明没错、已去掉，保留自动检查标红 4 条；用时 1.7 秒。
+2026-11-24 13:45:13,531 | INFO | voicetwin.proofcheck | 查错字完成：检查了 142 条，其中 98 条可能有错。用 FunASR（阿里的中文识别模型）把 142 条再听了一遍，做了对比。用时 191.1 秒。
+2026-11-24 13:45:13,533 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 13:47:52,690 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 142 条，母本里找到了差不多的句子 136 条（母本优先）；直接改好 224 处（94 条，存成没保存的修改，其中按母本 226 处），另外 0 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 4 条；用时 1.5 秒。
+2026-11-24 13:47:52,702 | INFO | voicetwin.workflow | 把有把握的修改建议一次全部采用……
+2026-11-24 13:47:52,757 | INFO | voicetwin.workflow | 校正完了：一共改了 224 处

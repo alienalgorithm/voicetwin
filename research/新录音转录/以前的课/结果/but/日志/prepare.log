@@ -1,0 +1,31 @@
+2026-11-24 12:59:38,943 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 12:59:38,943 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：but.wav（19 MB）
+2026-11-24 12:59:39,195 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 12:59:39,435 | INFO | voicetwin.enhance |   估计信噪比 21.1 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:59:41,735 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 12:59:41,864 | INFO | voicetwin.prepare |   切出 15 段
+2026-11-24 12:59:41,868 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:59:41,925 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 13:00:06,989 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 15 段）
+2026-11-24 13:00:27,200 | INFO | voicetwin.prepare | 识别 1/15：骂它最主要的作用，就是用来表示事情的前后
+2026-11-24 13:04:42,864 | INFO | voicetwin.prepare | 识别 15/15：比如说下面这个句子是Lewis Kahn
+2026-11-24 13:04:42,866 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 15 段）……
+2026-11-24 13:04:42,953 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 13:04:43,389 | INFO | voicetwin.prepare | 计算声纹 1/15
+2026-11-24 13:04:44,452 | INFO | voicetwin.prepare | 计算声纹 15/15
+2026-11-24 13:04:44,459 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 13:04:44,526 | INFO | voicetwin.references |   主参考（zh）：刚开始，我先唱白脸，后面我就开始唱黑脸。比如说下面这个句子，Tony is smart, but he is lazy。Tony很聪明，但他很懒。（6.72 秒）
+2026-11-24 13:04:44,528 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 13:04:44,541 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 13:04:47,617 | INFO | voicetwin.profile |   中文语速：7.00 音节/秒（不含停顿）
+2026-11-24 13:04:47,617 | INFO | voicetwin.profile |   中文音高：98 Hz，起伏 4.1 半音
+2026-11-24 13:04:47,618 | INFO | voicetwin.profile |   停顿习惯：逗号 0.28s / 句号 0.33s / 段落 0.58s
+2026-11-24 13:04:48,300 | INFO | voicetwin.workflow | 查找可能的错字（用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红）……
+2026-11-24 13:04:52,176 | INFO | voicetwin.proofcheck | 查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……
+2026-11-24 13:08:15,851 | INFO | voicetwin.proofcheck | 查错字：已加载 FunASR（cpu）paraformer-zh
+2026-11-24 13:08:26,195 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 15 条，母本里找到了差不多的句子 15 条（母本优先）；直接改好 0 处（0 条，存成没保存的修改，其中按母本 0 处），另外 12 条标红给了建议；1 条原来的标红被母本证明没错、已去掉，保留自动检查标红 0 条；用时 1.4 秒。
+2026-11-24 13:08:26,210 | INFO | voicetwin.proofcheck | 查错字完成：检查了 15 条，其中 12 条可能有错。用 FunASR（阿里的中文识别模型）把 15 条再听了一遍，做了对比。用时 217.9 秒。
+2026-11-24 13:08:26,211 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 13:10:11,731 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 15 条，母本里找到了差不多的句子 15 条（母本优先）；直接改好 22 处（12 条，存成没保存的修改，其中按母本 22 处），另外 0 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 0 条；用时 1.4 秒。
+2026-11-24 13:10:11,742 | INFO | voicetwin.workflow | 把有把握的修改建议一次全部采用……
+2026-11-24 13:10:11,749 | INFO | voicetwin.workflow | 校正完了：一共改了 22 处

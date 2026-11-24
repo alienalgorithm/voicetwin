@@ -1,0 +1,123 @@
+{
+ "started": "2026-11-24 12:56:46",
+ "files": [
+  {
+   "name": "yet.wav",
+   "bytes": 15077454,
+   "sha256": "f0b02eaa31762dc9d57c381b0dc4254ae9cb2865d93a7bfcae2e0c0d18d97161"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 326,
+  "SenseVoice 再听一遍": 66,
+  "一键全部文字校正": 1
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 11,
+  "clips_kept": 11,
+  "minutes_kept": 1.3,
+  "val_clips": 1,
+  "references": [
+   {
+    "no": 1,
+    "id": "yet_ae6384_0005",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "比如说在这个场景中，男生天天给女生送花送包送钻戒，然后女生说，Yet,我就是不心动，我们之间不合适。"
+   },
+   {
+    "no": 2,
+    "id": "yet_ae6384_0006",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "在这里的转折词yet,用来强调你做了这么多，但是我却依然无感，突出了这种巨大的反差。"
+   },
+   {
+    "no": 3,
+    "id": "yet_ae6384_0010",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "好，以上这些就是yet的主要用法，接下来我们就学习一下连词all的用法。"
+   },
+   {
+    "no": 4,
+    "id": "yet_ae6384_0003",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "罢了在这个句子里面就是直接拒绝，没有悬念，这就是一个比较简单的转折，没有过于突出和强调前后句之间的矛盾。"
+   },
+   {
+    "no": 5,
+    "id": "yet_ae6384_0004",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "但是如果这个事情的矛盾它更加突出的情况下，那么使用yet来表达潜伏句的转折会更加合适。"
+   },
+   {
+    "no": 6,
+    "id": "yet_ae6384_0008",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "通过以上这两个场景，我们可以看出，Yed和Bud的主要区别，就是Bud只是普通拒绝，单纯的只是想强调转折，用那种很普通的语气来说，你很好，但是我们不合适。"
+   },
+   {
+    "no": 7,
+    "id": "yet_ae6384_0002",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "男生对一个女生说：\"我有钱，有车，有房。然后女生说：\"爸的，我就是不喜欢你。"
+   },
+   {
+    "no": 8,
+    "id": "yet_ae6384_0001",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "让前一个句子和后一个句子的转折变得更加明显。为了更好地了解它们之间的主要差别，我们来进行一个场景的代入。我们先来看第一个场景。"
+   }
+  ],
+  "warnings": [
+   "可用素材只有 1.3 分钟。能训练，但建议 ≥30 分钟，1~3 小时效果最好。",
+   "素材里有 7 句夹着英文（共 19 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 10 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 3.9,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 11,
+  "flagged": 10,
+  "fixed_rows": 10,
+  "fixes": 21,
+  "found": 0,
+  "aligned": 11,
+  "cleared": 0,
+  "kept_auto": 0,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 0,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 11,
+  "mother_fixes": 21,
+  "truncated": false,
+  "seconds": 1.1
+ },
+ "finished": "2026-11-24 13:03:19",
+ "counts": {
+  "句子": 11,
+  "用来训练": 11,
+  "第二个引擎听过": 11,
+  "查错字标红": 10,
+  "一键校正改过": 10
+ }
+}

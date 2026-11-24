@@ -1,0 +1,115 @@
+{
+ "started": "2026-11-24 12:56:40",
+ "files": [
+  {
+   "name": "9999999.wav",
+   "bytes": 132546638,
+   "sha256": "f943679704608a8cc42bb7e8beff7e491126e9a3290bce790187288f97d3183a"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 1495,
+  "SenseVoice 再听一遍": 131,
+  "一键全部文字校正": 1
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 91,
+  "clips_kept": 91,
+  "minutes_kept": 11.5,
+  "val_clips": 11,
+  "references": [
+   {
+    "no": 1,
+    "id": "9999999_f1163a_0007",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "那么这个群体的数量范围就会越来越小，直到范围最后缩小到一个对象为止，那这个过程就叫做限定。"
+   },
+   {
+    "no": 2,
+    "id": "9999999_f1163a_0006",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "然后我们会发现，随着我们对某个群体的描述越来越详细，也就是说在这个群体前面所加的形容词越来越多。"
+   },
+   {
+    "no": 3,
+    "id": "9999999_f1163a_0014",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "我们还能说它是一个定语吗？肯定不行。因为只是单独看这个单词的话，我们只能够判断出它是个形容词。"
+   },
+   {
+    "no": 4,
+    "id": "9999999_f1163a_0032",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "等于是我们用enoblocode这个介词短语造出了穿着蓝色上衣的这个形容词。第三个句子，带着墨镜的那个男生Jim。"
+   },
+   {
+    "no": 5,
+    "id": "9999999_f1163a_0065",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "去掉白勺得之后，那就只剩下正在说话，我们会发现这是一个正在进行的动作。"
+   },
+   {
+    "no": 6,
+    "id": "9999999_f1163a_0005",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "那么这个数量级就会从5千万降低到1千万。要是再多出一个形容词reach,那又从1千万降低到了2万。"
+   },
+   {
+    "no": 7,
+    "id": "9999999_f1163a_0072",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "然后这个电影丛剧的原型我们就造出来了，Bad Boy is Talking。"
+   }
+  ],
+  "warnings": [
+   "素材里有 33 句夹着英文（共 104 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 43 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 23.0,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 91,
+  "flagged": 43,
+  "fixed_rows": 41,
+  "fixes": 78,
+  "found": 1,
+  "aligned": 91,
+  "cleared": 0,
+  "kept_auto": 1,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 2,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 88,
+  "mother_fixes": 80,
+  "truncated": false,
+  "seconds": 1.1
+ },
+ "finished": "2026-11-24 13:23:47",
+ "counts": {
+  "句子": 91,
+  "用来训练": 91,
+  "第二个引擎听过": 91,
+  "查错字标红": 43,
+  "一键校正改过": 42
+ }
+}

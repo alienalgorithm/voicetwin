@@ -1,0 +1,130 @@
+{
+ "started": "2026-11-24 12:55:46",
+ "files": [
+  {
+   "name": "liancihebingyuanli.wav",
+   "bytes": 19738702,
+   "sha256": "a949a3b84eab9b608751b22f3eabaf7bf7a22b5a6d478c535986b52bb07b49e9"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 586,
+  "SenseVoice 再听一遍": 90,
+  "一键全部文字校正": 1
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 13,
+  "clips_kept": 13,
+  "minutes_kept": 1.7,
+  "val_clips": 1,
+  "references": [
+   {
+    "no": 1,
+    "id": "liancihebingyuanli_20768b_0011",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "而AND就相当于是连接这两个车厢的锁链，可以让它们作为一个整体在句子中发挥作用。"
+   },
+   {
+    "no": 2,
+    "id": "liancihebingyuanli_20768b_0004",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "比如说这个火车，车厢的作用就是用来运输货物，单个车厢的作用是运输货物，多个车厢合在一起之后，它们的作用也是运输货物。"
+   },
+   {
+    "no": 3,
+    "id": "liancihebingyuanli_20768b_0008",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "斌与Apple的作用就是承受吃这个动作，而在这个句子中，斌与Orange的作用也是承受吃这个动作。"
+   },
+   {
+    "no": 4,
+    "id": "liancihebingyuanli_20768b_0006",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "在这个过程中，如果没有锁链把车厢连在一起的话，那么即使有再多的车厢也起不到任何的作用。"
+   },
+   {
+    "no": 5,
+    "id": "liancihebingyuanli_20768b_0012",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "好，以上就是为什么连词可以把相同属性的句子成分连接为一个整体的原因。最后我们再来看一下和连词解密相关的并列句。"
+   },
+   {
+    "no": 6,
+    "id": "liancihebingyuanli_20768b_0010",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "因为把它们合在一起之后，它们还是要承受吃这个动作。在这个过程中，Apple和Orange就相当于是这两个车厢。"
+   },
+   {
+    "no": 7,
+    "id": "liancihebingyuanli_20768b_0000",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "好，关于最常见的几个连词的用法和主要内容，我们就全都学完了。但是刚刚在讲的过程中，我一直有一个疑问。"
+   },
+   {
+    "no": 8,
+    "id": "liancihebingyuanli_20768b_0005",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "但是如果我们想把多个车厢结合在一起，那么就得由锁链来连接每个车厢，把它们连接为一个整体，只有这样它们才能共同发挥作用，以此来运输更多的货物。"
+   },
+   {
+    "no": 9,
+    "id": "liancihebingyuanli_20768b_0002",
+    "lang": "zh",
+    "kind": "question",
+    "text": "叫做并列谓语，而下面这个句子中被连词连接起来的部分，就被称作为并列宾语。那为什么连词就拥有这个功能，可以把几个句子成分连接成一个整体呢？"
+   }
+  ],
+  "warnings": [
+   "可用素材只有 1.7 分钟。能训练，但建议 ≥30 分钟，1~3 小时效果最好。",
+   "素材里有 5 句夹着英文（共 13 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 7 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 3.1,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 13,
+  "flagged": 7,
+  "fixed_rows": 6,
+  "fixes": 11,
+  "found": 0,
+  "aligned": 12,
+  "cleared": 0,
+  "kept_auto": 1,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 0,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 12,
+  "mother_fixes": 11,
+  "truncated": false,
+  "seconds": 1.0
+ },
+ "finished": "2026-11-24 13:07:03",
+ "counts": {
+  "句子": 13,
+  "用来训练": 13,
+  "第二个引擎听过": 13,
+  "查错字标红": 7,
+  "一键校正改过": 6
+ }
+}

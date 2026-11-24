@@ -1,0 +1,40 @@
+2026-11-24 12:56:39,808 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 12:56:39,808 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：0006.wav（198 MB）
+2026-11-24 12:56:40,635 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 12:56:43,067 | INFO | voicetwin.enhance |   估计信噪比 24.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:56:54,426 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 12:56:55,803 | INFO | voicetwin.prepare |   切出 152 段
+2026-11-24 12:56:55,810 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:56:55,856 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 12:57:16,920 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 152 段）
+2026-11-24 12:57:31,282 | INFO | voicetwin.prepare | 识别 1/152：接下来我们就学习一下另外一个关系代词，a
+2026-11-24 13:02:10,280 | INFO | voicetwin.prepare | 识别 21/152：这个电影重剧所表达的意思仅仅只是表示我们
+2026-11-24 13:06:55,012 | INFO | voicetwin.prepare | 识别 41/152：所以说Sasha X这个剧情主要想表达的
+2026-11-24 13:11:42,484 | INFO | voicetwin.prepare | 识别 61/152：如果想要表达我父亲前后咨询的都是同一个医
+2026-11-24 13:16:38,649 | INFO | voicetwin.prepare | 识别 81/152：或者直接用and来连接这两个独立的句子。
+2026-11-24 13:21:21,013 | INFO | voicetwin.prepare | 识别 101/152：好，我们现在从头到尾回顾一下整个流程。
+2026-11-24 13:26:17,852 | INFO | voicetwin.prepare | 识别 121/152：根据我们之前所学过的内容，定语从句的本质
+2026-11-24 13:31:23,061 | INFO | voicetwin.prepare | 识别 141/152：接下来我们需要做的就是把我们所造出来的这
+2026-11-24 13:34:07,318 | INFO | voicetwin.prepare | 识别 152/152：关于这两个例句的句子成分分析呢，在这里也
+2026-11-24 13:34:07,321 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 152 段）……
+2026-11-24 13:34:08,179 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 13:34:08,503 | INFO | voicetwin.prepare | 计算声纹 1/151
+2026-11-24 13:34:11,287 | INFO | voicetwin.prepare | 计算声纹 51/151
+2026-11-24 13:34:14,053 | INFO | voicetwin.prepare | 计算声纹 101/151
+2026-11-24 13:34:16,934 | INFO | voicetwin.prepare | 计算声纹 151/151
+2026-11-24 13:34:16,948 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 13:34:16,964 | INFO | voicetwin.references |   主参考（zh）：当我们使用关系代词as来代替一种句话的时候，它更多所表达的是一种期待和期盼。（6.65 秒）
+2026-11-24 13:34:16,967 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 13:34:17,027 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 13:34:20,454 | INFO | voicetwin.profile |   中文语速：5.71 音节/秒（不含停顿）
+2026-11-24 13:34:20,454 | INFO | voicetwin.profile |   中文音高：98 Hz，起伏 4.2 半音
+2026-11-24 13:34:20,454 | INFO | voicetwin.profile |   停顿习惯：逗号 0.25s / 句号 0.33s / 段落 0.58s
+2026-11-24 13:34:26,537 | INFO | voicetwin.workflow | 查找可能的错字（用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红）……
+2026-11-24 13:34:29,603 | INFO | voicetwin.proofcheck | 查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……
+2026-11-24 13:36:48,771 | INFO | voicetwin.proofcheck | 查错字：已加载 FunASR（cpu）paraformer-zh
+2026-11-24 13:37:42,552 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 151 条，母本里找到了差不多的句子 147 条（母本优先）；直接改好 0 处（0 条，存成没保存的修改，其中按母本 0 处），另外 92 条标红给了建议；1 条原来的标红被母本证明没错、已去掉，保留自动检查标红 2 条；用时 1.4 秒。
+2026-11-24 13:37:42,580 | INFO | voicetwin.proofcheck | 查错字完成：检查了 151 条，其中 94 条可能有错。用 FunASR（阿里的中文识别模型）把 151 条再听了一遍，做了对比。用时 196.0 秒。
+2026-11-24 13:37:42,582 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 13:42:39,174 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 151 条，母本里找到了差不多的句子 147 条（母本优先）；直接改好 181 处（92 条，存成没保存的修改，其中按母本 181 处），另外 0 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 2 条；用时 1.0 秒。
+2026-11-24 13:42:39,184 | INFO | voicetwin.workflow | 把有把握的修改建议一次全部采用……
+2026-11-24 13:42:39,231 | INFO | voicetwin.workflow | 校正完了：一共改了 181 处

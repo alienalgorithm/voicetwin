@@ -1,0 +1,88 @@
+{
+ "started": "2026-11-24 12:55:57",
+ "files": [
+  {
+   "name": "and-revised.wav",
+   "bytes": 95309902,
+   "sha256": "d66ab7c9ed375b642d597de2df1c54eee27bc33605d148e61adcc68ad1f17f0d"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 2173,
+  "SenseVoice 再听一遍": 276,
+  "一键全部文字校正": 2
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 70,
+  "clips_kept": 69,
+  "minutes_kept": 8.3,
+  "val_clips": 8,
+  "references": [
+   {
+    "no": 1,
+    "id": "and-revised_0893d7_0064",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "比如说很多人喜欢吃的西红柿炒鱼蛋，英文的表达方式就是tomato and egg scramble,虽然前后有&来连接，但是这本身就是一个专有的菜名。"
+   },
+   {
+    "no": 2,
+    "id": "and-revised_0893d7_0006",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "AND的第二个主要作用叫做合并同类项。那什么是合并同类项呢？我们还是以刚才这个句子为例。"
+   },
+   {
+    "no": 3,
+    "id": "and-revised_0893d7_0015",
+    "lang": "zh",
+    "kind": "question",
+    "text": "那我们能不能把这三个句子里面的这几个成分合并成一个？"
+   }
+  ],
+  "warnings": [
+   "可用素材只有 8.3 分钟。能训练，但建议 ≥30 分钟，1~3 小时效果最好。",
+   "素材里有 49 句夹着英文（共 172 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 50 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 33.7,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 69,
+  "flagged": 50,
+  "fixed_rows": 49,
+  "fixes": 101,
+  "found": 0,
+  "aligned": 68,
+  "cleared": 0,
+  "kept_auto": 1,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 0,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 67,
+  "mother_fixes": 100,
+  "truncated": false,
+  "seconds": 1.7
+ },
+ "finished": "2026-11-24 13:36:48",
+ "counts": {
+  "句子": 70,
+  "用来训练": 69,
+  "第二个引擎听过": 69,
+  "查错字标红": 50,
+  "一键校正改过": 49
+ }
+}

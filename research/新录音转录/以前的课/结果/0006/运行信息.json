@@ -1,0 +1,80 @@
+{
+ "started": "2026-11-24 12:56:38",
+ "files": [
+  {
+   "name": "0006.wav",
+   "bytes": 207159374,
+   "sha256": "6ae122ed1b4bb1739239bd065eecc5f1d1acd94cbdc37aac66edfcbfb0ea3357"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 2464,
+  "SenseVoice 再听一遍": 296,
+  "一键全部文字校正": 1
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 152,
+  "clips_kept": 151,
+  "minutes_kept": 17.9,
+  "val_clips": 18,
+  "references": [
+   {
+    "no": 1,
+    "id": "0006_769708_0013",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "当我们使用关系代词as来代替一种句话的时候，它更多所表达的是一种期待和期盼。"
+   },
+   {
+    "no": 2,
+    "id": "0006_769708_0112",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "换句话说，就是把户子还原成that person's,那这个定语从句的原型就是that person's son is a famous writer。"
+   }
+  ],
+  "warnings": [
+   "素材里有 78 句夹着英文（共 258 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 94 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 37.6,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 151,
+  "flagged": 94,
+  "fixed_rows": 92,
+  "fixes": 181,
+  "found": 0,
+  "aligned": 150,
+  "cleared": 0,
+  "kept_auto": 2,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 3,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 147,
+  "mother_fixes": 181,
+  "truncated": false,
+  "seconds": 1.0
+ },
+ "finished": "2026-11-24 13:42:39",
+ "counts": {
+  "句子": 152,
+  "用来训练": 151,
+  "第二个引擎听过": 151,
+  "查错字标红": 94,
+  "一键校正改过": 92
+ }
+}

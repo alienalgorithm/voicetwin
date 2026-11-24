@@ -1,0 +1,32 @@
+2026-11-24 12:56:40,681 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 12:56:40,681 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：nor.wav（34 MB）
+2026-11-24 12:56:40,975 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 12:56:41,416 | INFO | voicetwin.enhance |   估计信噪比 21.9 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:56:44,605 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 12:56:44,831 | INFO | voicetwin.prepare |   切出 25 段
+2026-11-24 12:56:44,834 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:56:44,879 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 12:57:07,916 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 25 段）
+2026-11-24 12:57:24,844 | INFO | voicetwin.prepare | 识别 1/25：那对常见的一种使用方式，就是和neith
+2026-11-24 13:02:23,345 | INFO | voicetwin.prepare | 识别 21/25：例如第一个例句，如果我们使用这个句式来重
+2026-11-24 13:03:25,471 | INFO | voicetwin.prepare | 识别 25/25：转换之后的这两个句子所表达的意思和原句基
+2026-11-24 13:03:25,472 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 25 段）……
+2026-11-24 13:03:25,623 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 13:03:25,979 | INFO | voicetwin.prepare | 计算声纹 1/25
+2026-11-24 13:03:27,383 | INFO | voicetwin.prepare | 计算声纹 25/25
+2026-11-24 13:03:27,388 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 13:03:27,410 | INFO | voicetwin.references |   主参考（zh）：再比如说下面这个句子，用neither know来连接work和test这两个并列的评语，表示工作和考试他们都不想要。好，以上就是neither know的主要使用方法。（9.78 秒）
+2026-11-24 13:03:27,411 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 13:03:27,481 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 13:03:30,077 | INFO | voicetwin.profile |   中文语速：6.68 音节/秒（不含停顿）
+2026-11-24 13:03:30,077 | INFO | voicetwin.profile |   中文音高：100 Hz，起伏 4.6 半音
+2026-11-24 13:03:30,077 | INFO | voicetwin.profile |   停顿习惯：逗号 0.23s / 句号 0.34s / 段落 0.59s
+2026-11-24 13:03:31,143 | INFO | voicetwin.workflow | 查找可能的错字（用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红）……
+2026-11-24 13:03:34,397 | INFO | voicetwin.proofcheck | 查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……
+2026-11-24 13:05:31,738 | INFO | voicetwin.proofcheck | 查错字：已加载 FunASR（cpu）paraformer-zh
+2026-11-24 13:05:42,365 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 25 条，母本里找到了差不多的句子 23 条（母本优先）；直接改好 0 处（0 条，存成没保存的修改，其中按母本 0 处），另外 17 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 1 条；用时 1.2 秒。
+2026-11-24 13:05:42,378 | INFO | voicetwin.proofcheck | 查错字完成：检查了 25 条，其中 18 条可能有错。用 FunASR（阿里的中文识别模型）把 25 条再听了一遍，做了对比。用时 131.2 秒。
+2026-11-24 13:05:42,379 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 13:07:36,428 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 25 条，母本里找到了差不多的句子 23 条（母本优先）；直接改好 47 处（17 条，存成没保存的修改，其中按母本 47 处），另外 0 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 1 条；用时 1.0 秒。
+2026-11-24 13:07:36,437 | INFO | voicetwin.workflow | 把有把握的修改建议一次全部采用……
+2026-11-24 13:07:36,451 | INFO | voicetwin.workflow | 校正完了：一共改了 47 处

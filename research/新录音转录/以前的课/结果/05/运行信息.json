@@ -1,0 +1,87 @@
+{
+ "started": "2026-11-24 12:55:27",
+ "files": [
+  {
+   "name": "05.wav",
+   "bytes": 252416078,
+   "sha256": "1de4d0f6dc06a66a6cdfc24e3668ec569a35e93305521eee810c3d4eafd3f7fd"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 5027,
+  "SenseVoice 再听一遍": 198,
+  "一键全部文字校正": 2
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 177,
+  "clips_kept": 177,
+  "minutes_kept": 21.9,
+  "val_clips": 20,
+  "references": [
+   {
+    "no": 1,
+    "id": "05_479493_0140",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "既然是一个完整的句子，那我们就应该使用关系副词来做这个定语从句的引导词。"
+   },
+   {
+    "no": 2,
+    "id": "05_479493_0014",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "综上来看，关系副词就可能意味着它所代替的内容是一个包含了先行词的状语。"
+   },
+   {
+    "no": 3,
+    "id": "05_479493_0090",
+    "lang": "zh",
+    "kind": "question",
+    "text": "那问题来了，我们要如何去选出合适的关系副词呢？"
+   }
+  ],
+  "warnings": [
+   "素材里有 71 句夹着英文（共 272 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 84 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 80.6,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 177,
+  "flagged": 84,
+  "fixed_rows": 83,
+  "fixes": 153,
+  "found": 0,
+  "aligned": 177,
+  "cleared": 0,
+  "kept_auto": 1,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 1,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 175,
+  "mother_fixes": 154,
+  "truncated": false,
+  "seconds": 1.7
+ },
+ "finished": "2026-11-24 14:22:34",
+ "counts": {
+  "句子": 177,
+  "用来训练": 177,
+  "第二个引擎听过": 177,
+  "查错字标红": 84,
+  "一键校正改过": 83
+ }
+}

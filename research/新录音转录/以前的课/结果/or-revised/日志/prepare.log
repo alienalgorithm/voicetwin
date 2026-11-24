@@ -1,0 +1,32 @@
+2026-11-24 12:56:09,068 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 12:56:09,068 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：or-revised.wav（43 MB）
+2026-11-24 12:56:09,995 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 12:56:10,568 | INFO | voicetwin.enhance |   估计信噪比 21.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:56:15,016 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 12:56:15,334 | INFO | voicetwin.prepare |   切出 31 段
+2026-11-24 12:56:15,340 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:56:15,408 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 12:56:30,992 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 31 段）
+2026-11-24 12:57:08,027 | INFO | voicetwin.prepare | 识别 1/31：all的第一个作用就是进行选择，就像我们
+2026-11-24 13:07:53,055 | INFO | voicetwin.prepare | 识别 21/31：这种用法的语气相对来说比较严肃，例如在下
+2026-11-24 13:13:03,418 | INFO | voicetwin.prepare | 识别 31/31：关于这两个句子的结构分析，这儿也给大家整
+2026-11-24 13:13:03,420 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 31 段）……
+2026-11-24 13:13:03,656 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 13:13:04,218 | INFO | voicetwin.prepare | 计算声纹 1/31
+2026-11-24 13:13:07,729 | INFO | voicetwin.prepare | 计算声纹 31/31
+2026-11-24 13:13:07,737 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 13:13:07,810 | INFO | voicetwin.references |   主参考（zh）：而在疑问句里面，我们一般把all翻译为还是。好，接下来我们看一下all的第二个作用，那就是在否定句中代替and。（7.38 秒）
+2026-11-24 13:13:07,813 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 13:13:07,831 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 13:13:12,053 | INFO | voicetwin.profile |   中文语速：7.09 音节/秒（不含停顿）
+2026-11-24 13:13:12,053 | INFO | voicetwin.profile |   中文音高：103 Hz，起伏 4.4 半音
+2026-11-24 13:13:12,053 | INFO | voicetwin.profile |   停顿习惯：逗号 0.24s / 句号 0.34s / 段落 0.59s
+2026-11-24 13:13:13,803 | INFO | voicetwin.workflow | 查找可能的错字（用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红）……
+2026-11-24 13:13:18,512 | INFO | voicetwin.proofcheck | 查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……
+2026-11-24 13:15:14,118 | INFO | voicetwin.proofcheck | 查错字：已加载 FunASR（cpu）paraformer-zh
+2026-11-24 13:15:39,234 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 31 条，母本里找到了差不多的句子 30 条（母本优先）；直接改好 0 处（0 条，存成没保存的修改，其中按母本 0 处），另外 28 条标红给了建议；1 条原来的标红被母本证明没错、已去掉，保留自动检查标红 0 条；用时 1.8 秒。
+2026-11-24 13:15:39,257 | INFO | voicetwin.proofcheck | 查错字完成：检查了 31 条，其中 28 条可能有错。用 FunASR（阿里的中文识别模型）把 31 条再听了一遍，做了对比。用时 145.5 秒。
+2026-11-24 13:15:39,258 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 13:21:18,111 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 31 条，母本里找到了差不多的句子 30 条（母本优先）；直接改好 73 处（28 条，存成没保存的修改，其中按母本 73 处），另外 0 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 0 条；用时 1.5 秒。
+2026-11-24 13:21:18,125 | INFO | voicetwin.workflow | 把有把握的修改建议一次全部采用……
+2026-11-24 13:21:18,150 | INFO | voicetwin.workflow | 校正完了：一共改了 73 处

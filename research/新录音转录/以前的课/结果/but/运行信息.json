@@ -1,0 +1,123 @@
+{
+ "started": "2026-11-24 12:59:37",
+ "files": [
+  {
+   "name": "but.wav",
+   "bytes": 20398158,
+   "sha256": "e3586cb8299efc7cb2969d3a5adfe1765ee3fffe5656f3bf7c589ba873735f65"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 528,
+  "SenseVoice 再听一遍": 104,
+  "一键全部文字校正": 1
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 15,
+  "clips_kept": 15,
+  "minutes_kept": 1.8,
+  "val_clips": 2,
+  "references": [
+   {
+    "no": 1,
+    "id": "but_26940f_0001",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "刚开始，我先唱白脸，后面我就开始唱黑脸。比如说下面这个句子，Tony is smart, but he is lazy。Tony很聪明，但他很懒。"
+   },
+   {
+    "no": 2,
+    "id": "but_26940f_0009",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "但是我们用Bud来进行了一个转折，即使在下雨的情况下，我们依然选择了出门购物，打破了人们固有的常规逻辑。"
+   },
+   {
+    "no": 3,
+    "id": "but_26940f_0012",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "如果一个句子是这种情况的话，那我们最好在连次but的前面加上一个逗号，对前后句子来进行一个分割。"
+   },
+   {
+    "no": 4,
+    "id": "but_26940f_0002",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "前半段话我还在夸Tony很聪明，但是后半段话我就直接说出了他的缺点，非常懒惰。这个聪明和懒惰形成了一个性格上的鲜明对比。"
+   },
+   {
+    "no": 5,
+    "id": "but_26940f_0004",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "but除了体现转折以外，其他的特点和and是一样的。就比如说我们现在看的这个例句，前后的主语和系统词都是一样的。"
+   },
+   {
+    "no": 6,
+    "id": "but_26940f_0005",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "第二个句子里面的主语hey代替的本来就是Tony,所以说是同一个对象。"
+   },
+   {
+    "no": 7,
+    "id": "but_26940f_0011",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "也就是说，BAD前后这两个句子没有任何重复的句子成分，无法进行合并同理项的操作。"
+   },
+   {
+    "no": 8,
+    "id": "but_26940f_0006",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "既然主语和系统词都是相同的对象，那我们也可以对这个句子来进行一个合并同类向的操作。"
+   }
+  ],
+  "warnings": [
+   "可用素材只有 1.8 分钟。能训练，但建议 ≥30 分钟，1~3 小时效果最好。",
+   "素材里有 11 句夹着英文（共 29 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 12 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 5.1,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 15,
+  "flagged": 12,
+  "fixed_rows": 12,
+  "fixes": 22,
+  "found": 0,
+  "aligned": 15,
+  "cleared": 0,
+  "kept_auto": 0,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 0,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 15,
+  "mother_fixes": 22,
+  "truncated": false,
+  "seconds": 1.4
+ },
+ "finished": "2026-11-24 13:10:11",
+ "counts": {
+  "句子": 15,
+  "用来训练": 15,
+  "第二个引擎听过": 15,
+  "查错字标红": 12,
+  "一键校正改过": 12
+ }
+}

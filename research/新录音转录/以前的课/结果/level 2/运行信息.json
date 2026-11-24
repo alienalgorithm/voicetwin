@@ -1,0 +1,122 @@
+{
+ "started": "2026-11-24 12:59:10",
+ "files": [
+  {
+   "name": "level 2.wav",
+   "bytes": 197853262,
+   "sha256": "ea3ced5321559e8910cda5c35f177bfcc76b440241b28d8dfaf4620a0b0fcd34"
+  }
+ ],
+ "timing_s": {
+  "准备素材（识别 + 查错字）": 2762,
+  "SenseVoice 再听一遍": 158,
+  "一键全部文字校正": 2
+ },
+ "prepare_summary": {
+  "voice": "新录音",
+  "clips_total": 142,
+  "clips_kept": 142,
+  "minutes_kept": 17.2,
+  "val_clips": 17,
+  "references": [
+   {
+    "no": 1,
+    "id": "level_2_65bd73_0124",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "通过这种方式，我们就可以得到定语从句的原型，以此来解决我们对定语从句所有的不解和困惑。"
+   },
+   {
+    "no": 2,
+    "id": "level_2_65bd73_0125",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "好，既然说到了借词，那我们就来了解一下借词的性质和作用。我们平时最经常用到的借词主要就是这几个。"
+   },
+   {
+    "no": 3,
+    "id": "level_2_65bd73_0037",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "然后我们检查一下我很喜欢到底是不是一个完整的句子。在这个句子里面，动词喜欢是谓语，我则是这个句子的主语。"
+   },
+   {
+    "no": 4,
+    "id": "level_2_65bd73_0089",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "但是很明显，这个句子它还缺少一个被寻找的对象才能构成一个完整的句子。"
+   },
+   {
+    "no": 5,
+    "id": "level_2_65bd73_0060",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "因为户和户母这两个关系代词的属性都是定语从句引导词。既然是从句的引导词，那么就需要放到从句的最前端。"
+   },
+   {
+    "no": 6,
+    "id": "level_2_65bd73_0045",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "我们这里需要注意一下，在这个句子里面，相应词它并不是乔单。"
+   },
+   {
+    "no": 7,
+    "id": "level_2_65bd73_0013",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "这两个关系代词的主要区别在于，它们在从语中能够做的句子成分不一样。"
+   },
+   {
+    "no": 8,
+    "id": "level_2_65bd73_0036",
+    "lang": "zh",
+    "kind": "statement",
+    "text": "我很喜欢的这个形容词在去掉了白烧得之后就只剩下了我很喜欢。"
+   }
+  ],
+  "warnings": [
+   "素材里有 42 句夹着英文（共 156 个英文单词），没有纯英文的句子。模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。",
+   "其中 98 条文字可能有错（已标红），请在校对表里看一看"
+  ],
+  "transcripts_csv": "/mnt/w/tr/workspace/新录音/transcripts.csv",
+  "elapsed_min": 42.7,
+  "files_total": 1,
+  "files_new": 1,
+  "skipped_files": []
+ },
+ "textfix": {
+  "checked": 142,
+  "flagged": 98,
+  "fixed_rows": 94,
+  "fixes": 224,
+  "found": 0,
+  "aligned": 141,
+  "cleared": 0,
+  "kept_auto": 4,
+  "dismissed": 0,
+  "chars": 41909,
+  "room": 358091,
+  "builtin_lines": 1005,
+  "terms": 820,
+  "builtin_terms": 335,
+  "corrections": 39,
+  "unsure": 5,
+  "kept_undo": 0,
+  "pinyin": true,
+  "jieba": true,
+  "mother_rows": 136,
+  "mother_fixes": 226,
+  "truncated": false,
+  "seconds": 1.5
+ },
+ "finished": "2026-11-24 13:47:52",
+ "counts": {
+  "句子": 142,
+  "用来训练": 142,
+  "第二个引擎听过": 142,
+  "查错字标红": 98,
+  "一键校正改过": 94
+ }
+}

@@ -1,0 +1,35 @@
+2026-11-24 12:55:59,159 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 12:55:59,159 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：and-revised.wav（91 MB）
+2026-11-24 12:55:59,861 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 12:56:01,026 | INFO | voicetwin.enhance |   估计信噪比 21.0 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:56:08,434 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 12:56:09,813 | INFO | voicetwin.prepare |   切出 70 段
+2026-11-24 12:56:09,819 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:56:09,887 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 12:56:24,292 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 70 段）
+2026-11-24 12:56:57,915 | INFO | voicetwin.prepare | 识别 1/70：本期视频我们来学习几个非常基础但又极其重
+2026-11-24 13:06:25,090 | INFO | voicetwin.prepare | 识别 21/70：相同对象的句子成分都可以合并成一个。如果
+2026-11-24 13:15:38,933 | INFO | voicetwin.prepare | 识别 41/70：也就是说，这两个句子中没有相同的成分，无
+2026-11-24 13:25:15,663 | INFO | voicetwin.prepare | 识别 61/70：包括在接下来的这个例句中，时间、耐心和知
+2026-11-24 13:29:29,597 | INFO | voicetwin.prepare | 识别 70/70：好，以上就是AND的主要用法，接下来我们
+2026-11-24 13:29:29,599 | INFO | voicetwin.prepare | 分析每段话的语速和停顿（共 70 段）……
+2026-11-24 13:29:30,088 | INFO | voicetwin.prepare | 加载声纹模型，检查每段话是不是你本人的声音……
+2026-11-24 13:29:30,635 | INFO | voicetwin.prepare | 计算声纹 1/69
+2026-11-24 13:29:36,215 | INFO | voicetwin.prepare | 计算声纹 51/69
+2026-11-24 13:29:38,250 | INFO | voicetwin.prepare | 计算声纹 69/69
+2026-11-24 13:29:38,264 | INFO | voicetwin.prepare | 挑选最具代表性的参考音频……
+2026-11-24 13:29:38,301 | INFO | voicetwin.references |   主参考（zh）：比如说很多人喜欢吃的西红柿炒鱼蛋，英文的表达方式就是tomato and egg scramble,虽然前后有&来连接，但是这本身就是一个专有的菜名。（8.55 秒）
+2026-11-24 13:29:38,306 | INFO | voicetwin.prepare | 素材整理完成
+2026-11-24 13:29:38,322 | INFO | voicetwin.workflow | 分析你的说话风格（语速、停顿、音高）……
+2026-11-24 13:29:43,421 | INFO | voicetwin.profile |   中文语速：6.76 音节/秒（不含停顿）
+2026-11-24 13:29:43,421 | INFO | voicetwin.profile |   中文音高：99 Hz，起伏 4.2 半音
+2026-11-24 13:29:43,421 | INFO | voicetwin.profile |   停顿习惯：逗号 0.30s / 句号 0.38s / 段落 0.63s
+2026-11-24 13:29:46,927 | INFO | voicetwin.workflow | 查找可能的错字（用 FunASR（阿里的中文识别模型）把每段中文再听一遍，和现在的文字对比，不一样的地方标红）……
+2026-11-24 13:29:51,575 | INFO | voicetwin.proofcheck | 查错字：本地没有 FunASR 模型，第一次使用会从 ModelScope 下载（大约 1 GB）……
+2026-11-24 13:31:21,582 | INFO | voicetwin.proofcheck | 查错字：已加载 FunASR（cpu）paraformer-zh
+2026-11-24 13:32:10,770 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 69 条，母本里找到了差不多的句子 67 条（母本优先）；直接改好 0 处（0 条，存成没保存的修改，其中按母本 0 处），另外 49 条标红给了建议；2 条原来的标红被母本证明没错、已去掉，保留自动检查标红 1 条；用时 2.1 秒。
+2026-11-24 13:32:10,797 | INFO | voicetwin.proofcheck | 查错字完成：检查了 69 条，其中 50 条可能有错。用 FunASR（阿里的中文识别模型）把 69 条再听了一遍，做了对比。用时 143.9 秒。
+2026-11-24 13:32:10,799 | INFO | voicetwin.workflow | 素材准备完成
+2026-11-24 13:36:48,648 | INFO | voicetwin.transcript_fix | 文字校正完成：检查了 69 条，母本里找到了差不多的句子 67 条（母本优先）；直接改好 101 处（49 条，存成没保存的修改，其中按母本 100 处），另外 0 条标红给了建议；0 条原来的标红被母本证明没错、已去掉，保留自动检查标红 1 条；用时 1.7 秒。
+2026-11-24 13:36:48,707 | INFO | voicetwin.workflow | 把有把握的修改建议一次全部采用……
+2026-11-24 13:36:48,749 | INFO | voicetwin.workflow | 校正完了：一共改了 101 处
