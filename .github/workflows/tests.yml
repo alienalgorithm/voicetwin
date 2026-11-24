@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+# 同一个分支又推送了新的提交：旧提交还没跑完的测试取消，GitHub 的机器留给最新的代码
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     strategy:
