@@ -3,7 +3,6 @@
 0006_9498bb_0031	被报到了	被报道了	同音（报道）
 0006_9498bb_0037	尊重的一声	尊重的医生	同音（医生）
 0006_9498bb_0037	这个一声	这个医生	同音（医生）
-0006_9498bb_0043	定语从一种关系代词	定语从句中关系代词	识别错（从句中）
 0006_9498bb_0072	Tony Caesars	Tony's scissors	英文识别错（剪刀 scissors）
 0006_9498bb_0104	还原成原形的这种操作	还原成原型的这种操作	老师的说法是「原型」
 0006_9498bb_0104	还原成原形的这个过程	还原成原型的这个过程	老师的说法是「原型」
@@ -35,7 +34,6 @@
 0007_d8ade5_0098	叙述词	序数词	同音（序数词）
 0007_d8ade5_0116	陷阱词	限定词	音近（限定词）
 0007_d8ade5_0127	在定语从中	在定语从句中	少了「句」
-0007_d8ade5_0128	识别三日令当刮目相看	士别三日当刮目相看	同音（士别三日）
 0007_d8ade5_0133	在定语从中去保留关系代词代的	在定语从句中去保留关系代词that	少了「句」；英文被写成汉字（that）
 0007_d8ade5_0135	关系带词	关系代词	同音（代词）
 0007_d8ade5_0136	非限性定语从句	非限定性定语从句	少了「定」
@@ -101,7 +99,6 @@ and-revised_db6f95_0060	v语用的都是	谓语用的都是	识别错（谓语�
 and-revised_db6f95_0064	tomato and eggs rainbow	tomato and egg scramble	英文识别错（第 706 句是 tomato and egg scramble）
 and-revised_db6f95_0065	有按的连接	有and连接	英文被写成汉字（and）
 and-revised_db6f95_0068	零词but	连词but	音近（连词）
-binglieju_b84f44_0021	she never shows off	he never shows off	英文识别错（说的是 Johnny）
 but_8e9084_0000	我再夸奖	我在夸奖	同音（在）
 but_8e9084_0006	系统词	系动词	音近（系动词）
 but_8e9084_0009	用bad来进行	用but来进行	英文识别错（but）
@@ -138,3 +135,34 @@ or-revised_fa8bba_0005	选择联词	选择连词	同音（连词）
 or-revised_fa8bba_0011	和平同类像	合并同类项	音近（合并同类项）
 yet_11c752_0000	转述词yet	转折词yet	识别错（第 1004 句是「转折词」）
 yet_11c752_0008	yed和but	yet和but	英文识别错（yet）
+# 2026-11-24 对着录音核对改的（research/文字校正/老师的母本/录音核对改动_2026-11-24.tsv）：
+0006_9498bb_0043	语从一种关系	语从句中的关系	对着录音核对（11-24）
+0006_9498bb_0053	句，	句，it's the same doctor as my father consulted.	对着录音核对（11-24）
+0006_9498bb_0057	之后就表	之后呢，就表	对着录音核对（11-24）
+0006_9498bb_0070	种表示物品	种表述物品	对着录音核对（11-24）
+0006_9498bb_0073	替这类词，	替这个词，	对着录音核对（11-24）
+0006_9498bb_0100	that person	that person's	对着录音核对（11-24）
+0007_d8ade5_0056	is a doctor	is the doctor	对着录音核对（11-24）
+0007_d8ade5_0075	因为in that	因为that	对着录音核对（11-24）
+0007_d8ade5_0081	句。Let Frank	句。That Frank	对着录音核对（11-24）
+0007_d8ade5_0081	 remember in	 remembered in	对着录音核对（11-24）
+0007_d8ade5_0128	表达识别三日令当刮	表达士别三日另当刮	对着录音核对（11-24）
+0007_d8ade5_0128	译成LvMeng is	译成吕蒙is	对着录音核对（11-24）
+0007_d8ade5_0137	was又可以	was就可以	对着录音核对（11-24）
+05_27d31c_0086	就是Grew up	就是grew up	对着录音核对（11-24）
+05_27d31c_0112	句子A ready player when we are, 	句子In Ready Player One, VR, 	对着录音核对（11-24）
+05_27d31c_0129	句子的成分	句子成分	对着录音核对（11-24）
+05_27d31c_0138	He主语	He是主语	对着录音核对（11-24）
+22222222222_56d51b_0027	从句was in	从句what's in	对着录音核对（11-24）
+22222222222_56d51b_0072	树枝则是	树枝呢则是	对着录音核对（11-24）
+and-revised_db6f95_0053	Microsoft,Google	Microsoft and Google	对着录音核对（11-24）
+binglieju_b84f44_0018	but的后面这个	but后面的这个	对着录音核对（11-24）
+binglieju_b84f44_0018	，就指向Johnny	，就只剩Johnny	对着录音核对（11-24）
+but_8e9084_0001	but he is lazy	but he's lazy	对着录音核对（11-24）
+guanxifuci_5c1a5c_0018	子，a disliked wish always	子，I dislike the way she always	对着录音核对（11-24）
+liancihebingyuanli_2a7cf0_0005	就得用锁链	就得由锁链	对着录音核对（11-24）
+or-revised_fa8bba_0001	coffee?这句	coffee?那这句	对着录音核对（11-24）
+or-revised_fa8bba_0005	句子都属	句子呢都属	对着录音核对（11-24）
+or-revised_fa8bba_0012	们不但使用	们不再使用	对着录音核对（11-24）
+or-revised_fa8bba_0018	件事，那	件事儿，那	对着录音核对（11-24）
+or-revised_fa8bba_0018	件事。	件事儿。	对着录音核对（11-24）

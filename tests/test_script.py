@@ -404,6 +404,17 @@ def test_hard_split_comma_only_where_the_sentence_is_really_cut():
     assert not en_cut, (len(en_cut), en_cut[:3])
 
 
+def test_long_english_across_the_middle_is_not_cut():
+    """11-24 新录音的句子放进母本以后上面的测试找到的：英文很长、跨过了一半的地方（没有标点的讲稿），以前在英文中间切
+    （「……spoil it，」「for you……」）。现在在英文前面切（前面有三分之一长就行），英文整个留在一段里。"""
+    s = ("那我们可能就会说这么一句话I know what happens in the movie but I'm not going to spoil it for you"
+         "翻译出来就是我知道这个电影里发生了什么但是我不想给你剧透。")
+    segs = [x.display for x in parse_script(s)]
+    assert len(segs) == 2 and not _inserted_commas(s, segs), segs
+    assert all(10 <= syllable_count(d) <= 50 for d in segs), segs
+    assert "I know what happens in the movie but I'm not going to spoil it for you" in segs[1], segs
+
+
 def test_chunk_sentence_never_puts_a_cut_comma_inside_a_chunk():
     """随机拼的长句（有的分句有逗号、有的没有）× 3 种上限：每段都不超过上限；拼回去和原文一样，
     只有真的切开的地方（不是最后一段的末尾）才多一个逗号。"""

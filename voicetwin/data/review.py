@@ -22,7 +22,7 @@ import json
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 from voicetwin.utils import atomic
 from voicetwin.utils.log import get_logger
@@ -726,14 +726,52 @@ def change_pieces(old: str, new: str) -> List[Tuple[str, str]]:
 
 def is_rejected(pairs: Any, text: str, s: int, e: int, rep: str) -> bool:
     """在 text 的 [s, e) 换成 rep，里面有没有老师撤销过的改法（pairs：这一行的 [[原来的, 程序想改成的], ...]）。
-    这一处单独比、放在整句里比，有一个对上就算（两种比法拆出来的偶尔不一样）。"""
+    这一处单独比、放在整句里比，有一个对上就算（两种比法拆出来的偶尔不一样）。
+    以后拆成了别的样子也算：撤销过的那一处（挨着的几处合在一起）这样改完离程序当时想改成的样子更近（_toward_undone）。"""
     if not pairs or not (0 <= s <= e <= len(text)):
         return False
     bad = {(str(p[0]), str(p[1])) for p in pairs if isinstance(p, (list, tuple)) and len(p) == 2}
     new = text[:s] + rep + text[e:]
     # 存进表格的文字都整理过（英文后面的逗号变半角等），撤销时记下的也是整理过的：两种都比
     found = change_pieces(text[s:e], rep) + change_pieces(text, new) + change_pieces(text, clean_transcript(new))
-    return any(pc in bad or any(_part_of(pc, x) for x in bad) for pc in found)
+    if any(pc in bad or any(_part_of(pc, x) for x in bad) for pc in found):
+        return True
+    return _toward_undone(bad, text, s, e, rep)
+
+
+def _toward_undone(bad: Set[Tuple[str, str]], text: str, s: int, e: int, rep: str) -> bool:
+    """[s, e) 换成 rep 是不是把老师撤销过的那一处往程序当时想改成的样子改（只改了一部分、拆法和撤销时不一样）。
+    11-24 母本对着录音核对以后实测出来的：撤销时按单位一对一记下「when → One」「we → ,」「are → VR」、
+    「一 种 → 句 中 的」，以后程序按读音拆成「when → One,」「we are → VR」、「种 → 中」加一个「的」，都对不上，
+    撤销了的又改回一半，改出母本和录音里都没有的「从一中的关系代词」「a dislike the wish」。
+    现在撤销过的每一处在这句话里找到位置，挨着的几处合成一处；这一处改动碰到它、改完离程序当时想改成的样子更近，就算撤销过。"""
+    units = [(m.group(), m.start(), m.end()) for m in _UNIT.finditer(text)]
+    keys = [u for u, _s, _e in units]
+    hits: List[Tuple[int, int, List[str]]] = []
+    for a, b in bad:
+        au = a.split()
+        if not au:
+            continue  # 撤销的是加上去的字：原来没有字，找不到位置（整句比的时候已经认得出来）
+        for i in range(len(keys) - len(au) + 1):
+            if keys[i:i + len(au)] == au:
+                hits.append((i, i + len(au), b.split()))
+    runs: List[Tuple[int, int, List[str]]] = []
+    for i, j, want in sorted(hits, key=lambda h: (h[0], -h[1])):  # 同一个地方开头的：长的（整的那一处）在前
+        if runs and i < runs[-1][1]:
+            continue  # 和前面的重叠（同一处整句比、单独比各记了一次）：用前面整的那一处
+        if runs and i == runs[-1][1]:
+            runs[-1] = (runs[-1][0], j, runs[-1][2] + want)  # 挨着的合成一处
+        else:
+            runs.append((i, j, list(want)))
+    for i, j, want in runs:
+        cs, ce = units[i][1], units[j - 1][2]
+        if s > ce or e < cs:
+            continue
+        lo, hi = min(s, cs), max(e, ce)
+        target = text[lo:cs] + " ".join(want) + text[ce:hi]
+        if unit_dist(text[lo:s] + rep + text[e:hi], target) < unit_dist(text[lo:hi], target):
+            return True
+    return False
 
 
 def _undo_pieces(text: str, undo: Sequence[Edit]) -> List[List[str]]:

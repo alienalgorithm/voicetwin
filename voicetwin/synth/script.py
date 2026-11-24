@@ -336,7 +336,9 @@ def _cut_point(cur: List[str], nxt: str, limit: int) -> int:
     1. 不挨着英文单词的空格（用空格代替逗号的讲稿），前面已经有一半长：在最后一个这样的空格处切；
     2. 不然就在 nxt 前面切，可是不在两个英文单词（数字）中间切（以前会切成「which we，」「know……」，英文短语中间停一下）：
        往前找最后一个不在英文中间、前面也有一半长的地方；
-    3. 都找不到：在 nxt 前面切。"""
+    3. 英文很长、跨过了一半的地方：前面有三分之一长、不在英文中间的地方也行（11-24 新录音的句子
+       「……一句话I know what happens in the movie but I'm not going to spoil it for you翻译出来……」以前切成「spoil it，」「for you」）；
+    4. 都找不到：在 nxt 前面切。"""
     seq = cur + [nxt]
 
     def inside_en(j: int) -> bool:  # 切在 seq[j] 前面，是不是在两个英文单词（数字）中间
@@ -355,6 +357,9 @@ def _cut_point(cur: List[str], nxt: str, limit: int) -> int:
         return len(cur)
     for j in range(len(cur) - 1, 0, -1):
         if not cur[j].isspace() and before[j] >= limit / 2 and not inside_en(j):
+            return j
+    for j in range(len(cur) - 1, 0, -1):
+        if not cur[j].isspace() and before[j] >= limit / 3 and not inside_en(j):
             return j
     return len(cur)
 

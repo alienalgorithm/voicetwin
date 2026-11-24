@@ -4,8 +4,9 @@
 老师的原话：「识别出来的这些句子，先去跟母本对照。一般母本都会有差不多或者原模原样的句子。跟母本不一样的地方，
 那很明显就是错误的地方。」「这个自动检查错字功能，它的底层逻辑也是要以母本为主……母本是最优先级。」
 
-数据：research/文字校正/老师的母本/母本_原文.csv（老师修缮以前、识别引擎写的句子）和母本_修缮后.csv（正确答案），
-程序自带的母本（core_corpus.tsv）就是修缮好的这些句子。这些测试在修改以前的代码上都会失败
+数据：research/文字校正/老师的母本/母本_原文.csv（老师修缮以前、识别引擎写的句子）和母本_录音核对后.csv（正确答案：
+10 月份只看文字修缮的 母本_修缮后.csv，11-24 又对着录音逐句核对、改了 27 句），程序自带的母本（core_corpus.tsv）就是
+录音核对后的这些句子（后面还加了 11-24 新录音的 204 句）。这些测试在修改以前的代码上都会失败
 （片段 id 变了、切的位置不一样时很多句子改不对；自动查错字的建议不看母本；和母本矛盾的建议留着）。"""
 
 import csv
@@ -16,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import make_cfg
+from conftest import CHECKED_CSV, MOTHER_DIR, make_cfg, teacher_answer
 from voicetwin import workflows as wf
 from voicetwin.data import review
 from voicetwin.data import transcript_fix as tf
@@ -25,14 +26,44 @@ from voicetwin.utils.textutil import clean_transcript
 HAS_PINYIN = importlib.util.find_spec("pypinyin") is not None
 HAS_JIEBA = importlib.util.find_spec("jieba") is not None or importlib.util.find_spec("jieba_fast") is not None
 need_both = pytest.mark.skipif(not (HAS_PINYIN and HAS_JIEBA), reason="没有装 pypinyin / jieba（整合包里有）")
-MOTHER_DIR = Path(__file__).resolve().parents[1] / "research" / "文字校正" / "老师的母本"
 VOICE = "母本优先"
+
+#: 识别引擎写的句子（母本_原文.csv，保留的 1004 句）里和录音核对后的母本（CHECKED_CSV）不一样的句数：
+#: 对保留的每一句数 原文 != 录音核对后 = 142。10 月份（正确答案是 母本_修缮后.csv）是 123 句；录音核对多出来 20 句
+#: （10 月份没改、录音核对改了，比如「表示 → 表述」「A ready player → In Ready Player One」），少了 1 句
+#: （binglieju_b84f44_0021：10 月份把识别的 she 改成 he，录音里就是 she，又改回去了，和识别的一样）：123 + 20 - 1 = 142。
+NEED_FIX = 142
+#: 这个文件的测试都把片段 id 换掉（没有「同一个 id」的提示），这时实测改不到母本写法的地方：id → (母本里的, 改完留下的)。
+#: 同一个 id 时这两句都改得和母本一样（test_transcript_fix.py 里老师真实数据的测试）。
+NO_HINT_LEFT = {
+    # 句末少一个「儿」（另外一件事 / 另外一件事儿）：句首句尾漏掉的字只在同一个 id 的那一句补（mother_first._to_line_edges）；
+    # 换了 id 可能只是切的位置不一样（后半句在下一个片段里），不补。同一句前面的「这件事 → 这件事儿」照样改
+    "or-revised_fa8bba_0018": ("另外一件事儿。", "另外一件事。"),
+    # 开头 5 个字后面紧跟着读音不像的英文（was / what's）：按读音找的时候只对上后半句，不是母本里完整的一句，
+    # 不算「母本里有这一句」（_acceptable），整句不按母本改
+    "22222222222_56d51b_0027": ("名词性从句what's", "名词性从句was"),
+}
+#: 上面这 2 句加上识别时整句漏掉英文例句的 1 句（conftest.MISSED_BY_ASR）：0027 和 0053 改完还是识别的样子，
+#: or-revised_fa8bba_0018 只改了前一半，所以换了 id 时要改的是 142 - 2 = 140 句（_teacher_rows() 里 t != c 的句数）。
+NEED_FIX_NO_HINT = 140
+
+
+def _no_hint_answer(rid, checked):
+    """换了 id 时这一句改完应该是的样子：录音核对后的母本，去掉上面实测改不到的地方。"""
+    c = teacher_answer(rid, checked)
+    if rid in NO_HINT_LEFT:
+        master, left = NO_HINT_LEFT[rid]
+        assert c.count(master) == 1, (rid, c)
+        c = c.replace(master, left)
+    return c
 
 
 def _teacher_rows():
+    """[(id, 识别的文字, 一键校正以后应该是的样子)]：保留的 1004 句（老师删除的不算）。"""
     orig = list(csv.DictReader(open(MOTHER_DIR / "母本_原文.csv", encoding="utf-8-sig")))
-    clean = {r["id"]: r["text"] for r in csv.DictReader(open(MOTHER_DIR / "母本_修缮后.csv", encoding="utf-8-sig"))}
-    return [(r["id"], r["text"], clean[r["id"]]) for r in orig if r["keep"] == "1" and r["drop_reason"] != "老师删除"]
+    clean = {r["id"]: r["text"] for r in csv.DictReader(open(CHECKED_CSV, encoding="utf-8-sig"))}
+    return [(r["id"], r["text"], _no_hint_answer(r["id"], clean[r["id"]])) for r in orig
+            if r["keep"] == "1" and r["drop_reason"] != "老师删除"]
 
 
 def _voice(tmp_path, texts, ids, sources=None):
@@ -83,11 +114,31 @@ def _comma_cut(t, c):
     return None
 
 
+def test_builtin_corpus_is_the_checked_master():
+    """程序自带的母本（core_corpus.tsv）：原来的 1005 句和录音核对后的母本一模一样（11-24 录音核对改的 27 句都改进去了），
+    后面接着 11-24 新录音逐句定稿的 204 句（research/新录音转录/核对结果/逐句定稿.json），id 和句子都不重复。"""
+    import json
+
+    checked = {r["id"]: r["text"] for r in csv.DictReader(open(CHECKED_CSV, encoding="utf-8-sig"))}
+    october = {r["id"]: r["text"] for r in csv.DictReader(open(MOTHER_DIR / "母本_修缮后.csv", encoding="utf-8-sig"))}
+    final = json.loads((MOTHER_DIR.parents[1] / "新录音转录" / "核对结果" / "逐句定稿.json").read_text(encoding="utf-8"))
+    path = Path(tf.__file__).resolve().parent / "lexicon" / "core_corpus.tsv"
+    rows = [ln.split("\t", 1) for ln in path.read_text(encoding="utf-8").splitlines() if ln and not ln.startswith("#")]
+    old, new = rows[:-len(final)], rows[-len(final):]
+    assert len(old) == 1005 and len(new) == 204
+    assert all(checked[rid] == text for rid, text in old)
+    assert sum(october[rid] != text for rid, text in old) == 27  # 录音核对改的 29 句里另外 2 句是老师删除的，不在程序里
+    assert new == [[x["id"], x["定稿"]] for x in final]
+    assert len({rid for rid, _t in rows}) == len(rows) and len({t for _r, t in rows}) == len(rows)
+    assert len(tf.builtin_mother()) == 1005 + 204
+
+
 # ---------------------------------------------------------------------------- 一键校正：按内容找，不按 id
 @need_both
 def test_changed_ids_still_follow_the_master(tmp_path):
     """片段 id 全变了（重新准备素材、视频挪了地方、升级以后新建了声音）：以前按 id 的逐句修缮记录全都用不上，
-    123 句里 33 句没改、7 句改成别的样子。现在和母本不一样的句子全部改得和母本一模一样，对的句子一个字都不动。
+    （10 月份的母本）123 句里 33 句没改、7 句改成别的样子。现在和母本不一样的句子（录音核对后的母本：NEED_FIX = 142 句）
+    都改得和母本一模一样（实测改不到的 3 处见 NO_HINT_LEFT、conftest.MISSED_BY_ASR），对的句子一个字都不动。
     （第二轮：整批素材按原来的顺序放进去——读音不像听错的地方要靠「前后的句子也对上母本里前后的句子」才直接改，
     以前这个测试只放了有错的句子、顺序是乱的，那样的话现在只给没把握的建议，见 test_new_lecture_*。）"""
     data = _teacher_rows()
@@ -100,7 +151,10 @@ def test_changed_ids_still_follow_the_master(tmp_path):
         if not _same(cur, c):
             wrong.append((t, cur, c))
     assert not wrong, wrong[:5]
-    assert sum(1 for _i, t, c in data if t != c) == 123 and res["mother_rows"] == len(data)
+    clean = {r["id"]: r["text"] for r in csv.DictReader(open(CHECKED_CSV, encoding="utf-8-sig"))}
+    assert sum(1 for i, t, _c in data if t != clean[i]) == NEED_FIX
+    # 母本里找到差不多的句子的：除了 22222222222_56d51b_0027（只对上后半句，不算找到，见 NO_HINT_LEFT）都找到了
+    assert sum(1 for _i, t, c in data if t != c) == NEED_FIX_NO_HINT and res["mother_rows"] == len(data) - 1
 
 
 @need_both

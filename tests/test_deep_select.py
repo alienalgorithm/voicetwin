@@ -791,10 +791,12 @@ def test_text_groups_ignore_punctuation_and_digits():
 
 
 def test_teacher_material_layout_and_weights():
-    """老师的母本：1004 句（keep）里 559 句中英夹在一起、445 句纯中文、0 句纯英文（research/文字校正/老师的母本/）。"""
+    """老师的母本：1004 句（keep）里 559 句中英夹在一起、445 句纯中文、0 句纯英文（research/文字校正/老师的母本/）。
+    用 11-24 录音核对后的母本（程序自带的母本就是它）；录音核对改的 29 句没有改变哪一句属于哪一组，
+    所以和 10 月份的 母本_修缮后.csv 数出来一样（两个文件都按 LG.text_group 数过：559 / 445 / 0）。"""
     import csv
 
-    path = Path(__file__).resolve().parents[1] / "research" / "文字校正" / "老师的母本" / "母本_修缮后.csv"
+    from conftest import CHECKED_CSV as path
     rows = [r for r in csv.DictReader(path.open(encoding="utf-8-sig")) if r["keep"] == "1"]
     counts = {g: sum(1 for r in rows if LG.text_group(r["text"]) == g) for g in LG.GROUP_ORDER}
     assert len(rows) == 1004 and counts == {"mixed": 559, "zh": 445, "en": 0}

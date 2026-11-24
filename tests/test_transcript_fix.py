@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import confirm_material, make_cfg
+from conftest import CHECKED_CSV, MOTHER_DIR, confirm_material, make_cfg, teacher_answer
 from voicetwin import workflows as wf
 from voicetwin.data import lexicon_fix as lf
 from voicetwin.data import review
@@ -20,7 +20,11 @@ HAS_JIEBA = importlib.util.find_spec("jieba") is not None or importlib.util.find
 need_pinyin = pytest.mark.skipif(not HAS_PINYIN, reason="没有装 pypinyin（整合包里有）")
 need_both = pytest.mark.skipif(not (HAS_PINYIN and HAS_JIEBA), reason="没有装 pypinyin / jieba（整合包里有）")
 ROOT = Path(__file__).resolve().parents[1]
-MOTHER_DIR = ROOT / "research" / "文字校正" / "老师的母本"
+#: 老师真实的 1004 句（母本_原文.csv 里保留的）点一键校正要改的句数：对保留的、不是老师删除的每一句，数
+#: 识别的文字 != teacher_answer(录音核对后的母本) = 141。录音核对后的母本和识别的文字不一样的有 142 句（10 月份的母本是
+#: 123 句，录音核对多了 20 句、少了 1 句，见 test_mother_first.NEED_FIX），其中 1 句是识别时整句漏掉的英文例句、
+#: 一键校正不补（conftest.MISSED_BY_ASR）：142 - 1 = 141。
+TEACHER_NEED = 141
 
 REF = """同学们好，今天我们来讲定语从句。定语从句是用来修饰名词的句子。被修饰的名词叫做先行词。
 我们先来看 as 引导的定语从句。as 引导的定语从句可以放在句首，也可以放在句末。
@@ -70,7 +74,9 @@ def test_save_and_load_transcripts(tmp_path):
 
 def test_builtin_standard_library_is_shipped():
     assert len(tf.builtin_mother()) > 900  # 老师修缮过的母本
-    assert sum(len(v) for v in tf.builtin_fixes().values()) == 138
+    # 逐句修缮记录（core_fixes.tsv）的条数：10 月份 138 条（= 修缮记录.tsv）；11-24 对着录音核对以后去掉和录音矛盾的 3 条、
+    # 加 30 条（research/文字校正/老师的母本/更新程序自带母本.py 打印出来的）：138 - 3 + 30 = 165
+    assert sum(len(v) for v in tf.builtin_fixes().values()) == 165
     info = lf.builtin_info()
     assert info["terms"] > 300 and info["corrections"] > 30
     terms = set(lf.builtin_terms())
@@ -260,9 +266,10 @@ def test_check_with_transcript_respects_dismissed_and_deleted_rows(tmp_path):
 
 
 def test_teacher_rows_are_fixed_exactly_like_the_manual_review(tmp_path):
-    """老师现在这个声音的句子（母本原文）点一次「文字校正」：需要改的句子改得和逐句修缮的一模一样，别的句子不动。"""
+    """老师现在这个声音的句子（母本原文）点一次「文字校正」：需要改的句子改得和逐句修缮、录音核对过的母本一模一样，别的句子不动。"""
     orig = list(csv.DictReader(open(MOTHER_DIR / "母本_原文.csv", encoding="utf-8-sig")))
-    clean = list(csv.DictReader(open(MOTHER_DIR / "母本_修缮后.csv", encoding="utf-8-sig")))
+    clean = [dict(r, text=teacher_answer(r["id"], r["text"]))
+             for r in csv.DictReader(open(CHECKED_CSV, encoding="utf-8-sig"))]
     cfg = make_cfg(tmp_path / "ws")
     project = wf.Project(cfg, "老师").ensure()
     project.save_manifest([{"id": r["id"], "path": f"clips/{r['id']}.wav", "text": r["text"], "lang": "zh",
@@ -271,11 +278,14 @@ def test_teacher_rows_are_fixed_exactly_like_the_manual_review(tmp_path):
     res = tf.check_with_transcript(project)
     draft = review.load_draft(project)
     need = {o["id"] for o, c in zip(orig, clean) if o["text"] != c["text"] and o["drop_reason"] != "老师删除"}
-    assert set(draft) == need and len(need) == 123
+    assert set(draft) == need and len(need) == TEACHER_NEED
     for o, c in zip(orig, clean):
         if o["id"] in draft:
             assert draft[o["id"]]["text"] == c["text"], o["id"]
-    assert res["fixes"] >= 138
+    # 改了几处：11-24 实测 212 处（141 句；用这个测试的数据跑 tf.check_with_transcript 数出来的 res["fixes"]）。
+    # 10 月份的母本（123 句）时这里是 138；录音核对多出来的句子里有整段英文例句（A ready player when we are → In Ready
+    # Player One, VR），一句就好几处
+    assert res["fixes"] >= 212
     # 老师看过、点了「保存修改」以后再点一次：什么都不应该再改（以前出过错：从保存的修改里学到「位置 → which」「按照 → and」，
     # 别的句子里正常的「位置」「按照」也被改掉了）
     review.save_rows(project)
@@ -665,9 +675,10 @@ def test_row_fixes_only_for_the_same_sentence(tmp_path):
 
 def test_teacher_uploads_her_raw_transcripts_csv_again(tmp_path):
     """老师又上传了修缮以前的 transcripts.csv（同样的 id，里面还有「借词」）：结果和不上传一样，
-    需要改的 123 句全对、多改 0 句；保存以后再点一次什么都不改。"""
+    需要改的 TEACHER_NEED（141）句全对、多改 0 句；保存以后再点一次什么都不改。"""
     orig = list(csv.DictReader(open(MOTHER_DIR / "母本_原文.csv", encoding="utf-8-sig")))
-    clean = {r["id"]: r["text"] for r in csv.DictReader(open(MOTHER_DIR / "母本_修缮后.csv", encoding="utf-8-sig"))}
+    clean = {r["id"]: teacher_answer(r["id"], r["text"])
+             for r in csv.DictReader(open(CHECKED_CSV, encoding="utf-8-sig"))}
     cfg = make_cfg(tmp_path / "ws")
     project = wf.Project(cfg, "老师").ensure()
     project.save_manifest([{"id": r["id"], "path": f"clips/{r['id']}.wav", "text": r["text"], "lang": "zh",
@@ -676,7 +687,7 @@ def test_teacher_uploads_her_raw_transcripts_csv_again(tmp_path):
     res = wf.run_transcript_fix(cfg, "老师", files=[str(MOTHER_DIR / "母本_原文.csv")])
     draft = review.load_draft(project)
     need = {r["id"] for r in orig if r["text"] != clean[r["id"]] and r["drop_reason"] != "老师删除"}
-    assert set(draft) == need and all(draft[i]["text"] == clean[i] for i in need)
+    assert set(draft) == need and len(need) == TEACHER_NEED and all(draft[i]["text"] == clean[i] for i in need)
     assert res["adopted"]["changes"] == 0
     review.save_rows(project)
     res2 = wf.run_transcript_fix(cfg, "老师")
@@ -1000,7 +1011,8 @@ def test_undo_is_remembered_for_neighbouring_and_bundled_changes(tmp_path, text)
 
 
 def test_teacher_undoing_every_fix_on_her_real_rows_is_remembered(tmp_path):
-    """老师真实的 1004 句：一键校正以后 123 句全部点红色按钮撤销，再点一键校正：一句都不改回来（保存前后都一样）。"""
+    """老师真实的 1004 句：一键校正以后改的 TEACHER_NEED（141）句全部点红色按钮撤销，再点一键校正：一句都不改回来
+    （保存前后都一样）。"""
     if not (HAS_PINYIN and HAS_JIEBA):
         pytest.skip("没有装 pypinyin / jieba")
     orig = list(csv.DictReader(open(MOTHER_DIR / "母本_原文.csv", encoding="utf-8-sig")))
@@ -1011,7 +1023,7 @@ def test_teacher_undoing_every_fix_on_her_real_rows_is_remembered(tmp_path):
                             "split": "train"} for r in orig])
     wf.run_transcript_fix(cfg, "老师")
     changed = list(review.load_draft(project))
-    assert len(changed) == 123
+    assert len(changed) == TEACHER_NEED
     for cid in changed:
         review.unadopt_suggestion(project, cid)
     assert review.load_draft(project) == {}
@@ -1155,7 +1167,9 @@ def test_undoing_a_deletion_is_remembered(tmp_path, how):
 @need_both
 @pytest.mark.parametrize("how", ["type", "revert"])
 def test_teacher_typing_every_fix_back_on_real_rows_is_remembered(tmp_path, how):
-    """老师真实的 1004 句：123 句全部自己打回去（或撤销这一行的修改），再点一句都不改回来（以前有 2 句：开头的斌与、英文 home）。"""
+    """老师真实的 1004 句：改的 TEACHER_NEED（141）句全部自己打回去（或撤销这一行的修改），再点一句都不改回来
+    （以前有 2 句：开头的斌与、英文 home；11-24 母本录音核对以后有 3 句改回一半：「从一中的关系代词」「a dislike the wish」
+    「A ready player One, VR」——撤销时记下的拆法和以后的拆法不一样，见 review._toward_undone）。"""
     if not (HAS_PINYIN and HAS_JIEBA):
         pytest.skip("没有装 pypinyin / jieba")
     orig = list(csv.DictReader(open(MOTHER_DIR / "母本_原文.csv", encoding="utf-8-sig")))
@@ -1174,6 +1188,53 @@ def test_teacher_typing_every_fix_back_on_real_rows_is_remembered(tmp_path, how)
     assert review.load_draft(project) == {}
     res = wf.run_transcript_fix(cfg, "老师")
     assert review.load_draft(project) == {} and res["fixes"] == 0 and res["adopted"]["changes"] == 0
+
+
+def test_undo_recorded_in_other_pieces_is_still_remembered():
+    """11-24 母本录音核对以后实测出来的：撤销时记下的拆法（「一 种 → 句 中 的」、when → One / we → , / are → VR）和以后
+    程序的拆法（「种 → 中」加一个「的」、「when → One,」「we are → VR」）不一样，以前认不出是撤销过的，改回一半。
+    现在撤销过的那一处（挨着的几处合在一起）改完离程序当时想改成的样子更近，就算撤销过；往别处改的、别的地方的照样改。"""
+    t = "那么定语从一种关系代词that就需要换成as。"
+    bad = [["一 种", "句 中 的"]]
+    k = t.index("种")
+    assert review.is_rejected(bad, t, k, k + 1, "中")  # 撤销过的一部分
+    assert review.is_rejected(bad, t, k + 1, k + 1, "的")  # 撤销过的一部分（加的字）
+    assert not review.is_rejected(bad, t, k, k + 1, "肿")  # 不是往撤销过的样子改
+    assert not review.is_rejected(bad, t, t.index("换成"), t.index("换成") + 2, "改成")  # 别的地方
+
+    t = "我们就可以造出这么一个句子A ready player when we are, where people can do many things."
+    bad = [["A", "In"], ["ready", "Ready"], ["player", "Player"], ["when", "One"], ["we", ","], ["are", "VR"]]
+    k = t.index("when")
+    assert review.is_rejected(bad, t, k, k + 4, "One,")
+    assert review.is_rejected(bad, t, t.index("we are"), t.index("we are") + 6, "VR")
+    assert not review.is_rejected(bad, t, t.index("people"), t.index("people") + 6, "persons")
+
+    t = "就比如说下面这个句子，a disliked wish always criticizes me,这个例句来自于牛津词典。"
+    bad = [["a disliked wish", "I dislike the way she"]]
+    k = t.index("disliked")
+    assert review.is_rejected(bad, t, k, k + 8, "dislike the")
+    assert not review.is_rejected(bad, t, t.index("牛津"), t.index("牛津") + 2, "剑桥")
+
+
+@need_both
+@pytest.mark.parametrize("rid", ["0006_9498bb_0043", "05_27d31c_0112", "guanxifuci_5c1a5c_0018"])
+@pytest.mark.parametrize("how", ["type", "revert"])
+def test_undone_master_fix_is_not_half_redone(tmp_path, rid, how):
+    """上面那个测试在老师真实的句子上：按母本改了（录音核对后的母本），老师自己打回去 / 撤销这一行的修改，再点一键校正：
+    一个字都不改（以前改回一半：「从一中的关系代词」「A ready player One, VR」「a dislike the wish」）。"""
+    orig = {r["id"]: r["text"] for r in csv.DictReader(open(MOTHER_DIR / "母本_原文.csv", encoding="utf-8-sig"))}
+    checked = {r["id"]: r["text"] for r in csv.DictReader(open(CHECKED_CSV, encoding="utf-8-sig"))}
+    cfg, project = _voice(tmp_path, [orig[rid]], ids=[rid])
+    wf.run_transcript_fix(cfg, "校正声音")
+    assert _cur(project, rid)[1] == checked[rid]
+    if how == "type":
+        review.set_draft(project, rid, text=orig[rid])
+    else:
+        review.discard_draft(project, rid)
+    for _ in range(2):
+        res = wf.run_transcript_fix(cfg, "校正声音")
+        assert _cur(project, rid)[1] == orig[rid] and res["fixes"] == 0 and res["adopted"]["changes"] == 0
+        review.save_rows(project)
 
 
 @need_both
@@ -1923,6 +1984,23 @@ def test_upload_info_after_the_one_click_used_it_is_true(tmp_path):
     (tf.transcript_dir(project) / tf.UPLOAD_META).unlink()
     info = ui.textfix_info("校正声音")
     assert "和校对表里现在的句子一模一样" in info and "自己的文字" not in info and "也一起用" not in info, info
+
+
+@need_both
+def test_teacher_raw_transcripts_csv_is_still_known_as_builtin(tmp_path):
+    """11-24 母本对着录音核对改了 27 句以后，老师原来的 transcripts.csv（母本_原文.csv）照样认得出是程序里已经带着的：
+    原文按逐句修缮记录（core_fixes.tsv）改完正好是程序自带的母本。只改母本、不改记录时这 27 句认不出来，
+    会当成上传的母本拿去用（里面是识别错的字）。下面那个测试要 gradio，这个不用。"""
+    import shutil
+
+    cfg, project = _voice(tmp_path, ["今天我们来讲一讲非限定性定语从句里面的关系代词艾子。", "这个句子完全没有错误，我们继续往下看。"])
+    up = tmp_path / "transcripts.csv"
+    shutil.copy(MOTHER_DIR / "母本_原文.csv", up)
+    with pytest.raises(ValueError, match="程序里已经带着了"):
+        tf.save_transcripts(project, [str(up)], refuse_useless=True)
+    tf.save_transcripts(project, [str(up)])
+    res = tf.check_with_transcript(project, only=[])
+    assert res["files_known"] == ["transcripts.csv"] and not res["files"] and not res["files_same"]
 
 
 @need_both

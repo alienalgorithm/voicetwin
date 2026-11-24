@@ -73,6 +73,27 @@ def _no_sv_download(monkeypatch):
     monkeypatch.setattr(sv_models, "download", lambda cfg, progress=None, keys=None: [])
 
 
+#: 老师的母本（research/文字校正/老师的母本/）：母本_原文.csv 是识别引擎写的句子（10 月份修缮以前）；程序自带的母本
+#: （core_corpus.tsv）的正确答案是 母本_录音核对后.csv（10 月份只看文字修缮的 母本_修缮后.csv，11-24 又对着录音逐句核对、
+#: 改了 27 句；core_corpus.tsv 和它一模一样，见 test_mother_first.py::test_builtin_corpus_is_the_checked_master）。
+MOTHER_DIR = ROOT / "research" / "文字校正" / "老师的母本"
+CHECKED_CSV = MOTHER_DIR / "母本_录音核对后.csv"
+#: 识别的时候整句漏掉的英文例句（录音里有，这一句识别的文字里一个字都没有；11-24 录音核对时补进母本）。一键校正不会把
+#: 母本里多出来的一整句补进来：句首句尾漏掉的字只在同一个 id 的那一句补，而且最多 3 个（mother_first.EDGE_MAX），
+#: 再长的可能是切开的后半句、在下一个片段里（见 test_mother_first.py::test_split_piece_is_not_padded_...）。
+#: 所以一键校正以后这一句还是识别的样子，正确答案按「母本去掉这一句」算。
+MISSED_BY_ASR = {"0006_9498bb_0053": "it's the same doctor as my father consulted."}
+
+
+def teacher_answer(rid: str, checked: str) -> str:
+    """一键校正以后这一句应该是的样子：录音核对后的母本 checked，识别时整句漏掉的英文例句不算（MISSED_BY_ASR）。"""
+    tail = MISSED_BY_ASR.get(rid)
+    if tail:
+        assert checked.endswith(tail), (rid, checked)
+        return checked[:-len(tail)]
+    return checked
+
+
 def make_cfg(workspace: Path, **extra):
     overrides = {"workspace": str(workspace), "backend": "dummy", "prepare": {"asr": {"engine": "none"}},
                  "speaker_encoder": "mfcc", "similarity": {"model_dir": str(Path(workspace) / "_sv_models")}}

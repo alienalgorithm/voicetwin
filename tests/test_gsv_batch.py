@@ -39,11 +39,11 @@ from voicetwin.backends.gptsovits import (
     _split_wav,
 )
 
-from conftest import make_cfg
+from conftest import CHECKED_CSV, make_cfg
 from fake_gptsovits import REAL_API_V2, REAL_API_V2_2025, build_fake_root
 
 ROOT = Path(__file__).resolve().parents[1]
-MASTER_CSV = ROOT / "research" / "文字校正" / "老师的母本" / "母本_修缮后.csv"
+MASTER_CSV = CHECKED_CSV  # 老师的母本（11-24 录音核对后的，程序自带的母本就是它）
 TEXT = "大家好，今天我们讲第一课。"
 APIS = pytest.mark.parametrize("api_src", [REAL_API_V2, REAL_API_V2_2025], ids=["v5", "20250606v2pro"])
 
@@ -155,7 +155,7 @@ def test_split_repairs_int16_wrap_first():
 
 # ---------------------------------------------------------------------------- 按官方切分规则复刻
 def test_batch_text_on_all_teacher_lines():
-    """老师的 1004 句（母本修缮后、保留的）按程序生成时的样子整理后，复制 4 份全部正好切成 4 段、每段和单独生成的一样。"""
+    """老师的 1004 句（母本录音核对后、保留的）按程序生成时的样子整理后，复制 4 份全部正好切成 4 段、每段和单独生成的一样。"""
     from voicetwin.synth.script import tts_normalize
 
     rows = [r for r in csv.DictReader(open(MASTER_CSV, encoding="utf-8-sig")) if r["keep"] == "1"]
