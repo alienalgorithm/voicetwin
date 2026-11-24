@@ -151,7 +151,7 @@ _GSV_MODULES = frozenset({
     "g2p_en", "cn2an", "langsegment", "fast_langdetect", "wordsegment", "pyopenjtalk", "ffmpeg", "peft",
     "x_transformers", "rotary_embedding_torch", "opencc", "g2pk2", "ko_pron", "tojyutping", "split_lang",
     "sentencepiece", "nltk", "tensorboard", "matplotlib", "einops", "torchmetrics", "onnxruntime",
-    "fastapi", "uvicorn", "soundfile_backend",
+    "fastapi", "uvicorn", "soundfile_backend", "resampy", "datasets1",
 })
 
 

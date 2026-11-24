@@ -466,6 +466,13 @@ def test_trained_counts_from_the_real_log_lines():
     tc = _trained_counts(*_caps(["phoneme_data_len: 24", "wav_data_len: 96", "total left:  96"], []), 24)
     assert tc["sovits"] == 24 and tc["gpt"] is None
     assert _report_lines({"trained_counts": tc})[0] == "实际参加训练：音色 24 条、语气 （没测出来） 条（一共 24 条）。"
+    # 真实 V5 实测（GitHub，处理中文的组件没装好）：63 条里只有 16 条处理好了文字，16 × 6 = 96，不是 48 × 2
+    s2, s1 = _caps(["phoneme_data_len: 16", "wav_data_len: 96", "skipped_phone:  0 , skipped_dur:  0", "total left:  96"],
+                   ["semantic_data_len: 63", "phoneme_data_len: 16", "there are 47 semantic datas not in phoneme datas",
+                    "dataset.__len__(): 96"])
+    tc = _trained_counts(s2, s1, 63)
+    assert (tc["sovits"], tc["gpt"]) == (16, 16) and tc["reasons"] == {"文字处理的结果里没有这条": 47}
+    assert _report_lines({"trained_counts": tc})[0] == "实际参加训练：音色 16 条、语气 16 条（一共 63 条）。"
     # 接着练的时候从第几轮开始
     s2, s1 = _caps(["start training from epoch 13"], ["ckpt_path: X/ckpt/epoch=14-step=30.ckpt", "semantic_data_len: 5"])
     assert s2["resumed_from"] == 12 and s1["resumed_from"] == 15

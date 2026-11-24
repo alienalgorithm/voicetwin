@@ -909,6 +909,29 @@ def test_empty_text_step_does_not_block_later_training(prepared, tmp_path, monke
 
 
 @needs_fake_python
+def test_text_step_missing_module_stops_before_training(prepared, tmp_path, monkeypatch, no_users_pth):
+    """真实 V5 实测（GitHub）：整合包里少了 opencc，中文的句子处理文字全都出错，63 句只做好 16 句，以前照样练完
+    （练出来不像老师）。现在先停下，说清楚缺了哪个组件；装好以后重新处理文字、正常训练。"""
+    cfg, project, _ = prepared
+    gcfg, root, p2 = _small_train_cfg(project, tmp_path, "GSV-1a-module", train={
+        "sovits_epochs": 4, "gpt_epochs": 4, "batch_size": 2, "text_frontend": "official"})
+    confirm_material(gcfg, project.voice)
+    monkeypatch.setenv("FAKE_GSV_TEXT_NO_MODULE", "opencc")
+    with pytest.raises(RuntimeError) as e:
+        wf.run_train(gcfg, project.voice, "gptsovits", select=False)
+    assert "No module named 'opencc'" in str(e.value) and "所以先停下" in str(e.value)
+    assert not list((root / "SoVITS_weights_v2ProPlus").glob("*.pth"))   # 没有开始训练
+    from voicetwin.errors import explain
+    assert "整合包" in explain(e.value).advice
+    monkeypatch.delenv("FAKE_GSV_TEXT_NO_MODULE")
+    info = wf.run_train(gcfg, project.voice, "gptsovits", select=False)  # 装好了：重新处理文字
+    opt_dir = root / "logs" / info["exp_name"]
+    rows = (opt_dir / "2-name2text.txt").read_text(encoding="utf-8").strip().splitlines()
+    assert len(rows) == info["params"]["trained_counts"]["expected"]
+    assert info["sovits"] and info["gpt"]
+
+
+@needs_fake_python
 def test_leftover_part_files_are_not_reused_after_material_change(prepared, tmp_path, no_users_pth):
     """上次处理完、还没来得及合并就停了（或者杀毒软件占着删不掉），留下了旧素材的分块结果：
     改了素材再训练，不能悄悄用旧的文字 / 语义（真实脚本看到分块文件在就直接跳过）。"""

@@ -26,6 +26,7 @@
 - FAKE_GSV_HANG=1：s2 训练一直不结束（并开一个子进程），用来测试「停止」会结束整个进程树。
 - FAKE_GSV_API_DELAY=秒：推理服务启动前先等一会儿（模拟加载模型）。
 - FAKE_GSV_TEXT_FAIL=1 / FAKE_GSV_SEMANTIC_FAIL=1：1A / 1C 每一句都出错（和真的一样只打印、照样退出 0，留下空的分块结果）。
+- FAKE_GSV_TEXT_NO_MODULE=opencc：1A 除了第一句，每句都报「No module named 'opencc'」（整合包缺组件）。
 - 合成的文字里有「【测试显存不够】」时，api 和真的一样：记录里打印 Traceback，回 200 + 1 秒静音。
 - FAKE_GSV_MAX_BATCH=N：合成请求的 batch_size 大于 N 时，和真的显存不够一样：记录里打印「CUDA out of memory」的
   Traceback，回 200 + 1 秒 16 kHz 的静音。
@@ -85,6 +86,10 @@ for line in lines[int(os.environ["i_part"])::int(os.environ["all_parts"])]:  # �
     print(os.path.basename(wav))  # 真实脚本 1-get-text.py:91 就是这样逐条打印文件名
     if os.environ.get("FAKE_GSV_TEXT_FAIL"):  # 真实脚本逐句 try/except：每句都出错时只打印 Traceback，照样退出 0
         print(wav, text, "Traceback (most recent call last):\\nRuntimeError: fake per-line failure")
+        continue
+    if os.environ.get("FAKE_GSV_TEXT_NO_MODULE") and out:  # 整合包缺组件（真实 V5 实测：opencc）：只有第一句做成
+        mod = os.environ["FAKE_GSV_TEXT_NO_MODULE"]
+        print(wav, text, f"Traceback (most recent call last):\\nModuleNotFoundError: No module named '{mod}'")
         continue
     out.append(f"{wav}\\tph\\t1\\t{text}")
 with open(txt_path, "w", encoding="utf8") as f:  # 真实脚本 1-get-text.py:142-143（一句都没做成时写进去的是一个换行）

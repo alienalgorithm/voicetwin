@@ -975,6 +975,10 @@ def plan_training(n_clips: int, minutes: float, total_gb: Optional[float] = None
         parts.append(f"{mat} → 音色 {lv}（官方的 LoRA 练法）{le} 轮{_lora_mine(lora, 'lora_epochs')}、"
                      f"语气 GPT {g_ep} 轮{mine('gpt_epochs')}")
         parts.append(f"音色{every(ls)}、语气{every(g_save)}存一次模型，训练完自动挑最像你的那个")
+    else:
+        parts.append(f"{mat} → 音色 SoVITS {s_ep} 轮{mine('sovits_epochs')}、语气 GPT {g_ep} 轮{mine('gpt_epochs')}")
+    if lora:
+        pass
     elif s_save == g_save:
         parts.append(f"{every(s_save)}存一次模型，训练完自动挑最像你的那个")
     else:
@@ -1485,11 +1489,16 @@ class _DiskWatch:
         return True
 
 
-def _repeat_factor(listed: Optional[int], expected: int) -> int:
-    """训练程序在素材少于 100 条时把整份重复 max(2, int(100 / 条数)) 遍：从它打印的条数反推重复了几遍（推不出来就是 1）。"""
-    if not listed or listed <= expected:
+def _repeat_factor(listed: Optional[int], expected: int, upper: Optional[int] = None) -> int:
+    """训练程序在素材少于 100 条时把整份重复 max(2, int(100 / 条数)) 遍：从它打印的条数反推重复了几遍（推不出来就是 1）。
+    upper：最多可能有几条（s2 打印的 phoneme_data_len：文字处理好了几条），比如只有 16 条处理好时 96 = 16 × 6，
+    不能拆成 48 × 2。"""
+    if not listed:
         return 1
-    for u in range(min(int(expected), 99), 0, -1):  # 从多到少试：同一个总数可能有几种拆法，条数最接近素材条数的最可能
+    top = min(int(expected), int(upper)) if upper else int(expected)
+    if listed <= top:
+        return 1
+    for u in range(min(top, 99), 0, -1):  # 从多到少试：同一个总数可能有几种拆法，条数最接近素材条数的最可能
         r = max(2, int(100 / u))
         if u * r == listed:
             return r
@@ -1504,14 +1513,17 @@ def _trained_counts(s2: Dict[str, Any], s1: Dict[str, Any], expected: int) -> Di
     reasons: Dict[str, int] = {}
     left = s2.get("total_left")
     if left is not None:
-        r = _repeat_factor(s2.get("wav_len"), expected)
+        r = _repeat_factor(s2.get("wav_len"), expected, s2.get("phone_len"))
         out["sovits"] = int(round(left / float(r)))
+        if s2.get("phone_len") is not None and int(s2["phone_len"]) < int(expected):
+            reasons["文字处理的结果里没有这条"] = int(expected) - int(s2["phone_len"])
         if s2.get("phone_len") is not None and s2.get("wav_len") is not None:
             missing = int(s2["phone_len"]) - int(round(s2["wav_len"] / float(r)))
             if missing > 0:
                 reasons["声音特征没提取出来"] = missing
         if s2.get("skipped_phone"):
-            reasons["文字处理的结果里没有这条"] = int(round(s2["skipped_phone"] / float(r)))
+            reasons["文字处理的结果里没有这条"] = (reasons.get("文字处理的结果里没有这条", 0)
+                                         + int(round(s2["skipped_phone"] / float(r))))
         if s2.get("skipped_dur"):
             reasons["声音太短（不到 0.6 秒）或太长（54 秒以上）"] = int(round(s2["skipped_dur"] / float(r)))
     if s2.get("ssl"):
@@ -2683,7 +2695,27 @@ class GPTSoVITSBackend(Backend):
         if not "".join(lines).strip():
             _forget_features(opt_dir)
             raise RuntimeError("1A 文本处理没有产出，请查看日志 logs/gsv_1a_text.log")
+        done = len([ln for ln in lines if ln.strip()])
+        missing = self._text_missing_module(parts)
+        if missing and done < MIXED_MIN_SHARE * n:
+            # 例如整合包里少了 opencc：中文的句子一句都处理不了，只用剩下的句子练出来不像你，所以先停下。
+            # 处理了一半的结果删掉：装好以后下次要重新处理文字（不然看到 2-name2text.txt 在就接着用了）
+            self._clear_text_outputs(opt_dir)
+            _forget_features(opt_dir)
+            raise RuntimeError(f"处理文字只做好了 {done}/{n} 句：GPT-SoVITS 处理文字要用的组件没有装好"
+                               f"（No module named '{missing}'），只用剩下的句子练出来不像你，所以先停下。")
         return "official", {}
+
+    def _text_missing_module(self, parts: int) -> Optional[str]:
+        """刚才处理文字的日志（每一路一份，只看最后一次）里有没有「No module named 'xxx'」：有就返回 xxx。"""
+        for i in range(max(1, int(parts))):
+            name = "gsv_1a_text" if i == 0 else f"gsv_1a_text_{i + 1}"
+            text = read_text(self.project.logs_dir / f"{name}.log")
+            idx = text.rfind("\n===== ")
+            m = re.search(r"No module named ['\"]?([\w.]+)", text[idx + 1:] if idx >= 0 else text)
+            if m:
+                return m.group(1)
+        return None
 
     def _run_mixed_text(self, out_dir: Path, base: Dict[str, Any], n: int, progress: Optional[ProgressFn],
                         prange: Tuple[float, float], parts: int) -> Tuple[bool, str, Dict[str, int]]:
@@ -3961,6 +3993,13 @@ class GPTSoVITSBackend(Backend):
         ver = detect_sovits_version(w["sovits"], self.root).get("version") if w.get("sovits") else None
         return str(ver or self.version)
 
+    def _independent_batches(self) -> bool:
+        """正在用的是 V5 模型（官方 TTS.py 同时生成时每一句单独生成，不用「语速 1.0001」的办法）；读不出来时按以前的做法（False）。"""
+        try:
+            return self._batch_version() in BATCH_INDEPENDENT_VERSIONS
+        except Exception:  # noqa: BLE001
+            return False
+
     @property
     def supports_aux_refs(self) -> bool:  # type: ignore[override]
         """辅助参考录音（几条参考的音色平均一下）只有 v2 / v2Pro / v2ProPlus 用得上：官方 TTS.py 里 V3 / V4 / V5
@@ -4102,7 +4141,7 @@ class GPTSoVITSBackend(Backend):
 
         b = min(n, self._max_batch or n)
         speed = _speed_of(req)
-        send = BATCH_SPEED if speed == 1.0 and self._batch_version() not in BATCH_INDEPENDENT_VERSIONS else speed
+        send = BATCH_SPEED if speed == 1.0 and not self._independent_batches() else speed
         lang = self._payload(req)["text_lang"]
         while b > 1:
             check_cancel()

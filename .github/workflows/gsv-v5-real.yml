@@ -11,6 +11,8 @@ on:
     paths:
       - ".github/workflows/gsv-v5-real.yml"
       - "research/gsv_v4_v5/真实V5实测/run_real_v5.py"
+      - "research/gsv_v4_v5/真实V5实测/import_check.py"
+      - "voicetwin/backends/gptsovits.py"
       - "tests/constraints-gsv-v5.txt"
 
 permissions:
@@ -57,16 +59,20 @@ jobs:
           python -m pip install -U pip wheel
           python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
           # 整合包的 requirements.txt，去掉日文 / 韩文 / 粤语 / 语音识别这些这次用不到、又要现场编译的；显卡版 onnxruntime 换成普通版
-          grep -viE '^(--no-binary|pyopenjtalk|python_mecab_ko|g2pk2|ko_pron|opencc|ToJyutping|funasr|modelscope|onnxruntime)' \
+          # （opencc 不能去掉：处理中文的 G2PW 要用它，去掉以后中文的句子全都处理不了）
+          grep -viE '^(--no-binary|pyopenjtalk|python_mecab_ko|g2pk2|ko_pron|ToJyutping|funasr|modelscope|onnxruntime)' \
             "$GSV/requirements.txt" | sed -E 's/[[:space:]]*([<>=!~;].*)?$//' | grep -v '^$' > /tmp/req.txt
           # 版本范围不用：整合包里实际装的版本（tests/constraints-gsv-v5.txt）才是老师电脑上的，例如 torchmetrics 实际是 1.5.2
-          # 整合包里有、官方脚本要 import、但 requirements.txt 没写的（tools/my_utils.py 要 gradio，AR/modules/lr_schedulers.py 要 matplotlib）
-          printf 'onnxruntime\nmatplotlib\n' >> /tmp/req.txt
+          # 整合包里有、官方脚本要 import、但 requirements.txt 没写的（tools/my_utils.py 要 gradio，AR/modules/lr_schedulers.py 要 matplotlib，
+          # 推理时 TTS.py 要 resampy）
+          printf 'onnxruntime\nmatplotlib\nresampy\n' >> /tmp/req.txt
           cat /tmp/req.txt
           python -m pip install -c tests/constraints-gsv-v5.txt -r /tmp/req.txt
           python -m pip install -c tests/constraints-gsv-v5.txt -e ".[sv]" webrtcvad-wheels zhconv
           python -m pip install --no-deps resemblyzer noisereduce
           python -c "import torch, transformers, peft; print(torch.__version__, transformers.__version__, peft.__version__)"
+          # 官方代码要用的模块一个一个 import：缺了哪个马上停下、一次列全（不用等训练到一半）
+          python research/gsv_v4_v5/真实V5实测/import_check.py "$GSV"
       - name: Run the whole pipeline with the real V5 code and models
         run: |
           python research/gsv_v4_v5/真实V5实测/run_real_v5.py --gsv "$GSV" --out "$OUT" --work /mnt/w/vt

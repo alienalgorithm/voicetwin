@@ -185,15 +185,26 @@ def main() -> int:
         project = wf.open_project(cfg, voice, must_exist=True)
         m = project.load_models().get("gptsovits") or {}
         sel = m.get("selection") or {}
-        return {"versions": info.get("versions"), "timing": {k: v for k, v in info.items() if k.endswith("_s")},
-                "sovits": m.get("sovits"), "gpt": m.get("gpt"), "selected": m.get("selected"),
-                "params_lora": (m.get("params") or {}).get("lora"),
-                "results": [{k: r.get(k) for k in ("id", "version", "score", "sim", "speaker_pct", "cer")}
-                            for r in sel.get("results") or []]}
+        tc = (m.get("params") or {}).get("trained_counts") or {}
+        got = {"versions": info.get("versions"), "timing": {k: v for k, v in info.items() if k.endswith("_s")},
+               "sovits": m.get("sovits"), "gpt": m.get("gpt"), "selected": m.get("selected"),
+               "params_lora": (m.get("params") or {}).get("lora"), "trained_counts": tc,
+               "results": [{k: r.get(k) for k in ("id", "version", "score", "sim", "speaker_pct", "cer")}
+                           for r in sel.get("results") or []]}
+        res["train_detail"] = got
+        # 每一条素材都要真的参加训练（音色和语气），自动挑选要真的比过（不是挑选失败后先用最后一轮）
+        n = tc.get("expected")
+        if not n or tc.get("sovits") != n or tc.get("gpt") != n:
+            raise RuntimeError(f"不是每条素材都参加了训练：音色 {tc.get('sovits')}、语气 {tc.get('gpt')}、一共 {n}"
+                               f"（{tc.get('reasons')}）")
+        if not got["results"]:
+            raise RuntimeError("自动挑选没有真的比过（results 是空的），看 voicetwin.log")
+        return got
 
     trained = step("训练（V5：v5dev 的 LoRA + GPT）并自动挑选", train)
     res["progress_messages"] = rec.items[-60:]
     save()
+    trained = trained or res.get("train_detail")
     if trained:
         for p in trained.get("sovits") or []:
             res.setdefault("detected", {})[Path(p).name] = g.detect_sovits_version(p).get("version")
