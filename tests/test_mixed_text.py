@@ -544,9 +544,11 @@ def test_identical_training_stops_instead_of_dropping_english(gsv_env, monkeypat
     cfg, project, b = make(batch_size=4)
     confirm_material(cfg, project.voice)
     opt = b._opt_dir()
+    # 共用的测试声音里可能已经有别的测试练好的模型（按测试顺序不同）：只看这次有没有练出新的
+    before = (project.load_models().get("gptsovits") or {}).get("sovits")
     with pytest.raises(RuntimeError, match="^中英文一起处理文字没成功，训练先停下了"):
         wf.run_train(cfg, project.voice, "gptsovits", select=False, mode="identical")
-    assert not (project.load_models().get("gptsovits") or {}).get("sovits")   # 什么都没练
+    assert (project.load_models().get("gptsovits") or {}).get("sovits") == before   # 什么都没练
     assert not (opt / "2-name2text.txt").exists()
 
     std = wf.run_train(cfg, project.voice, "gptsovits", select=False, mode="standard")
