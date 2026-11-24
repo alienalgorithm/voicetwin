@@ -1,0 +1,55 @@
+name: copy-releases
+
+# 一次性：把原仓库 AlienCodes/literate-enigma 的 16 个发布（版本标签 + 安装包、快速上手 PDF、声纹模型包）照原样复制到这个仓库。
+# 标签指向的提交和原仓库一模一样（都在 master 的历史里）；已经有的发布跳过，可以重复运行。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/copy-releases"]
+    paths:
+      - ".github/workflows/copy-releases.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SRC: AlienCodes/literate-enigma
+      DST: ${{ github.repository }}
+    steps:
+      - name: Copy releases
+        run: |
+          set -euo pipefail
+          gh api "repos/$SRC/releases?per_page=100" > src.json
+          latest=$(gh api "repos/$SRC/releases/latest" --jq .tag_name)
+          echo "原仓库最新发布：$latest"
+          # 按发布时间从旧到新
+          for tag in $(jq -r 'sort_by(.published_at) | .[].tag_name' src.json); do
+            if gh release view "$tag" -R "$DST" >/dev/null 2>&1; then echo "已有 $tag，跳过"; continue; fi
+            sha=$(gh api "repos/$SRC/git/ref/tags/$tag" --jq .object.sha)
+            typ=$(gh api "repos/$SRC/git/ref/tags/$tag" --jq .object.type)
+            if [ "$typ" = "tag" ]; then sha=$(gh api "repos/$SRC/git/tags/$sha" --jq .object.sha); fi
+            jq -r --arg t "$tag" '.[] | select(.tag_name==$t) | .body // ""' src.json > notes.md
+            name=$(jq -r --arg t "$tag" '.[] | select(.tag_name==$t) | .name // .tag_name' src.json)
+            pre=$(jq -r --arg t "$tag" '.[] | select(.tag_name==$t) | .prerelease' src.json)
+            rm -rf a && mkdir a
+            gh release download "$tag" -R "$SRC" -D a
+            args=(--target "$sha" --title "$name" --notes-file notes.md)
+            [ "$pre" = "true" ] && args+=(--prerelease)
+            if [ "$tag" = "$latest" ]; then args+=(--latest); else args+=(--latest=false); fi
+            gh release create "$tag" -R "$DST" "${args[@]}" a/*
+            echo "复制了 $tag（$sha，$(ls a | wc -l) 个文件）"
+          done
+          # 核对：每个发布的文件名、大小和原仓库一样，标签指向同一个提交
+          ok=1
+          for tag in $(jq -r '.[].tag_name' src.json); do
+            s=$(gh api "repos/$SRC/releases/tags/$tag" --jq '[.assets[] | "\(.name) \(.size)"] | sort | join(",")')
+            d=$(gh api "repos/$DST/releases/tags/$tag" --jq '[.assets[] | "\(.name) \(.size)"] | sort | join(",")')
+            ss=$(gh api "repos/$SRC/git/ref/tags/$tag" --jq .object.sha); ds=$(gh api "repos/$DST/git/ref/tags/$tag" --jq .object.sha)
+            if [ "$s" = "$d" ] && [ "$ss" = "$ds" ]; then echo "✅ $tag"; else echo "❌ $tag"; ok=0; fi
+          done
+          [ $ok = 1 ]
