@@ -206,3 +206,18 @@
 2026-11-24 19:37:57,474 | INFO | voicetwin.backend |   训练音色：第 2/8 轮（60%）
 2026-11-24 20:15:29,473 | INFO | voicetwin.backend |   训练音色：第 2/8 轮完成
 2026-11-24 20:15:39,351 | INFO | voicetwin.backend | 正在停止「训练音色（v5dev）」……
+2026-11-24 20:28:24,479 | INFO | voicetwin.workflow | 这次训练用校对表里保存好的文字：1198 条训练、20 条当「考试题」；其中 1198 条是你改过文字的，按改好的文字训练
+2026-11-24 20:28:24,482 | INFO | voicetwin.backend | 检查显卡、整理训练素材（大约半分钟）……
+2026-11-24 20:28:24,521 | INFO | voicetwin.gptsovits | 实验名 vt_6c65d5；GPT-SoVITS 版本 v5dev（目前公开的最新版本）
+2026-11-24 20:28:24,521 | INFO | voicetwin.backend | 训练素材 1198 条，共 148.3 分钟
+2026-11-24 20:28:26,065 | WARNING | voicetwin.gptsovits | 没有检测到可用的 NVIDIA 显卡，训练会非常慢（CPU 训练可能需要数天）
+2026-11-24 20:28:26,161 | INFO | voicetwin.backend | 训练计划：「一模一样」训练——没有检测到能用的 N 卡 → 音色（v5dev）每批 1 条（你指定的）、语气每批 4 条（你指定的）（仍然按「一模一样」训练，但用处理器会非常慢）；音色 v5dev（官方的 LoRA 练法）8 轮、每轮存一个；语气 GPT 20 轮、每轮存一个；中文和英文都参加训练（素材里有 691 句夹着英文）；训练完用你没参加训练的 20 句录音和 24 句检查用的句子，把音色第 1 轮、语气第 4 轮以后存下的每个版本，还有音色没有训练的 V5 底模都试一遍，挑最像你的；不开 DPO（官方实验功能，显存也不够；需要的话可以在高级设置里手动打开）。
+2026-11-24 20:28:26,161 | INFO | voicetwin.gptsovits |   · 显卡用全精度训练（is_half: false），每批数量减半
+2026-11-24 20:28:26,161 | INFO | voicetwin.backend | 素材没变：接着上次没做完的训练往下练。
+2026-11-24 20:28:26,244 | INFO | voicetwin.backend | 提取声音特征（比较慢，素材多时要十几分钟）
+2026-11-24 20:28:26,244 | INFO | voicetwin.backend | ▶ 提取声音特征（详细日志：gsv_1b_hubert.log）
+2026-11-24 20:28:28,249 | INFO | voicetwin.backend |   提取声音特征 1198/1198
+2026-11-24 20:28:33,468 | INFO | voicetwin.backend | 训练音色（v5dev，LoRA 微调），共 8 轮……
+2026-11-24 20:28:33,469 | INFO | voicetwin.backend | ▶ 训练音色（v5dev）（详细日志：gsv_s2_train_v5dev.log）
+2026-11-24 20:29:19,158 | INFO | voicetwin.backend |   训练音色：第 3/8 轮（0%）
+2026-11-24 21:28:39,856 | INFO | voicetwin.backend |   训练音色：第 3/8 轮（40%）
