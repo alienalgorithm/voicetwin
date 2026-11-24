@@ -25,10 +25,11 @@ on:
 permissions:
   contents: write
 
-# 一次要跑一两天：别的推送不能把它取消（新的一次排在后面）
+# 一次要跑一两天。只有改了这三个文件才会触发（别的推送不会）；触发了就是有意从头再练：新的一次取消正在跑的
+# （11-24：训练用的文字处理改了——英文后面的「，」「、」不再被丢掉——要用新代码重练）
 concurrency:
   group: train-real-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   VARIANT: ${{ inputs.variant || 'default' }}
