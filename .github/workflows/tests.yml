@@ -10,7 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: ["3.9", "3.11", "3.12"]
+        # 老师的 V5 整合包是 Python 3.12；3.9 只是以前的 v2pro 整合包用的（新的 Ubuntu 也没有 3.9 了）
+        python: ["3.11", "3.12"]
         gsv: [""]
         include:
           # 和官方 V5 整合包（GPT-SoVITS-v5-20261005）一样：Windows、Python 3.12、各个库的版本一样（gradio 4.44.1……）

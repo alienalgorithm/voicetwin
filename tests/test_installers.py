@@ -107,7 +107,7 @@ def test_requirements_accept_gsv_package_versions():
 
 def test_requirements_accept_v5_package_versions():
     """官方 V5 整合包（GPT-SoVITS-v5-20261005，Python 3.12）里装好的版本也必须满足声音分身的依赖。
-    版本表是 GitHub 上解开官方整合包读出来的（.github/workflows/gsv-v5-package.yml）。"""
+    版本表是 GitHub 上解开官方整合包读出来的（.github/workflows/gsv-v5-package.yml → tests/constraints-gsv-v5.txt）。"""
     import re
 
     import pytest
@@ -120,12 +120,11 @@ def test_requirements_accept_v5_package_versions():
     reqs = {r.name.lower(): r for r in (packaging.Requirement(s) for s in re.findall(r'"([^"]+)"', deps))}
     assert Version("3.12") in packaging.SpecifierSet(re.search(r'requires-python = "([^"]+)"', text).group(1))
     have = {}
-    for name in ("v5整合包", "v5整合包_通用版"):
-        f = ROOT / "research" / "gsv_v4_v5" / "官方资料" / name / "runtime_包版本.txt"
-        if f.exists():
-            for line in f.read_text(encoding="utf-8").split():
-                n, _, v = line.rpartition("-")
-                have.setdefault(n.lower().replace("_", "-"), []).append(v.split("+")[0])
+    # 由官方 V5 整合包 runtime/Lib/site-packages 最上层的 *.dist-info 生成（别的包里面自带的副本不算）
+    for line in (ROOT / "tests" / "constraints-gsv-v5.txt").read_text(encoding="utf-8").splitlines():
+        if "==" in line and not line.startswith("#"):
+            n, v = line.split("==", 1)
+            have.setdefault(n.strip().lower().replace("_", "-"), []).append(v.strip())
     assert have, "没有官方 V5 整合包的版本表"
     checked = 0
     for name, req in reqs.items():
