@@ -535,9 +535,9 @@ def test_v4_model_uses_single_requests(prepared, tmp_path, quick):
         b.stop()
 
 
-def test_v5_model_batches_without_the_speed_trick(prepared, tmp_path, quick, monkeypatch):
-    """V5 模型：同时生成（官方对 V5 每个版本本来就单独合成），语速 1.0 照发 1.0、不做「1.0001」自检，切开以后正好 n 个。"""
-    monkeypatch.setenv("FAKE_GSV_SPEED_TRICK_BROKEN", "1")  # 就算 1.0001 和 1.0 不一样，V5 也用不着它
+def test_v5_model_is_generated_one_by_one(prepared, tmp_path, quick, monkeypatch):
+    """V5 模型：一个一个生成。官方 V5 整合包真跑时，3 个版本一次生成切不开（找到 4 段长静音），退回一个一个生成反而慢一倍
+    （research/gsv_v4_v5/真实V5实测/结果/结果.json）；V5 每个版本本来就单独合成，同时生成省不了时间。"""
     b, root, ref = _backend(prepared, tmp_path, REAL_API_V2)
     v5 = tmp_path / "v5_e4_s100_l32.pth"
     v5.write_bytes(b"07" + b"x" * 4000)  # 模型文件开头的版本标记 07 = v5dev LoRA
@@ -545,10 +545,11 @@ def test_v5_model_batches_without_the_speed_trick(prepared, tmp_path, quick, mon
         b.start()
         b.use_checkpoint({"id": "v5", "gpt": str(root / "GPT_SoVITS/pretrained_models/s1v3.ckpt"), "sovits": str(v5)})
         assert b._batch_version() == "v5dev"
+        assert b._single_reason(_req(ref), 3) == "v5dev 模型只能一个一个生成"
         out = b.synthesize_many(_req(ref), 3, tmp_path / "out")
         assert len(out) == 3 and [k for _, k in out] == [0, 1, 2]
-        assert [(r["batch_size"], r["speed_factor"]) for r in _runs(root)] == [(3, 1.0)]
-        assert b.batch_stats["speed_trick"] is None and not b.batch_stats["single_reasons"]
+        assert all(r["batch_size"] == 1 for r in _runs(root)) and len(_runs(root)) == 3
+        assert b.last_many["mode"] == "single"
     finally:
         b.stop()
 

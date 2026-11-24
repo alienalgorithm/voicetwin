@@ -180,6 +180,14 @@ def main() -> int:
     step("准备素材 + 确认训练素材", prepare)
     step("环境检查", lambda: [{k: r.get(k) for k in ("item", "status", "detail")} for r in wf.doctor(cfg)])
 
+    def badge_before():
+        b = wf.model_badge(cfg, voice)
+        if b.get("version") != "v5dev":   # 还没训练：读官方 V5 底模 s2Gv5dev.pth（按文件内容核对）
+            raise RuntimeError(f"还没训练时右上角的型号不是 v5dev：{b}")
+        return b
+
+    step("网页右上角的模型型号（还没训练：官方 V5 底模）", badge_before)
+
     rec = Rec()
 
     def train():
@@ -191,16 +199,20 @@ def main() -> int:
         got = {"versions": info.get("versions"), "timing": {k: v for k, v in info.items() if k.endswith("_s")},
                "sovits": m.get("sovits"), "gpt": m.get("gpt"), "selected": m.get("selected"),
                "params_lora": (m.get("params") or {}).get("lora"), "trained_counts": tc,
-               "results": [{k: r.get(k) for k in ("id", "version", "score", "sim", "speaker_pct", "cer")}
-                           for r in sel.get("results") or []]}
+               "results": [{k: r.get(k) for k in ("id", "version", "pct", "to_real", "sim", "score", "cer", "rhythm")}
+                           for r in sel.get("results") or []],
+               # 网页右上角的模型型号：训练好以后从选中的模型文件读出来（还没训练时的底模在前面「环境检查」后记过）
+               "badge_after_training": wf.model_badge(cfg, voice)}
         res["train_detail"] = got
         # 每一条素材都要真的参加训练（音色和语气），自动挑选要真的比过（不是挑选失败后先用最后一轮）
         n = tc.get("expected")
         if not n or tc.get("sovits") != n or tc.get("gpt") != n:
             raise RuntimeError(f"不是每条素材都参加了训练：音色 {tc.get('sovits')}、语气 {tc.get('gpt')}、一共 {n}"
                                f"（{tc.get('reasons')}）")
-        if not got["results"]:
-            raise RuntimeError("自动挑选没有真的比过（results 是空的），看 voicetwin.log")
+        if not got["results"] or all(r.get("pct") is None and r.get("to_real") is None for r in got["results"]):
+            raise RuntimeError("自动挑选没有真的比过（没有打分），看 voicetwin.log")
+        if got["badge_after_training"].get("version") != "v5dev":
+            raise RuntimeError(f"训练好以后右上角的型号不是 v5dev：{got['badge_after_training']}")
         return got
 
     trained = step("训练（V5：v5dev 的 LoRA + GPT）并自动挑选", train)
@@ -236,7 +248,7 @@ def main() -> int:
             single = b.synthesize_many(req, 3, work / "一个一个")
             report["one_by_one"] = {"seconds": round(time.time() - t0, 1), "count": len(single),
                                     "durations": [wav_info(p)["seconds"] for p, _ in single], "sr": wav_info(single[0][0])["sr"]}
-            g.BATCH_VERSIONS = orig if ver in orig else orig + (ver,)   # 再同时生成（程序现在的做法）
+            g.BATCH_VERSIONS = orig   # 再按程序现在的做法（V5 一个一个生成，11-24 实测同时生成切不开）
             n_req = int(b.batch_stats.get("requests") or 0)
             t0 = time.time()
             many = b.synthesize_many(req, 3, work / "同时生成")
@@ -252,7 +264,7 @@ def main() -> int:
         finally:
             b.stop()
 
-    step("同时生成好几个版本（V5）", batch_test)
+    step("要好几个版本时（V5：程序现在一个一个生成）", batch_test)
 
     def base_model():
         project = wf.open_project(cfg, voice, must_exist=True)
