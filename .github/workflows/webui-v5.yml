@@ -1,0 +1,75 @@
+name: webui-v5
+
+# 用 V5 整合包里的库版本（gradio 4.44.1、fastapi 0.115.2、pydantic 2.10.6……，tests/constraints-gsv-v5.txt）
+# 在真的浏览器里把网页从头点到尾，设置全用默认的：准备素材 → 确认 → 训练 → 生成。
+# GPT-SoVITS 用测试里的替身（只为了快）；真的 V5 代码和底模的实测是 gsv-v5-real.yml。
+# 截图和结果提交到 research/gsv_v4_v5/网页实测/结果/。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "voicetwin/**"
+      - "tests/fake_gptsovits.py"
+      - "tests/conftest.py"
+      - "tests/constraints-gsv-v5.txt"
+      - "research/gsv_v4_v5/网页实测/*.py"
+      - ".github/workflows/webui-v5.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: webui-v5-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      OUT: research/gsv_v4_v5/网页实测/结果
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (versions as in the V5 package)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          python -m pip install -U pip wheel
+          python -m pip install -c tests/constraints-gsv-v5.txt -e ".[dev,webui,sv]"
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+          python -c "import gradio, fastapi, pydantic; print('gradio', gradio.__version__, 'fastapi', fastapi.__version__, 'pydantic', pydantic.__version__)"
+      - name: Open the page
+        run: |
+          mkdir -p /tmp/vt
+          nohup python research/gsv_v4_v5/网页实测/start_page.py /tmp/vt 7860 > /tmp/vt/page.log 2>&1 &
+          echo $! > /tmp/vt/page.pid
+          for i in $(seq 1 150); do curl -sf http://127.0.0.1:7860/ >/dev/null && break; sleep 2; done
+          curl -sf http://127.0.0.1:7860/ >/dev/null || { cat /tmp/vt/page.log; exit 1; }
+      - name: Click through the page in a browser
+        run: |
+          rm -rf "$OUT"
+          python research/gsv_v4_v5/网页实测/browser_check.py http://127.0.0.1:7860/ /tmp/vt/素材 "$OUT"
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p "$OUT/日志"
+          cp /tmp/vt/page.log "$OUT/日志/" 2>/dev/null || true
+          for d in /tmp/vt/workspace/*/logs; do cp -r "$d/." "$OUT/日志/" 2>/dev/null || true; done
+          find "$OUT/日志" -type f -size +2M -delete || true
+          kill "$(cat /tmp/vt/page.pid)" 2>/dev/null || true
+      - name: Commit results
+        if: always()
+        run: |
+          [ -d "$OUT" ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$OUT"
+          git commit -m "记录：网页实测结果（V5 整合包的库版本，GitHub 自动运行）" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && break
+            sleep $((i * 5))
+          done

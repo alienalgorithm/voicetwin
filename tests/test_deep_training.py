@@ -764,7 +764,7 @@ def test_web_page_has_training_mode(tmp_path):
     app = ui.build()
     assert ui.c["train_mode"].value == "identical" and ui.c["train_mode"].label == "训练方式"
     assert ui.c["train_mode"].info == A.TRAIN_MODE_INFO
-    conf = json.dumps(app.get_config_file(), ensure_ascii=False)
+    conf = json.dumps(app.get_config_file(), ensure_ascii=False, default=str)  # 和 gradio 自己一样（orjson default=str）
     assert A.TRAIN_INTRO in conf and "V4" not in conf
 
 

@@ -529,7 +529,7 @@ def test_web_page_build_defaults(tmp_path):
     assert ui.c["quality"].value == "identical"
     assert [v for _, v in ui.c["quality"].choices] == list(eng.QUALITY_ORDER)
     assert ui.c["speed_try"].value == "▶ 试听（快速，只听语速）"
-    conf = json.dumps(app.get_config_file(), ensure_ascii=False)
+    conf = json.dumps(app.get_config_file(), ensure_ascii=False, default=str)  # 和 gradio 自己一样（orjson default=str）
     assert A.BLIND_QUALITY_NOTE in conf and "大约几分钟" not in conf
     assert app.title == "声音分身 VoiceTwin v18"
 
