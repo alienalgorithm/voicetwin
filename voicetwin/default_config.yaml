@@ -89,9 +89,9 @@ backends:
       if_dpo: auto            # DPO（GPT-SoVITS 的实验功能）：auto = 不开（没有可靠的测量说明它能让声音更像）；
                               # true 手动打开（语气训练慢 2～4 倍，显存最好 ≥ 22GB，不够会出错），false 关
       text_low_lr_rate: 0.4
-      compare_versions: auto  # 一起练、一起比较的版本：auto = 用 V4 / V5 时同时练 v2ProPlus，挑选时用你没参加训练的录音实测，
-                              # 哪个更像用哪个（训练时间会长一些）；none = 只练上面 version 写的那一个
-      lora_epochs: auto       # V4 / V5 音色 LoRA：auto = 标准 4 轮、「一模一样」8 轮，每轮存一个（官方默认 2 轮、最多 16 轮）
+      compare_versions: none  # 只练上面 version 写的那一个（V5）。想同时练别的版本、挑模型时一起实测比较，写版本名，例如 v2ProPlus
+      lora_epochs: auto       # V4 / V5 音色 LoRA：auto = 标准 4 轮、「一模一样」8 轮，每轮存一个（官方默认 2 轮、最多 16 轮）；
+                              # 只练 V5 时，网页高级设置里的「音色训练轮数」「每批数量」也用在这里
       lora_batch_size: auto   # auto = 官方公式（显存 + 0.4）÷ 8，8 GB 显卡每批 1 条
       lora_save_every: auto
       lora_rank: 32           # LoRA 的秩：16 / 32（官方默认）/ 64 / 128

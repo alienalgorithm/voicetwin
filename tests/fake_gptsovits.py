@@ -136,7 +136,9 @@ if os.path.exists(semantic_path):  # 真实脚本 3-get-semantic.py:58-59：分�
 names = clip_names()  # 真实的 3-get-semantic.py 也是读 inp_text（只看声音，不看文字）
 if os.environ.get("FAKE_GSV_SEMANTIC_FAIL"):  # 真实脚本也是逐句 try/except：每句都出错时写进去的是空文件，退出 0
     names = []
-open(semantic_path, "w", encoding="utf8").write("\\n".join(f"{n}\\t1 2 3" for n in names))
+# 最后一个数记下是哪个底模提取的（真的不同底模提取的 token 也会不一样）：训练时核对用的是不是这个版本自己的
+mark = sum(os.path.basename(os.environ["pretrained_s2G"]).encode()) % 997
+open(semantic_path, "w", encoding="utf8").write("\\n".join(f"{n}\\t1 2 {mark}" for n in names))
 '''
 
 OOM = '''
@@ -171,6 +173,10 @@ exp_dir = cfg["data"]["exp_dir"]
 assert os.path.exists(exp_dir + "/6-name2semantic.tsv")
 assert cfg["model"]["version"] == cfg["version"]
 assert os.path.isdir(exp_dir + "/4-cnhubert") and os.path.isdir(exp_dir + "/5-wav32k")
+# 官方：哪个版本的音色就用哪个版本的底模提取的语义 token
+_mark = str(sum(os.path.basename(t["pretrained_s2G"]).encode()) % 997)
+_sem = [l.split("\\t") for l in open(exp_dir + "/6-name2semantic.tsv", encoding="utf8").read().splitlines()[1:] if l.strip()]
+assert _sem and all(r[1].split()[-1] == _mark for r in _sem), ("语义 token 不是这个底模提取的", t["pretrained_s2G"], _sem[:2])
 name = cfg["name"]
 def info(msg):  # utils.py: logging.basicConfig(stream=sys.stdout, level=INFO) → 「INFO:<logger名>:<消息>」
     print(f"INFO:{os.path.basename(exp_dir)}:{msg}", flush=True)

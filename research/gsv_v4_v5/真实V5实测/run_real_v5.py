@@ -3,7 +3,7 @@
 做什么（每一步的结果、用时、出错原因都写进 <out>/结果.json 和 结果.md，出错也接着做下一步能做的）：
   1. 用 espeak-ng 合成一段「讲课录音」（中英文都有）+ 字幕：不是老师的声音，只用来检查整套流程能不能跑通；
   2. 准备素材 → 确认训练素材 → 环境检查；
-  3. 训练：默认的 v5dev（LoRA，官方 s2_train_v3_lora.py）+ 对比的 v2ProPlus + GPT，练完自动挑（两个版本都实测）；
+  3. 训练：和老师用的默认设置一样，只练 V5（v5dev 的 LoRA，官方 s2_train_v3_lora.py）+ GPT，练完自动挑；
   4. 生成一段讲稿（快速档）；
   5. 「一次请求同时生成好几个版本」在 V5 上能不能用：同一句话同时生成 3 个，能不能按数字静音切开、
      每个版本和单独生成的长度差多少、用时多少（程序现在只对 v2 / v2Pro / v2ProPlus 这么做）。
@@ -191,57 +191,13 @@ def main() -> int:
                 "results": [{k: r.get(k) for k in ("id", "version", "score", "sim", "speaker_pct", "cer")}
                             for r in sel.get("results") or []]}
 
-    trained = step("训练（v5dev + v2ProPlus + GPT）并自动挑选", train)
+    trained = step("训练（V5：v5dev 的 LoRA + GPT）并自动挑选", train)
     res["progress_messages"] = rec.items[-60:]
     save()
     if trained:
         for p in trained.get("sovits") or []:
             res.setdefault("detected", {})[Path(p).name] = g.detect_sovits_version(p).get("version")
         save()
-
-    def semantic_diff():
-        """官方 3-get-semantic.py 再用 v2ProPlus 的底模提取一遍，和训练用的（v5dev 底模提取的）逐个 token 比。"""
-        project = wf.open_project(cfg, voice, must_exist=True)
-        b = get_backend("gptsovits", cfg, project)
-        opt = b._opt_dir()
-        tmp = work / "语义_v2ProPlus"
-        tmp.mkdir(parents=True, exist_ok=True)
-        if not (tmp / "4-cnhubert").exists():
-            os.symlink(opt / "4-cnhubert", tmp / "4-cnhubert")
-        env = b.env({"inp_text": str(project.exports_dir / "gptsovits" / "train.list"), "exp_name": b.exp_name,
-                     "opt_dir": str(tmp), "i_part": "0", "all_parts": "1", "_CUDA_VISIBLE_DEVICES": "0",
-                     "is_half": "False", "version": "v2ProPlus",
-                     "pretrained_s2G": str(b.p(g.PRETRAINED_SOVITS["v2ProPlus"])),
-                     "s2config_path": "GPT_SoVITS/configs/s2v2ProPlus.json"})
-        subprocess.run([sys.executable, "-s", "GPT_SoVITS/prepare_datasets/3-get-semantic.py"], env=env,
-                       cwd=str(b.root), check=True)
-
-        def load(path):
-            out = {}
-            for line in Path(path).read_text(encoding="utf-8").splitlines():
-                name, _, toks = line.partition("\t")
-                if name and name != "item_name":
-                    out[name] = toks.split()
-            return out
-
-        a, c = load(opt / "6-name2semantic.tsv"), load(tmp / "6-name2semantic-0.tsv")
-        names = sorted(set(a) & set(c))
-        total = same = 0
-        diff_items = len_mismatch = 0
-        for n in names:
-            x, y = a[n], c[n]
-            if len(x) != len(y):
-                len_mismatch += 1
-            k = min(len(x), len(y))
-            total += k
-            eq = sum(1 for i in range(k) if x[i] == y[i])
-            same += eq
-            diff_items += int(eq != k or len(x) != len(y))
-        return {"items_v5dev": len(a), "items_v2ProPlus": len(c), "compared": len(names), "tokens": total,
-                "same_tokens": same, "same_pct": round(100.0 * same / max(1, total), 3),
-                "items_with_any_diff": diff_items, "length_mismatch": len_mismatch}
-
-    step("语义 token：v5dev 和 v2ProPlus 底模提取的差别", semantic_diff)
 
     def narrate():
         r = wf.run_narrate(cfg, voice, NARRATE, out=str(out / "生成_快速档.wav"), backend_name="gptsovits",

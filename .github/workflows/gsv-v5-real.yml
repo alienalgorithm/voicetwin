@@ -1,7 +1,7 @@
 name: gsv-v5-real
 
 # 用官方 V5 整合包（RTX 50 系列版）里真的 GPT-SoVITS 代码和真的底模，把声音分身从头跑一遍（只有处理器，所以很慢）：
-# 准备素材 → 训练 v5dev（LoRA）+ v2ProPlus + GPT → 自动挑选 → 生成 → V5 能不能「同时生成好几个版本」。
+# 准备素材 → 训练 V5（v5dev，LoRA）+ GPT → 自动挑选 → 生成 → V5 能不能「同时生成好几个版本」（和老师用的默认设置一样）。
 # 整合包里的 Windows Python（runtime/Lib）不用，换成 Linux 的 Python 3.12，各个库的版本和整合包一样（tests/constraints-gsv-v5.txt）。
 # 结果提交到 research/gsv_v4_v5/真实V5实测/结果/，详细日志在这次运行的 Artifacts 里。
 on:
@@ -58,7 +58,8 @@ jobs:
           python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
           # 整合包的 requirements.txt，去掉日文 / 韩文 / 粤语 / 语音识别 / 网页这些这次用不到、又要现场编译的；显卡版 onnxruntime 换成普通版
           grep -viE '^(--no-binary|pyopenjtalk|python_mecab_ko|g2pk2|ko_pron|opencc|ToJyutping|funasr|modelscope|gradio|onnxruntime)' \
-            "$GSV/requirements.txt" > /tmp/req.txt
+            "$GSV/requirements.txt" | sed -E 's/[[:space:]]*([<>=!~;].*)?$//' | grep -v '^$' > /tmp/req.txt
+          # 版本范围不用：整合包里实际装的版本（tests/constraints-gsv-v5.txt）才是老师电脑上的，例如 torchmetrics 实际是 1.5.2
           echo onnxruntime >> /tmp/req.txt
           cat /tmp/req.txt
           python -m pip install -c tests/constraints-gsv-v5.txt -r /tmp/req.txt

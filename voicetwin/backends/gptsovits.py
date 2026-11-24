@@ -103,11 +103,11 @@ SV_PATH = "GPT_SoVITS/pretrained_models/sv/pretrained_eres2netv2w24s4ep4.ckpt"
 SUPPORTED_VERSIONS = tuple(PRETRAINED_SOVITS)
 #: 默认版本：V5 的完整版 v5dev（老师 2026-11-24 要求换成 V5）。官方 README 的「Seed-TTS-Eval 中文 SIM」图（零样本、不训练）：
 #: v5 0.805、v4 0.735；官方代码里 v5dev 每句算 32 步（带 cfg 1.30），v5turbo 只算 4 步（快、略差：官方 wiki 0.782）。
-#: v2ProPlus 官方没有公布同一个测试的数字。训练以后哪个更像，官方没有测过，所以默认同时练 v2ProPlus（COMPARE_VERSIONS），
-#: 用老师没参加训练的录音实测挑（永久规定 11）。
+#: 老师 2026-11-24：「这次主要考虑的就是 V5……之前那个 V2 Pro Plus 先不考虑」→ 默认只练 V5（COMPARE_VERSIONS 是空的）。
+#: 想同时练别的版本、挑模型时一起实测比较，在 config.yaml 的 train.compare_versions 写上版本名（例如 v2ProPlus）。
 LATEST_VERSION = "v5dev"
 DEFAULT_VERSION = "v5dev"
-COMPARE_VERSIONS = ("v2ProPlus",)
+COMPARE_VERSIONS: Tuple[str, ...] = ()
 
 
 def is_lora_version(version: str) -> bool:
@@ -634,6 +634,31 @@ def _forget_features(opt_dir: Path) -> None:
         log.warning(f"删不掉训练记录里的素材指纹 voicetwin_list.sha1（{exc}）：下次训练前请先把它删掉，不然可能不会重新处理文字")
 
 
+#: 每个版本自己的底模提取的语义 token（官方训练哪个版本就用哪个版本的底模提取；V5 和 v2ProPlus 底模里提取语义的那部分权重
+#: 不完全一样，见 research/gsv_v4_v5/官方资料/语义token对比.txt）。训练哪个版本前，把它的那一份放到 6-name2semantic.tsv。
+SEMANTIC_COPY = "voicetwin_semantic_{}.tsv"
+
+
+def _semantic_ok(path: Path) -> bool:
+    """语义 token 文件在、而且不只是一行表头（「item_name\tsemantic_audio」是 30 个字节）。"""
+    return path.exists() and path.stat().st_size >= 31
+
+
+def _use_semantic(opt_dir: Path, version: str) -> bool:
+    """把 version 自己的语义 token 放到官方脚本读的 6-name2semantic.tsv（复制，不挪：中途停下也不会丢）。没有这一份时返回 False。"""
+    src = opt_dir / SEMANTIC_COPY.format(version)
+    if not src.exists():
+        return False
+    dst = opt_dir / "6-name2semantic.tsv"
+    data = src.read_bytes()
+    if dst.exists() and dst.stat().st_size == len(data) and dst.read_bytes() == data:
+        return True
+    tmp = dst.with_name(dst.name + ".tmp")
+    tmp.write_bytes(data)
+    os.replace(tmp, dst)
+    return True
+
+
 def _remove_parts(opt_dir: Path, *patterns: str, quiet: bool = False) -> None:
     """删掉上次留下的分块结果（2-name2text-0.txt、6-name2semantic-0.tsv）。
 
@@ -790,13 +815,20 @@ def _nominal_gb(total_gb: float) -> str:
     return f"{int(round(total_gb + 0.2))}"
 
 
+def _lora_mine(lora: Dict[str, Any], key: str) -> str:
+    """说明里 LoRA 的数是不是老师自己指定的（高级设置 / config.yaml）。"""
+    return "" if (lora.get("auto") or {}).get(key, True) else "（你指定的）"
+
+
 def plan_training(n_clips: int, minutes: float, total_gb: Optional[float] = None, free_gb: Optional[float] = None,
                   *, is_half: bool = True, noisy: bool = False, suspects: int = 0,
                   user: Optional[Dict[str, Any]] = None, mode: str = "standard", probe_batch: Any = None,
                   deep: Optional[Dict[str, Any]] = None, will_probe: bool = False, n_val: Optional[int] = None,
                   en_lines: Optional[int] = None, mixed_text: bool = False,
-                  batch_source: str = "probe", n_test: Optional[int] = None) -> Dict[str, Any]:
+                  batch_source: str = "probe", n_test: Optional[int] = None,
+                  lora: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """根据显存和素材，算出这次的训练设置，并写一行中文说明（summary）。纯计算，不碰显卡和文件。
+    lora：只练 V4 / V5 时的音色 LoRA 设置（plan_lora 的结果）：说明里的音色部分按它写（音色 SoVITS 那几个数这时不用）。
 
     user 里不是「自动」的值优先（来自高级设置 / config.yaml / 命令行）。
     mode="identical"（「一模一样」）：每批 b 条（probe_batch = 实测出来的；可以是一个数，也可以是
@@ -919,17 +951,25 @@ def plan_training(n_clips: int, minutes: float, total_gb: Optional[float] = None
 
     # ---- 一行中文说明
     parts: List[str] = []
-    if g_total > 0:
-        gpu = f"显存 {_nominal_gb(total)} GB" + (f"（现在空闲 {free:.1f} GB）" if by_free else "")
-        parts.append(f"{gpu} → 每批 {bs} 条{mine('batch_size')}")
-    else:
-        parts.append(f"没有检测到能用的 N 卡 → 每批 {bs} 条{mine('batch_size')}（用 CPU 训练会非常慢）")
-    mat = f"素材 {minutes:g} 分钟（{n_clips} 条{'，有底噪或背景音乐' if noisy else ''}）"
-    parts.append(f"{mat} → 音色 SoVITS {s_ep} 轮{mine('sovits_epochs')}、语气 GPT {g_ep} 轮{mine('gpt_epochs')}")
     def every(n: int) -> str:
         return "每轮" if n == 1 else f"每 {n} 轮"
 
-    if s_save == g_save:
+    if lora:
+        lb, le, ls, lv = lora["batch_size"], lora["epochs"], lora["save_every"], lora["version"]
+        bat = f"音色每批 {lb} 条{_lora_mine(lora, 'lora_batch_size')}、语气每批 {gpt_bs} 条{mine('batch_size')}"
+    else:
+        bat = f"每批 {bs} 条{mine('batch_size')}"
+    if g_total > 0:
+        gpu = f"显存 {_nominal_gb(total)} GB" + (f"（现在空闲 {free:.1f} GB）" if by_free else "")
+        parts.append(f"{gpu} → {bat}")
+    else:
+        parts.append(f"没有检测到能用的 N 卡 → {bat}（用 CPU 训练会非常慢）")
+    mat = f"素材 {minutes:g} 分钟（{n_clips} 条{'，有底噪或背景音乐' if noisy else ''}）"
+    if lora:
+        parts.append(f"{mat} → 音色 {lv}（官方的 LoRA 练法）{le} 轮{_lora_mine(lora, 'lora_epochs')}、"
+                     f"语气 GPT {g_ep} 轮{mine('gpt_epochs')}")
+        parts.append(f"音色{every(ls)}、语气{every(g_save)}存一次模型，训练完自动挑最像你的那个")
+    elif s_save == g_save:
         parts.append(f"{every(s_save)}存一次模型，训练完自动挑最像你的那个")
     else:
         parts.append(f"音色{every(s_save)}、语气{every(g_save)}存一次模型，训练完自动挑最像你的那个")
@@ -939,6 +979,8 @@ def plan_training(n_clips: int, minutes: float, total_gb: Optional[float] = None
     else:
         parts.append(f"不开 DPO（{why_not}）")
     summary = "训练计划：" + "；".join(parts) + "。"
+    if lora:   # 音色用 LoRA：说音色 SoVITS 轮数的那几句不对了
+        notes = [x for x in notes if "音色" not in x]
 
     return {
         "mode": "standard",
@@ -1069,38 +1111,51 @@ def _plan_deep(v: Dict[str, Any]) -> Dict[str, Any]:
     measured = auto["batch_size"] and bool(p_s or p_g)
     probing = bool(v.get("will_probe")) and auto["batch_size"] and g_total > 0 and not measured
     parts: List[str] = []
+    lora = v.get("lora")
+    if lora:   # 只练 V4 / V5：音色用 LoRA（每批条数按官方公式），实测的只是语气（GPT）的每批条数
+        lb = f"音色（{lora['version']}）每批 {lora['batch_size']} 条{_lora_mine(lora, 'lora_batch_size')}、"
+    else:
+        lb = ""
+    sb = gpt_bs if lora else bs   # 说明里「每批」写的数（只练 LoRA 时是语气的）
     if g_total > 0:
         gpu = f"显存 {_nominal_gb(total)} GB" + (f"（现在空闲 {free:.1f} GB）" if by_free else "")
         if probing:
-            parts.append(f"{gpu} → 先实测一次能练几条（按显存估计每批 {bs} 条）")
+            parts.append(f"{gpu} → {lb}{'语气' if lb else ''}先实测一次能练几条（按显存估计每批 {sb} 条）")
         elif measured:
             lab = "（和上次一样）" if v.get("batch_source") == "previous" else "（实测）"
             lab_s = lab if p_s else "（按显存估计）"
             lab_g = lab if (p_g and not v["dpo"]) else ("（开 DPO 时的设置）" if v["dpo"] else "（按显存估计）")
-            if bs == gpt_bs and lab_s == lab_g:
+            if lb:
+                parts.append(f"{gpu} → {lb}语气每批 {gpt_bs} 条{lab_g}")
+            elif bs == gpt_bs and lab_s == lab_g:
                 parts.append(f"{gpu} → 每批 {bs} 条{lab_s}")
             else:
                 parts.append(f"{gpu} → 音色每批 {bs} 条{lab_s}、语气每批 {gpt_bs} 条{lab_g}")
         else:
-            parts.append(f"{gpu} → 每批 {bs} 条{mine('batch_size')}")
+            parts.append(f"{gpu} → {lb}{'语气' if lb else ''}每批 {sb} 条{mine('batch_size')}")
     else:
-        parts.append(f"没有检测到能用的 N 卡 → 每批 {bs} 条{mine('batch_size')}（仍然按「一模一样」训练，但用处理器会非常慢）")
-    line = (f"音色 SoVITS {s_ep} 轮{mine('sovits_epochs')}、{every(s_save)}存一个；"
-            f"语气 GPT {g_ep} 轮{mine('gpt_epochs')}、{every(g_save)}存一个")
-    if probing and (auto["sovits_epochs"] or auto["gpt_epochs"]):
+        parts.append(f"没有检测到能用的 N 卡 → {lb}{'语气' if lb else ''}每批 {sb} 条{mine('batch_size')}"
+                     "（仍然按「一模一样」训练，但用处理器会非常慢）")
+    if lora:
+        line = (f"音色 {lora['version']}（官方的 LoRA 练法）{lora['epochs']} 轮{_lora_mine(lora, 'lora_epochs')}、"
+                f"{every(lora['save_every'])}存一个；语气 GPT {g_ep} 轮{mine('gpt_epochs')}、{every(g_save)}存一个")
+    else:
+        line = (f"音色 SoVITS {s_ep} 轮{mine('sovits_epochs')}、{every(s_save)}存一个；"
+                f"语气 GPT {g_ep} 轮{mine('gpt_epochs')}、{every(g_save)}存一个")
+    if probing and not lora and (auto["sovits_epochs"] or auto["gpt_epochs"]):
         line += "（实测的每批条数不一样时，轮数按比例调整，模型更新的次数不变）"
     parts.append(line)
     if v.get("mixed_text"):
         en = v.get("en_lines")
         parts.append("中文和英文都参加训练" + (f"（素材里有 {en} 句夹着英文）" if en else ""))
     n_val, n_test = v.get("n_val"), v.get("n_test")
+    which = (f"音色第 {LORA_SELECT_FROM} 轮、语气第 4 轮以后存下的每个版本" if lora else "第 4 轮以后存下的每个版本")
     if n_val and n_test:
-        parts.append(f"训练完用你没参加训练的 {n_val} 句录音和 {n_test} 句检查用的句子，把第 4 轮以后存下的每个版本都试一遍，"
-                     "挑最像你的")
+        parts.append(f"训练完用你没参加训练的 {n_val} 句录音和 {n_test} 句检查用的句子，把{which}都试一遍，挑最像你的")
     elif n_val:
-        parts.append(f"训练完用你没参加训练的 {n_val} 句录音把第 4 轮以后存下的每个版本都试一遍，挑最像你的")
+        parts.append(f"训练完用你没参加训练的 {n_val} 句录音把{which}都试一遍，挑最像你的")
     else:
-        parts.append("训练完把第 4 轮以后存下的每个版本都试一遍，挑最像你的")
+        parts.append(f"训练完把{which}都试一遍，挑最像你的")
     dpo = v["dpo"]
     if dpo:
         who = "" if auto["if_dpo"] else "你指定的；"
@@ -1110,6 +1165,8 @@ def _plan_deep(v: Dict[str, Any]) -> Dict[str, Any]:
     if max(bs, gpt_bs) > DEEP_BASE_BATCH and (auto["sovits_epochs"] or auto["gpt_epochs"]):
         notes.append("每批多练几条时轮数会跟着加多，每句话总共会被多练几遍；练得太多可能变差，所以第 4 轮以后存下的每个版本都会拿来比较")
     summary = "训练计划：「一模一样」训练——" + "；".join(parts) + "。"
+    if lora:   # 音色用 LoRA：说音色 SoVITS 轮数 / 每批条数换算的那几句不对了
+        notes = [x for x in notes if "音色" not in x and "每批多练几条" not in x]
     return {
         "mode": "identical",
         "batch_size": bs, "gpt_batch_size": gpt_bs,
@@ -1617,8 +1674,8 @@ class GPTSoVITSBackend(Backend):
         return problems
 
     def compare_versions(self) -> List[str]:
-        """训练时同时练、一起比较的别的版本（设置 train.compare_versions）：auto = 主版本是 V4 / V5 时加上 v2ProPlus
-        （训练以后哪个更像官方没有测过，用老师的录音实测挑）；none / false / [] = 不加。不认识的版本不加。"""
+        """训练时同时练、一起比较的别的版本（设置 train.compare_versions，写版本名，例如 v2ProPlus）：
+        auto = COMPARE_VERSIONS（现在是空的：只练设置里的版本）；none / false / [] = 不加。不认识的版本不加。"""
         raw = self._tcfg().get("compare_versions", "auto")
         if raw is None or raw is False or (isinstance(raw, str) and raw.strip().lower() in ("none", "false", "off", "no", "")):
             vers: List[str] = []
@@ -1953,31 +2010,52 @@ class GPTSoVITSBackend(Backend):
             plan_kw.setdefault("mixed_text", self._text_frontend() == "mixed")
             for k, v in self._plan_context().items():
                 plan_kw.setdefault(k, v)
+        vers = self.train_versions()
+        lora = (plan_lora(vers[0], total, free, is_half=self.is_half, mode=mode, n_clips=n_clips,
+                          user=self._lora_user(opts)) if all(is_lora_version(x) for x in vers) else None)
         plan = plan_training(n_clips, minutes, total, free, is_half=self.is_half, noisy=noisy, suspects=suspects,
-                             user=self._user_settings(opts), mode=mode, **plan_kw)
-        self._add_versions_to_plan(plan, n_clips, total, free, mode)
+                             user=self._user_settings(opts), mode=mode, lora=lora, **plan_kw)
+        self._add_versions_to_plan(plan, n_clips, total, free, mode, opts, lora=lora)
         plan["gpu_source"] = source
         plan["noisy_share"] = round(share, 2)
         return plan
 
+    def _lora_user(self, opts: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """V4 / V5 音色 LoRA 的设置：config.yaml 的 train 段（lora_epochs 等）。只练 V4 / V5（没有对比的 v2ProPlus）时，
+        网页高级设置 / config.yaml / 命令行里的「音色训练轮数」「每批数量」「音色保存间隔」也用在 LoRA 上：
+        老师在原来的界面上照样能改（lora_* 自己写了数字的，以 lora_* 为准）。"""
+        user = self._tcfg()
+        if any(not is_lora_version(v) for v in self.train_versions()):
+            return user
+        given = self._user_settings(opts or {})
+        for src, dst in (("sovits_epochs", "lora_epochs"), ("batch_size", "lora_batch_size"),
+                         ("sovits_save_every", "lora_save_every")):
+            v = given.get(src)
+            if _is_auto(user.get(dst, "auto")) and not _is_auto(v) and _to_int(v, 0) > 0:
+                user[dst] = v
+        return user
+
     def _add_versions_to_plan(self, plan: Dict[str, Any], n_clips: int, total: Optional[float], free: Optional[float],
-                              mode: str) -> None:
-        """训练计划里加上这次要练哪几个版本的音色模型（V4 / V5 的 LoRA 设置在 plan["lora"]）。"""
+                              mode: str, opts: Optional[Dict[str, Any]] = None,
+                              lora: Optional[Dict[str, Any]] = None) -> None:
+        """训练计划里加上这次要练哪几个版本的音色模型（V4 / V5 的 LoRA 设置在 plan["lora"]）。
+        lora：只练 V4 / V5 时已经算好的 LoRA 设置（说明里已经按它写了）。"""
         vers = self.train_versions()
-        lora = [v for v in vers if is_lora_version(v)]
+        lora_v = [v for v in vers if is_lora_version(v)]
         vits = [v for v in vers if not is_lora_version(v)]
-        plan["versions"], plan["lora_versions"], plan["sovits_versions"] = vers, lora, vits
-        if lora:
-            plan["lora"] = plan_lora(lora[0], total, free, is_half=self.is_half, mode=mode, n_clips=n_clips,
-                                     user=self._tcfg())
+        plan["versions"], plan["lora_versions"], plan["sovits_versions"] = vers, lora_v, vits
+        if lora is not None:
+            plan["lora"] = lora
+            return
+        if lora_v:
+            plan["lora"] = plan_lora(lora_v[0], total, free, is_half=self.is_half, mode=mode, n_clips=n_clips,
+                                     user=self._lora_user(opts))
         extra = []
-        if lora:
+        if lora_v:
             extra.append(plan["lora"]["summary"])
         if len(vers) > 1:
             extra.append(f"这次练 {len(vers)} 个版本的音色模型（{'、'.join(vers)}），语气模型（GPT）只练一个、大家共用；"
                          f"挑选时放在一起用你的录音实测，哪个更像用哪个")
-        elif lora:
-            extra.append(f"只练 {lora[0]}，上面说的音色 SoVITS 轮数不用")
         if extra:
             plan["summary"] = str(plan.get("summary") or "") + "".join(f"{x}。" for x in extra)
 
@@ -2400,12 +2478,16 @@ class GPTSoVITSBackend(Backend):
                 log.info("处理文字的方法或训练文字变了：重新处理文字（声音特征没变，接着用）")
             else:
                 log.info("训练素材有变化，清理旧的特征文件后重新提取")
-            for name in (() if settings_only else TEXT_FEATURES if text_only else ALL_FEATURES):
+            cleared = () if settings_only else TEXT_FEATURES if text_only else ALL_FEATURES
+            for name in cleared:
                 target = opt_dir / name
                 if target.is_dir():
                     shutil.rmtree(target, ignore_errors=True)
                 elif target.exists():
                     target.unlink()
+            if "6-name2semantic.tsv" in cleared:
+                for old_sem in opt_dir.glob(SEMANTIC_COPY.format("*")):
+                    old_sem.unlink(missing_ok=True)
             _remove_parts(opt_dir, "2-name2text-*.txt", "6-name2semantic-*.tsv")
             archived = self._archive_old_run(opt_dir)
             what = "训练设置改了" if settings_only else "检测到素材有变化"
@@ -2454,24 +2536,40 @@ class GPTSoVITSBackend(Backend):
                             "gsv_1b_sv", progress, (pos["sv"], pos["semantic"]), label="提取声纹",
                             poll=_count_files(opt_dir / "7-sv_cn", "*.pt", n))
 
-        # 1C：语义 token
+        # 1C：语义 token。和官方一样，每个要练的版本都用它自己的底模提取一份（SEMANTIC_COPY）；
+        # 6-name2semantic.tsv 放的是设置里那个版本的（GPT 用它练），练别的版本的音色前换成那个版本的（_use_semantic）
         path_sem = opt_dir / "6-name2semantic.tsv"
-        if not path_sem.exists() or path_sem.stat().st_size < 31:
-            self.step(progress, pos["semantic"], "提取语义（大约 1~3 分钟）")
+        main = self._semantic_version()
+        _use_semantic(opt_dir, main)   # 上次练对比版本时停下了：先换回设置里那个版本的
+        vers = [main] + [v for v in self.train_versions() if v != main]
+        todo = [v for v in vers if not _semantic_ok(opt_dir / SEMANTIC_COPY.format(v))]
+        if not _semantic_ok(path_sem) and main not in todo:
+            todo.insert(0, main)
+        elif _semantic_ok(path_sem) and main in todo:   # 只有官方的那一份（以前的训练）：就是设置里那个版本的
+            shutil.copyfile(path_sem, opt_dir / SEMANTIC_COPY.format(main))
+            todo.remove(main)
+        lo, hi = pos["semantic"], pos["probe"]
+        for i, ver in enumerate(todo):
+            r = (lo + (hi - lo) * i / len(todo), lo + (hi - lo) * (i + 1) / len(todo))
+            label = "提取语义" if len(vers) == 1 else f"提取语义（{ver}）"
+            self.step(progress, r[0], f"{label}（大约 1~3 分钟）")
             # 官方 3-get-semantic.py 看到分块结果已经在了就什么都不做（直接用旧的），所以先删；删不掉就停下说清楚
             _remove_parts(opt_dir, "6-name2semantic-*.tsv")
-            with self._as_version(self._semantic_version()):
+            with self._as_version(ver):
                 env_1c = self.env({**base, "pretrained_s2G": str(self.p(PRETRAINED_SOVITS[self.version])),
                                    "s2config_path": self._s2_config_template()})
+            log_name = "gsv_1c_semantic" if ver == main else f"gsv_1c_semantic_{ver}"
             self._run_parts([self.python, "-s", "GPT_SoVITS/prepare_datasets/3-get-semantic.py"], env_1c, parts,
-                            "gsv_1c_semantic", progress, (pos["semantic"], pos["probe"]), label="提取语义")
-            got = self._merge_parts(opt_dir, "6-name2semantic-{}.tsv", parts, "6-name2semantic.tsv",
+                            log_name, progress, r, label=label)
+            got = self._merge_parts(opt_dir, "6-name2semantic-{}.tsv", parts, SEMANTIC_COPY.format(ver),
                                     header="item_name\tsemantic_audio")
             # 和 1A 一样：脚本逐句 try/except，一句都没做成也退出 0。只有表头的列表拿去训练，
             # 要白白练完音色、到 GPT 那一步才出错，所以这里就停下说清楚
             if not got:
+                (opt_dir / SEMANTIC_COPY.format(ver)).unlink(missing_ok=True)
                 _forget_features(opt_dir)
-                raise RuntimeError("1C 提取语义没有产出，请查看日志 logs/gsv_1c_semantic.log")
+                raise RuntimeError(f"1C 提取语义没有产出，请查看日志 logs/{log_name}.log")
+        _use_semantic(opt_dir, main)
         return {"opt_dir": opt_dir, "frontend": frontend, "en_phones": int(en.get("en_phones") or 0),
                 "en_lines": int(en.get("en_lines") or 0)}
 
@@ -3149,7 +3247,7 @@ class GPTSoVITSBackend(Backend):
         if lora_vers and not params.get("lora"):   # 接着上次的计划练、上次的计划里没有 LoRA 的设置
             total_gb, free_gb, _src = gpu
             params["lora"] = plan_lora(lora_vers[0], total_gb, free_gb, is_half=self.is_half, mode=mode, n_clips=n,
-                                       user=self._tcfg())
+                                       user=self._lora_user(opts))
         params.update(versions=vers, lora_versions=lora_vers, sovits_versions=vits_vers)
         counts_l: Dict[str, Dict[str, Any]] = {}
         # 音色模型：每个版本练一个（V5 在前）；语气模型（GPT）只练一个，各版本共用（同一套语义编码）
@@ -3174,6 +3272,7 @@ class GPTSoVITSBackend(Backend):
             t0 = time.time()
             try:
                 with self._as_version(ver):
+                    _use_semantic(opt_dir, ver)   # 这个版本的底模提取的语义 token（GPT 用设置里那个版本的）
                     if kind == "lora":
                         counts_l[ver] = {}
                         params["lora"]["batch_size_used"] = self._train_lora(opt_dir, params, progress, pos_k, counts_l[ver])

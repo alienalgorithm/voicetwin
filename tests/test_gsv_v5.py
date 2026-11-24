@@ -1,8 +1,10 @@
-"""GPT-SoVITS V5（v5dev / v5turbo）：默认用 v5dev，同时练 v2ProPlus 做对比，练完用老师没参加训练的录音实测挑更像的。
+"""GPT-SoVITS V5（v5dev / v5turbo）：默认用 v5dev、只练它（老师 2026-11-24：这次只要 V5）。
+想同时练 v2ProPlus 一起实测比较时，config.yaml 写 train.compare_versions: v2ProPlus。
 
 V5 的音色模型是 LoRA 微调（官方 s2_train_v3_lora.py）：不用 s2D，模型文件名多一个 _l{rank}，开头 2 字节 07 / 08。"""
 
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -23,10 +25,10 @@ def _v5cfg(project, root, port, version="v5dev", **train):
     }})
 
 
-def test_shipped_default_is_v5dev_with_v2proplus_compare():
+def test_shipped_default_is_v5dev_only():
     cfg = load_config(user_config=False)
     assert cfg["backends"]["gptsovits"]["version"] == "v5dev" == g.DEFAULT_VERSION == g.LATEST_VERSION
-    assert cfg["backends"]["gptsovits"]["train"]["compare_versions"] == "auto"
+    assert cfg["backends"]["gptsovits"]["train"]["compare_versions"] == "none" and g.COMPARE_VERSIONS == ()
     assert g.is_lora_version("v5dev") and g.is_lora_version("v5turbo") and not g.is_lora_version("v2ProPlus")
     assert g.PRETRAINED_SOVITS["v5dev"].endswith("gsv-v5-pretrained/s2Gv5dev.pth")
     assert g.VOCODER["v5dev"] == g.VOCODER["v5turbo"] == "GPT_SoVITS/pretrained_models/gsv-v5-pretrained/vocoder.pth"
@@ -63,7 +65,8 @@ def test_compare_versions_setting(prepared, tmp_path):
     _, project, _ = prepared
     root = build_fake_root(tmp_path / "GSV-cmp")
     vers = lambda **t: get_backend("gptsovits", _v5cfg(project, root, 19893, **t), project).train_versions()
-    assert vers() == ["v5dev", "v2ProPlus"]
+    assert vers() == ["v5dev"] and vers(compare_versions="auto") == ["v5dev"]
+    assert vers(compare_versions="v2ProPlus") == ["v5dev", "v2ProPlus"]
     assert vers(compare_versions="none") == ["v5dev"]
     assert vers(compare_versions="v5turbo，v2ProPlus 不存在的") == ["v5dev", "v5turbo", "v2ProPlus"]
     b = get_backend("gptsovits", _v5cfg(project, root, 19893, version="v2ProPlus"), project)
@@ -71,12 +74,13 @@ def test_compare_versions_setting(prepared, tmp_path):
 
 
 @needs_fake_python
-def test_train_v5dev_and_v2proplus_then_pick_by_measurement(prepared, tmp_path, monkeypatch, no_users_pth):
+def test_compare_setting_trains_v5dev_and_v2proplus_then_picks_by_measurement(prepared, tmp_path, monkeypatch, no_users_pth):
     monkeypatch.setenv("FAKE_GSV_CLIP_SLEEP", "0.03")
     monkeypatch.setenv("EXPECT_VERSION", "v5dev")    # 1A 处理文字时和官方 webui 一样传 v5dev
     _, project, _ = prepared
     root = build_fake_root(tmp_path / "GPT-SoVITS-v5")
-    gcfg = _v5cfg(project, root, 19891, sovits_epochs=8, gpt_epochs=10, batch_size=2, lora_epochs=4)
+    gcfg = _v5cfg(project, root, 19891, sovits_epochs=8, gpt_epochs=10, batch_size=2, lora_epochs=4,
+                  compare_versions="v2ProPlus")
     confirm_material(gcfg, project.voice)
     rec = Rec()
     info = wf.run_train(gcfg, project.voice, "gptsovits", select=True, progress=rec, sovits_save_every=4,
@@ -89,6 +93,13 @@ def test_train_v5dev_and_v2proplus_then_pick_by_measurement(prepared, tmp_path, 
     # v5dev 用 LoRA 脚本：配置里没有 s2D，断点在 logs_s2_v5dev_lora_32
     assert (opt_dir / "logs_s2_v5dev_lora_32").is_dir()
     assert (opt_dir / "7-sv_cn").is_dir()             # 对比的 v2ProPlus 要声纹
+    # 语义 token：和官方一样，每个版本用自己的底模提取一份；练完 6-name2semantic.tsv 是设置里那个版本（v5dev）的（GPT 用它练）
+    mark = lambda f: str(sum(Path(g.PRETRAINED_SOVITS[f]).name.encode()) % 997)
+    for ver in ("v5dev", "v2ProPlus"):
+        rows = (opt_dir / g.SEMANTIC_COPY.format(ver)).read_text(encoding="utf-8").splitlines()[1:]
+        assert rows and all(r.split()[-1] == mark(ver) for r in rows)
+    assert (opt_dir / "6-name2semantic.tsv").read_bytes() == (opt_dir / g.SEMANTIC_COPY.format("v5dev")).read_bytes()
+    assert (project.logs_dir / "gsv_1c_semantic_v2ProPlus.log").exists()
     models = project.load_models()["gptsovits"]
     v5 = [p for p in models["sovits"] if "SoVITS_weights_v5dev" in p.replace("\\", "/")]
     pp = [p for p in models["sovits"] if "SoVITS_weights_v2ProPlus" in p.replace("\\", "/")]
@@ -112,3 +123,36 @@ def test_train_v5dev_and_v2proplus_then_pick_by_measurement(prepared, tmp_path, 
     res = wf.run_narrate(gcfg, project.voice, "大家好，这是用 V5 生成的一句话。Hello!",
                          out=str(tmp_path / "v5.wav"), backend_name="gptsovits", quality="fast")
     assert res.audio_path.exists() and res.duration > 1.0
+
+
+@needs_fake_python
+def test_v5_only_default_uses_the_same_page_settings(prepared, tmp_path, monkeypatch, no_users_pth):
+    """默认只练 V5：网页高级设置里的「音色训练轮数」「每批数量」照样管用（用在 V5 的 LoRA 上），不练 v2ProPlus、不要声纹。"""
+    monkeypatch.setenv("FAKE_GSV_CLIP_SLEEP", "0.03")
+    monkeypatch.setenv("EXPECT_VERSION", "v5dev")
+    _, project, _ = prepared
+    root = build_fake_root(tmp_path / "GPT-SoVITS-v5only")
+    gcfg = _v5cfg(project, root, 19895, gpt_epochs=4)
+    confirm_material(gcfg, project.voice)
+    rec = Rec()
+    # 和网页上「② 训练模型 → 高级设置」一样：音色训练轮数 3、每批数量 2
+    info = wf.run_train(gcfg, project.voice, "gptsovits", select=True, progress=rec, mode="standard",
+                        sovits_epochs=3, batch_size=2)
+    assert info["versions"] == ["v5dev"]
+    backend = get_backend("gptsovits", gcfg, project)
+    opt_dir = root / "logs" / backend.exp_name
+    models = project.load_models()["gptsovits"]
+    assert all("SoVITS_weights_v5dev" in p.replace("\\", "/") for p in models["sovits"])
+    assert [int(p.rsplit("_e", 1)[1].split("_")[0]) for p in models["sovits"]] == [1, 2, 3]
+    lora = models["params"]["lora"]
+    assert (lora["epochs"], lora["batch_size"]) == (3, 2)
+    s = models["params"]["summary"]
+    assert "v5dev（官方的 LoRA 练法）3 轮（你指定的）" in s and "音色每批 2 条（你指定的）" in s and "SoVITS" not in s
+    assert not (opt_dir / "7-sv_cn").exists()            # 只练 V5：不用声纹（v2Pro 才要）
+    assert not (opt_dir / g.SEMANTIC_COPY.format("v2ProPlus")).exists()
+    assert {c["id"] for c in backend.checkpoints()} and models["selected"]["id"].startswith("s")
+    msgs = [m for _, m in rec.train_part()]
+    assert msgs[-1] == "GPT-SoVITS 训练完成"
+    res = wf.run_narrate(gcfg, project.voice, "大家好，这是只用 V5 生成的一句话。", out=str(tmp_path / "v5only.wav"),
+                         backend_name="gptsovits", quality="fast")
+    assert res.audio_path.exists() and res.audio_path.name.endswith("_v5dev.wav")
