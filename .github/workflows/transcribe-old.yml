@@ -1,0 +1,99 @@
+name: transcribe-old
+
+# 老师以前的讲课录音（Release「录音文件」里的 voice68.zip，15 个 wav，一共约 2 小时；母本就是从这些录音转录、修缮出来的）：
+# 每个录音一台机器同时转录（和 transcribe.yml 一样：whisper large-v3 + FunASR 查错字 + SenseVoice + 按母本一键校正），
+# 最后一起提交到 research/新录音转录/以前的课/结果/<录音名>/，再逐句和母本核对。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - ".github/workflows/transcribe-old.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: transcribe-old-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ZIP_URL: https://github.com/alienalgorithm/voicetwin/releases/download/%E5%BD%95%E9%9F%B3%E6%96%87%E4%BB%B6/voice68.zip
+  ZIP_BYTES: "751689329"
+
+jobs:
+  asr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        wav: ["0006.wav", "0007.wav", "05.wav", "22222222222.wav", "9999999.wav", "and-revised.wav", "binglieju.wav",
+              "but.wav", "guanxifuci.wav", "level 2.wav", "liancihebingyuanli.wav", "nor.wav", "or-revised.wav",
+              "so.wav", "yet.wav"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo mkdir -p /mnt/w && sudo chown $USER /mnt/w
+      - name: Get this recording out of voice68.zip
+        run: |
+          cd /mnt/w
+          curl -fL --retry 5 -o voice68.zip "$ZIP_URL"
+          test "$(stat -c %s voice68.zip)" = "$ZIP_BYTES"
+          mkdir -p src && unzip -j -o voice68.zip "voice68/${{ matrix.wav }}" -d src && rm -f voice68.zip
+          ls -la src
+          python3 -c "import sys, urllib.parse; print('file://' + urllib.parse.quote(sys.argv[1]))" "/mnt/w/src/${{ matrix.wav }}" > list.txt
+          cat list.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (CPU)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          python -m pip install -U pip wheel
+          python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[asr,funasr,dev,sv,denoise]" webrtcvad-wheels
+          python -m pip install --no-deps resemblyzer
+      - name: Transcribe
+        run: |
+          N="${{ matrix.wav }}"; OUT="/tmp/out/${N%.wav}"
+          python research/新录音转录/transcribe.py --list /mnt/w/list.txt --work /mnt/w/tr --out "$OUT"
+      - name: Keep logs
+        if: always()
+        run: |
+          N="${{ matrix.wav }}"; OUT="/tmp/out/${N%.wav}"
+          mkdir -p "$OUT/日志"
+          for d in /mnt/w/tr/workspace/*/logs; do cp -r "$d/." "$OUT/日志/" 2>/dev/null || true; done
+          find "$OUT/日志" -type f -size +2M -delete || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: old-${{ strategy.job-index }}
+          path: /tmp/out
+
+  collect:
+    needs: asr
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: old-*
+          merge-multiple: true
+          path: research/新录音转录/以前的课/结果
+      - name: Commit results
+        run: |
+          OUT=research/新录音转录/以前的课/结果
+          [ -d "$OUT" ] || exit 0
+          ls "$OUT"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$OUT"
+          git commit -m "记录：以前的讲课录音转录结果（GitHub 自动运行）" || exit 0
+          for i in 1 2 3 4 5 6; do
+            git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && break
+            sleep $((i * 7))
+          done
