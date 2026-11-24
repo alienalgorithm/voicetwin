@@ -1,0 +1,10 @@
+./GPT-SoVITS-v5-20261006/requirements.txt
+./GPT-SoVITS-v5-20261006/weight.json
+./GPT-SoVITS-v5-20261006/install.ps1
+./GPT-SoVITS-v5-20261006/runtime/python312._pth
+./GPT-SoVITS-v5-20261006/go-webui.ps1
+./GPT-SoVITS-v5-20261006/webui.py
+./GPT-SoVITS-v5-20261006/GPT_SoVITS/process_ckpt.py
+./GPT-SoVITS-v5-20261006/go-webui.bat
+./GPT-SoVITS-v5-20261006/api_v2.py
+./GPT-SoVITS-v5-20261006/config.py
