@@ -2,12 +2,12 @@
  "steps": {
   "合成讲课录音（espeak-ng）": {
    "ok": true,
-   "seconds": 2.1,
+   "seconds": 1.3,
    "result": "/mnt/w/vt/素材/第1课.wav"
   },
   "准备素材 + 确认训练素材": {
    "ok": true,
-   "seconds": 47.6,
+   "seconds": 36.5,
    "result": {
     "clips": null,
     "kept": null,
@@ -46,7 +46,7 @@
   },
   "环境检查": {
    "ok": true,
-   "seconds": 2.2,
+   "seconds": 1.4,
    "result": [
     {
      "item": "Python",
@@ -162,24 +162,27 @@
   },
   "训练（V5：v5dev 的 LoRA + GPT）并自动挑选": {
    "ok": true,
-   "seconds": 986.7,
+   "seconds": 6923.1,
    "result": {
     "versions": [
      "v5dev"
     ],
     "timing": {},
     "sovits": [
-     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s96_l32.pth",
-     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s192_l32.pth"
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s126_l32.pth",
+     "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth"
     ],
     "gpt": [
      "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt",
      "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt"
     ],
     "selected": {
-     "id": "s2-g2",
-     "sovits": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s192_l32.pth",
-     "gpt": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt"
+     "id": "s2-g1",
+     "sovits": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth",
+     "gpt": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt",
+     "sovits_epoch": 2,
+     "gpt_epoch": 1,
+     "version": "v5dev"
     },
     "params_lora": {
      "version": "v5dev",
@@ -195,23 +198,132 @@
      "summary": "v5dev 音色（LoRA 微调，官方的练法）：每批 1 条、2 轮、每轮存一个，练完用你没参加训练的录音实测挑最像的那一轮",
      "batch_size_used": 1
     },
-    "results": []
+    "trained_counts": {
+     "sovits": 63,
+     "gpt": 63,
+     "expected": 63,
+     "reasons": {},
+     "ids": []
+    },
+    "results": [
+     {
+      "id": "s1-g1",
+      "version": null,
+      "score": null,
+      "sim": null,
+      "speaker_pct": null,
+      "cer": null
+     },
+     {
+      "id": "s1-g2",
+      "version": null,
+      "score": null,
+      "sim": null,
+      "speaker_pct": null,
+      "cer": null
+     },
+     {
+      "id": "s2-g1",
+      "version": null,
+      "score": null,
+      "sim": null,
+      "speaker_pct": null,
+      "cer": null
+     },
+     {
+      "id": "s2-g2",
+      "version": null,
+      "score": null,
+      "sim": null,
+      "speaker_pct": null,
+      "cer": null
+     }
+    ]
    }
   },
   "生成一段讲稿（快速档）": {
-   "ok": false,
-   "seconds": 12.6,
-   "error": "RuntimeError: 第 1 句没能生成（原因：缺少「resampy」组件）：大家好，今天我们继续学习定语从句。",
-   "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1429, in attempt\n    self.backend.synthesize(req, out)\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3909, in synthesize\n    data = self._tts_answer(self._payload(req))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3945, in _tts_answer\n    raise _answer_error(text, reason)\nRuntimeError: GPT-SoVITS 合成失败：No module named 'resampy'\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 139, in step\n    got = fn()\n          ^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 203, in narrate\n    r = wf.run_narrate(cfg, voice, NARRATE, out=str(out / \"生成_快速档.wav\"), backend_name=\"gptsovits\",\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/workflows.py\", line 1213, in run_narrate\n    return narrator.narrate(src_path if is_file else source, out_path, redo=redo, subtitles=subtitles)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1905, in narrate\n    results = self.synthesize_all(segments, redo)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1701, in synthesize_all\n    res = self.synthesize_segment(seg, force=i in redo_set)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1505, in synthesize_segment\n    attempt(r_i, k, sampling, msg)\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/synth/engine.py\", line 1435, in attempt\n    raise RuntimeError(f\"第 {seg.index + 1} 句没能生成（原因：{_reason(exc)}）：{seg.text[:30]}\") from exc\nRuntimeError: 第 1 句没能生成（原因：缺少「resampy」组件）：大家好，今天我们继续学习定语从句。\n"
+   "ok": true,
+   "seconds": 540.5,
+   "result": {
+    "file": "生成_快速档_v5dev.wav",
+    "duration": 20.931604166666666,
+    "sr": 48000,
+    "seconds": 20.932,
+    "channels": 1
+   }
   },
   "同时生成好几个版本（V5）": {
-   "ok": false,
-   "seconds": 12.5,
-   "error": "RuntimeError: GPT-SoVITS 合成失败：No module named 'resampy'",
-   "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 139, in step\n    got = fn()\n          ^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/research/gsv_v4_v5/真实V5实测/run_real_v5.py\", line 223, in batch_test\n    single = b.synthesize_many(req, 3, work / \"一个一个\")\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 4100, in synthesize_many\n    return self._many_singles(req, n, out_dir)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 4152, in _many_singles\n    path = self._synthesize_freeing_gpu(one, out_dir / f\"{prefix}_r{k}.wav\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 4165, in _synthesize_freeing_gpu\n    return self.synthesize(req, out_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3909, in synthesize\n    data = self._tts_answer(self._payload(req))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/voicetwin/voicetwin/voicetwin/backends/gptsovits.py\", line 3945, in _tts_answer\n    raise _answer_error(text, reason)\nRuntimeError: GPT-SoVITS 合成失败：No module named 'resampy'\n"
+   "ok": true,
+   "seconds": 954.2,
+   "result": {
+    "model_version": "v5dev",
+    "batch_versions_in_program": [
+     "v2",
+     "v2Pro",
+     "v2ProPlus",
+     "v5dev",
+     "v5turbo"
+    ],
+    "one_by_one": {
+     "seconds": 313.2,
+     "count": 3,
+     "durations": [
+      6.32,
+      6.12,
+      5.92
+     ],
+     "sr": 48000
+    },
+    "batched": {
+     "seconds": 632.6,
+     "count": 3,
+     "durations": [
+      5.88,
+      6.12,
+      5.92
+     ]
+    },
+    "why_not_batched": "",
+    "batched_requests": 4,
+    "last_many": {
+     "mode": "single",
+     "seeds": [
+      7,
+      104736,
+      209465
+     ],
+     "speed": 1.0
+    },
+    "batch_stats": {
+     "requests": 7,
+     "pieces": 6,
+     "by_batch": {
+      "1": {
+       "requests": 6,
+       "pieces": 6,
+       "seconds": 635.485
+      },
+      "3": {
+       "requests": 1,
+       "pieces": 0,
+       "seconds": 310.264
+      }
+     },
+     "oom_backoffs": 0,
+     "split_fallbacks": 1,
+     "split_reason": "找到 4 段长的静音，应该是 3 段",
+     "gpu_releases": 0,
+     "single_reasons": {
+      "v5dev 模型只能一个一个生成": 1
+     },
+     "speed_trick": null,
+     "speed_trick_reason": "",
+     "max_batch": null
+    }
+   }
   }
  },
- "started": "2026-11-24 10:30:01",
+ "started": "2026-11-24 11:17:01",
  "env": {
   "python": "3.12.16",
   "torch": "2.7.1+cpu",
@@ -224,311 +336,388 @@
   "seconds": 458.245,
   "channels": 1
  },
+ "train_detail": {
+  "versions": [
+   "v5dev"
+  ],
+  "timing": {},
+  "sovits": [
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e1_s126_l32.pth",
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth"
+  ],
+  "gpt": [
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt",
+   "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e2.ckpt"
+  ],
+  "selected": {
+   "id": "s2-g1",
+   "sovits": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/SoVITS_weights_v5dev/vt_419cd8_e2_s252_l32.pth",
+   "gpt": "/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0/GPT_weights_v5dev/vt_419cd8-e1.ckpt",
+   "sovits_epoch": 2,
+   "gpt_epoch": 1,
+   "version": "v5dev"
+  },
+  "params_lora": {
+   "version": "v5dev",
+   "batch_size": 1,
+   "epochs": 2,
+   "save_every": 1,
+   "rank": 32,
+   "auto": {
+    "lora_batch_size": true,
+    "lora_epochs": false,
+    "lora_save_every": true
+   },
+   "summary": "v5dev 音色（LoRA 微调，官方的练法）：每批 1 条、2 轮、每轮存一个，练完用你没参加训练的录音实测挑最像的那一轮",
+   "batch_size_used": 1
+  },
+  "trained_counts": {
+   "sovits": 63,
+   "gpt": 63,
+   "expected": 63,
+   "reasons": {},
+   "ids": []
+  },
+  "results": [
+   {
+    "id": "s1-g1",
+    "version": null,
+    "score": null,
+    "sim": null,
+    "speaker_pct": null,
+    "cer": null
+   },
+   {
+    "id": "s1-g2",
+    "version": null,
+    "score": null,
+    "sim": null,
+    "speaker_pct": null,
+    "cer": null
+   },
+   {
+    "id": "s2-g1",
+    "version": null,
+    "score": null,
+    "sim": null,
+    "speaker_pct": null,
+    "cer": null
+   },
+   {
+    "id": "s2-g2",
+    "version": null,
+    "score": null,
+    "sim": null,
+    "speaker_pct": null,
+    "cer": null
+   }
+  ]
+ },
  "progress_messages": [
   [
-   0.0968,
-   "处理文字 54/63",
-   "10:31:17"
-  ],
-  [
-   0.0978,
-   "处理文字 55/63",
-   "10:31:17"
-  ],
-  [
-   0.0988,
-   "处理文字 56/63",
-   "10:31:17"
-  ],
-  [
-   0.0997,
-   "处理文字 57/63",
-   "10:31:17"
-  ],
-  [
-   0.1007,
-   "处理文字 58/63",
-   "10:31:17"
-  ],
-  [
-   0.1017,
-   "处理文字 59/63",
-   "10:31:17"
-  ],
-  [
-   0.1027,
-   "处理文字 60/63",
-   "10:31:17"
-  ],
-  [
-   0.1036,
-   "处理文字 61/63",
-   "10:31:17"
-  ],
-  [
-   0.1046,
-   "处理文字 62/63",
-   "10:31:17"
-  ],
-  [
-   0.1056,
-   "处理文字 63/63",
-   "10:31:17"
-  ],
-  [
-   0.1056,
-   "提取声音特征（比较慢，素材多时要十几分钟）",
-   "10:31:19"
-  ],
-  [
-   0.1056,
-   "提取声音特征 0/63",
-   "10:31:21"
-  ],
-  [
-   0.1064,
-   "提取声音特征 1/63",
-   "10:31:27"
-  ],
-  [
-   0.109,
-   "提取声音特征 4/63",
-   "10:31:29"
-  ],
-  [
-   0.1106,
-   "提取声音特征 6/63",
-   "10:31:31"
-  ],
-  [
-   0.1131,
-   "提取声音特征 9/63",
-   "10:31:33"
-  ],
-  [
-   0.1157,
-   "提取声音特征 12/63",
-   "10:31:35"
-  ],
-  [
-   0.1173,
-   "提取声音特征 14/63",
-   "10:31:37"
-  ],
-  [
-   0.1215,
-   "提取声音特征 19/63",
-   "10:31:39"
-  ],
-  [
-   0.124,
-   "提取声音特征 22/63",
-   "10:31:41"
-  ],
-  [
-   0.1266,
-   "提取声音特征 25/63",
-   "10:31:43"
-  ],
-  [
-   0.1282,
-   "提取声音特征 27/63",
-   "10:31:45"
-  ],
-  [
-   0.1307,
-   "提取声音特征 30/63",
-   "10:31:47"
-  ],
-  [
-   0.1333,
-   "提取声音特征 33/63",
-   "10:31:49"
-  ],
-  [
-   0.1349,
-   "提取声音特征 35/63",
-   "10:31:51"
-  ],
-  [
-   0.1391,
-   "提取声音特征 40/63",
-   "10:31:53"
-  ],
-  [
-   0.1416,
-   "提取声音特征 43/63",
-   "10:31:55"
-  ],
-  [
-   0.1442,
-   "提取声音特征 46/63",
-   "10:31:57"
-  ],
-  [
-   0.1458,
-   "提取声音特征 48/63",
-   "10:31:59"
-  ],
-  [
-   0.1483,
-   "提取声音特征 51/63",
-   "10:32:01"
-  ],
-  [
-   0.1509,
-   "提取声音特征 54/63",
-   "10:32:03"
-  ],
-  [
-   0.1525,
-   "提取声音特征 56/63",
-   "10:32:05"
-  ],
-  [
-   0.1559,
-   "提取声音特征 60/63",
-   "10:32:07"
-  ],
-  [
-   0.1584,
-   "提取声音特征 63/63",
-   "10:32:09"
-  ],
-  [
-   0.176,
-   "提取语义（大约 1~3 分钟）",
-   "10:32:09"
-  ],
-  [
-   0.22,
-   "训练音色（v5dev，LoRA 微调），共 2 轮……",
-   "10:32:17"
-  ],
-  [
-   0.22,
-   "训练音色：第 1/2 轮（0%）",
-   "10:32:33"
-  ],
-  [
-   0.2523,
-   "训练音色：第 1/2 轮（21%）",
-   "10:33:38"
-  ],
-  [
-   0.2847,
-   "训练音色：第 1/2 轮（42%）",
-   "10:34:39"
-  ],
-  [
-   0.3155,
-   "训练音色：第 1/2 轮（62%）",
-   "10:35:40"
-  ],
-  [
-   0.3478,
-   "训练音色：第 1/2 轮（83%）",
-   "10:36:40"
+   0.3663,
+   "训练音色：第 1/2 轮（95%）",
+   "11:24:34"
   ],
   [
    0.374,
    "训练音色：第 1/2 轮完成",
-   "10:37:26"
+   "11:24:53"
   ],
   [
-   0.3802,
-   "训练音色：第 2/2 轮（4%）",
-   "10:37:42"
+   0.3909,
+   "训练音色：第 2/2 轮（11%）",
+   "11:25:34"
   ],
   [
-   0.4125,
-   "训练音色：第 2/2 轮（25%）",
-   "10:38:43"
+   0.4156,
+   "训练音色：第 2/2 轮（27%）",
+   "11:26:36"
   ],
   [
-   0.4448,
-   "训练音色：第 2/2 轮（46%）",
-   "10:39:44"
+   0.4402,
+   "训练音色：第 2/2 轮（43%）",
+   "11:27:30"
   ],
   [
-   0.4772,
-   "训练音色：第 2/2 轮（67%）",
-   "10:40:44"
+   0.4649,
+   "训练音色：第 2/2 轮（59%）",
+   "11:28:30"
   ],
   [
-   0.5095,
-   "训练音色：第 2/2 轮（88%）",
-   "10:41:45"
+   0.4895,
+   "训练音色：第 2/2 轮（75%）",
+   "11:29:31"
+  ],
+  [
+   0.5126,
+   "训练音色：第 2/2 轮（90%）",
+   "11:30:29"
   ],
   [
    0.528,
    "训练音色：第 2/2 轮完成",
-   "10:42:23"
+   "11:31:08"
   ],
   [
    0.528,
    "训练语气和节奏（GPT），共 2 轮……",
-   "10:42:25"
+   "11:31:09"
   ],
   [
    0.836,
    "保存模型……",
-   "10:45:19"
+   "11:34:28"
   ],
   [
    0.836,
-   "实际参加训练：音色 48 条、语气 16 条（一共 63 条）。",
-   "10:45:19"
+   "实际参加训练：音色 63 条、语气 63 条（一共 63 条）。",
+   "11:34:28"
   ],
   [
    0.836,
-   "有 47 条没参加训练（原因：文字处理的结果里没有这条 47 条），一般是文字和声音对不上或者太短；不影响使用，训练程序没有记下是哪几条。",
-   "10:45:19"
+   "英文：16 句里的英文这次也参加了训练（一共 71 个英文音素）。",
+   "11:34:28"
   ],
   [
    0.836,
-   "用时（实测）：处理文字和提取特征 1.4 分钟、语气每轮 88 秒。",
-   "10:45:19"
+   "用时（实测）：处理文字和提取特征 0.9 分钟、语气每轮 100 秒。",
+   "11:34:28"
   ],
   [
    0.88,
    "GPT-SoVITS 训练完成",
-   "10:45:19"
+   "11:34:28"
   ],
   [
    0.88,
    "训练完成，开始自动挑选最像你的模型",
-   "10:45:19"
+   "11:34:28"
   ],
   [
    0.88,
    "挑选方式：标准——从早到晚均匀挑几个版本比（大约 5~15 分钟，估计）",
-   "10:45:20"
+   "11:34:28"
   ],
   [
    0.88,
    "加载声纹和识别模型（第一次使用会先下载）……",
-   "10:45:20"
+   "11:34:28"
   ],
   [
    0.886,
    "启动合成引擎（要先加载模型）……",
-   "10:47:03"
+   "11:35:26"
   ],
   [
    0.892,
    "切换到模型 s1-g1（第 1/4 个）",
-   "10:47:17"
+   "11:35:34"
+  ],
+  [
+   0.895,
+   "试听模型 s1-g1：1/36",
+   "11:39:10"
+  ],
+  [
+   0.898,
+   "试听模型 s1-g1：2/36",
+   "11:41:57"
+  ],
+  [
+   0.901,
+   "试听模型 s1-g1：3/36",
+   "11:43:06"
+  ],
+  [
+   0.904,
+   "试听模型 s1-g1：4/36",
+   "11:46:33"
+  ],
+  [
+   0.907,
+   "试听模型 s1-g1：5/36",
+   "11:49:27"
+  ],
+  [
+   0.91,
+   "试听模型 s1-g1：6/36",
+   "11:52:20"
+  ],
+  [
+   0.913,
+   "试听模型 s1-g1：7/36",
+   "11:55:19"
+  ],
+  [
+   0.916,
+   "试听模型 s1-g1：8/36",
+   "11:58:14"
+  ],
+  [
+   0.919,
+   "试听模型 s1-g1：9/36",
+   "11:59:20"
+  ],
+  [
+   0.919,
+   "切换到模型 s1-g2（第 2/4 个）",
+   "11:59:20"
+  ],
+  [
+   0.922,
+   "试听模型 s1-g2：10/36",
+   "12:03:05"
+  ],
+  [
+   0.925,
+   "试听模型 s1-g2：11/36",
+   "12:06:01"
+  ],
+  [
+   0.928,
+   "试听模型 s1-g2：12/36",
+   "12:07:10"
+  ],
+  [
+   0.931,
+   "试听模型 s1-g2：13/36",
+   "12:10:41"
+  ],
+  [
+   0.934,
+   "试听模型 s1-g2：14/36",
+   "12:13:48"
+  ],
+  [
+   0.937,
+   "试听模型 s1-g2：15/36",
+   "12:17:03"
+  ],
+  [
+   0.94,
+   "试听模型 s1-g2：16/36",
+   "12:20:06"
+  ],
+  [
+   0.943,
+   "试听模型 s1-g2：17/36",
+   "12:23:11"
+  ],
+  [
+   0.946,
+   "试听模型 s1-g2：18/36",
+   "12:24:16"
+  ],
+  [
+   0.946,
+   "切换到模型 s2-g1（第 3/4 个）",
+   "12:24:16"
+  ],
+  [
+   0.949,
+   "试听模型 s2-g1：19/36",
+   "12:28:03"
+  ],
+  [
+   0.952,
+   "试听模型 s2-g1：20/36",
+   "12:30:37"
+  ],
+  [
+   0.955,
+   "试听模型 s2-g1：21/36",
+   "12:31:48"
+  ],
+  [
+   0.958,
+   "试听模型 s2-g1：22/36",
+   "12:35:25"
+  ],
+  [
+   0.961,
+   "试听模型 s2-g1：23/36",
+   "12:38:23"
+  ],
+  [
+   0.964,
+   "试听模型 s2-g1：24/36",
+   "12:41:24"
+  ],
+  [
+   0.967,
+   "试听模型 s2-g1：25/36",
+   "12:44:27"
+  ],
+  [
+   0.97,
+   "试听模型 s2-g1：26/36",
+   "12:47:26"
+  ],
+  [
+   0.973,
+   "试听模型 s2-g1：27/36",
+   "12:48:34"
+  ],
+  [
+   0.973,
+   "切换到模型 s2-g2（第 4/4 个）",
+   "12:48:34"
+  ],
+  [
+   0.976,
+   "试听模型 s2-g2：28/36",
+   "12:52:07"
+  ],
+  [
+   0.979,
+   "试听模型 s2-g2：29/36",
+   "12:55:01"
+  ],
+  [
+   0.982,
+   "试听模型 s2-g2：30/36",
+   "12:56:07"
+  ],
+  [
+   0.985,
+   "试听模型 s2-g2：31/36",
+   "12:59:39"
+  ],
+  [
+   0.988,
+   "试听模型 s2-g2：32/36",
+   "13:02:39"
+  ],
+  [
+   0.991,
+   "试听模型 s2-g2：33/36",
+   "13:05:45"
+  ],
+  [
+   0.994,
+   "试听模型 s2-g2：34/36",
+   "13:08:51"
+  ],
+  [
+   0.997,
+   "试听模型 s2-g2：35/36",
+   "13:12:00"
+  ],
+  [
+   1.0,
+   "试听模型 s2-g2：36/36",
+   "13:13:04"
   ],
   [
    1.0,
    "训练完成",
-   "10:47:21"
+   "13:13:05"
   ]
  ],
  "detected": {
-  "vt_419cd8_e1_s96_l32.pth": "v5dev",
-  "vt_419cd8_e2_s192_l32.pth": "v5dev"
+  "vt_419cd8_e1_s126_l32.pth": "v5dev",
+  "vt_419cd8_e2_s252_l32.pth": "v5dev"
  },
- "finished": "2026-11-24 10:47:46"
+ "finished": "2026-11-24 13:37:59"
 }

@@ -1,0 +1,215 @@
+{
+ "audio": "research/gsv_v4_v5/真实V5实测/结果/生成_快速档_v5dev.wav",
+ "backend": "gptsovits",
+ "model": "gsv-v5dev-s2-g1-55afa7",
+ "model_name": "v5dev",
+ "models_used": [
+  {
+   "name": "v5dev",
+   "sentences": 3,
+   "seconds": 18.76,
+   "files": [
+    {
+     "kind": "SoVITS",
+     "file": "vt_419cd8_e2_s252_l32.pth",
+     "fingerprint": "b1afcb462e670896"
+    },
+    {
+     "kind": "GPT",
+     "file": "vt_419cd8-e1.ckpt",
+     "fingerprint": "73f1e4de8332547e"
+    }
+   ],
+   "how": "模型文件里的版本标记"
+  }
+ ],
+ "file_comment": "VoiceTwin 生成；模型：v5dev；模型文件：SoVITS vt_419cd8_e2_s252_l32.pth（指纹 b1afcb462e670896）、GPT vt_419cd8-e1.ckpt（指纹 73f1e4de8332547e）",
+ "srt": "research/gsv_v4_v5/真实V5实测/结果/生成_快速档_v5dev.srt",
+ "quality": "fast",
+ "quality_label": "快速（最快，每句只做 1 遍）",
+ "duration": 20.93,
+ "speed": 1.0,
+ "mean_speaker_sim": 0.8022,
+ "overall_pct": 90.4,
+ "min_pct": 85.0,
+ "similarity_filter": true,
+ "similarity": {
+  "models": [
+   "eres2netv2",
+   "resemblyzer"
+  ],
+  "labels": [
+   "ERes2NetV2（GPT-SoVITS 自带）",
+   "Resemblyzer"
+  ],
+  "reliable": true,
+  "precise": false,
+  "calibration": {
+   "eres2netv2": {
+    "p10": 0.8956,
+    "p50": 0.9581,
+    "p90": 0.965,
+    "n": 9,
+    "source": "val"
+   },
+   "resemblyzer": {
+    "p10": 0.9232,
+    "p50": 0.9703,
+    "p90": 0.9806,
+    "n": 9,
+    "source": "val"
+   }
+  },
+  "natural_range": null,
+  "definition": "100% = 和你自己的真实录音一样像，0% = 陌生人的水平",
+  "note": "相似度是几个声纹模型一起自动打分，越高越像；机器打分不可能百分之百准确，最终以耳朵为准"
+ },
+ "elapsed_sec": 540.1,
+ "warnings": [],
+ "flagged": [],
+ "notes": [
+  "本次生成：共 3 句（新生成 3 句），平均每句试了 1.0 次。",
+  "整篇像你本人 90.4%（100% = 和你自己的真实录音一样像，0% = 陌生人的水平；相似度是几个声纹模型一起自动打分，越高越像；机器打分不可能百分之百准确，最终以耳朵为准）。",
+  "没有需要特别注意的句子。"
+ ],
+ "variants": [],
+ "final": "",
+ "segments": [
+  {
+   "index": 1,
+   "text": "大家好，今天我们继续学习定语从句。",
+   "tts_text": "大家好，今天我们继续学习定语从句。",
+   "lang": "zh",
+   "start": 0.35,
+   "end": 5.205,
+   "ref": "第1课_8a31f3_0016",
+   "cached": false,
+   "seed": 20240601,
+   "speaker_sim": 0.7979,
+   "cer": null,
+   "hyp": null,
+   "rate": 3.3557,
+   "issues": [],
+   "pct": 90.3,
+   "pcts": {
+    "eres2netv2": 83.3,
+    "resemblyzer": 97.4
+   },
+   "sims": {
+    "eres2netv2": 0.7979,
+    "resemblyzer": 0.9452
+   },
+   "status": "🟢",
+   "hint": "",
+   "flagged": false,
+   "tries": 1,
+   "met": null,
+   "candidates": [
+    {
+     "seed": 20240601,
+     "pct": 90.3,
+     "cer": null,
+     "errors": null,
+     "total": 1.7949,
+     "speaker_sim": 0.7979,
+     "round": 0,
+     "eliminated": false,
+     "chosen": true
+    }
+   ],
+   "model": "v5dev",
+   "clip": "cache/segments/48/48b93605b53e7bd8.wav"
+  },
+  {
+   "index": 2,
+   "text": "上节课我们讲了关系代词 which 和 who 的用法，今天我们来看介词加关系代词的结构。",
+   "tts_text": "上节课我们讲了关系代词 which 和 who 的用法，今天我们来看介词加关系代词的结构。",
+   "lang": "zh",
+   "start": 5.909,
+   "end": 16.419,
+   "ref": "第1课_8a31f3_0016",
+   "cached": false,
+   "seed": 20248520,
+   "speaker_sim": 0.8154,
+   "cer": null,
+   "hyp": null,
+   "rate": 3.1579,
+   "issues": [],
+   "pct": 91.3,
+   "pcts": {
+    "eres2netv2": 85.1,
+    "resemblyzer": 97.6
+   },
+   "sims": {
+    "eres2netv2": 0.8154,
+    "resemblyzer": 0.947
+   },
+   "status": "🟢",
+   "hint": "",
+   "flagged": false,
+   "tries": 1,
+   "met": null,
+   "candidates": [
+    {
+     "seed": 20248520,
+     "pct": 91.3,
+     "cer": null,
+     "errors": null,
+     "total": 1.79,
+     "speaker_sim": 0.8154,
+     "round": 0,
+     "eliminated": false,
+     "chosen": true
+    }
+   ],
+   "model": "v5dev",
+   "clip": "cache/segments/4b/4b1239df034ed1e8.wav"
+  },
+  {
+   "index": 3,
+   "text": "First, let's look at an example from the passage.",
+   "tts_text": "First, let's look at an example from the passage.",
+   "lang": "en",
+   "start": 17.142,
+   "end": 20.532,
+   "ref": "第1课_8a31f3_0067",
+   "cached": false,
+   "seed": 20256439,
+   "speaker_sim": 0.7934,
+   "cer": null,
+   "hyp": null,
+   "rate": 3.6036,
+   "issues": [],
+   "pct": 87.6,
+   "pcts": {
+    "eres2netv2": 82.8,
+    "resemblyzer": 92.4
+   },
+   "sims": {
+    "eres2netv2": 0.7934,
+    "resemblyzer": 0.8966
+   },
+   "status": "🟢",
+   "hint": "",
+   "flagged": false,
+   "tries": 1,
+   "met": null,
+   "candidates": [
+    {
+     "seed": 20256439,
+     "pct": 87.6,
+     "cer": null,
+     "errors": null,
+     "total": 1.6516,
+     "speaker_sim": 0.7934,
+     "round": 0,
+     "eliminated": false,
+     "chosen": true
+    }
+   ],
+   "model": "v5dev",
+   "clip": "cache/segments/f3/f321d92fb54c4144.wav"
+  }
+ ],
+ "tries_avg": 1.0
+}
