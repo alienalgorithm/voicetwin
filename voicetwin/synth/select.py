@@ -1121,6 +1121,7 @@ class _DeepSelect:
         se = float(np.std(S_all, ddof=1) / math.sqrt(len(S_all))) if len(S_all) > 1 else None
         comp = four.get("composite") or {}
         return {"id": _cid(c), "ckpt": c, "previous": bool((c or {}).get("previous")),
+                "base": bool((c or {}).get("base")), "label": str((c or {}).get("label") or ""),
                 "pct": comp.get("mean") if comp.get("status") == "ok" else None, "four": four,
                 "cer": round(float(np.mean(cers)), 4) if cers else None,
                 "total": round(float(np.mean(S_all)), 4) if S_all else FAIL_S, "se": None if se is None else round(se, 4),
@@ -1349,7 +1350,8 @@ def select_deep(cfg: Dict[str, Any], project: Project, backend: Backend, progres
 
     1. 先比语气模型（GPT）：音色模型固定用存下的里面最接近训练一半的那个，第 4 轮以后存下的每个语气模型 × 每句（没参加训练的
        录音 + 检查用的句子）× 一次请求同时生成 2 个，留前 3 个；
-    2. 再比音色模型（SoVITS）：第一步最好的语气模型 × 每个音色模型，留前 3 个；
+    2. 再比音色模型（SoVITS）：第一步最好的语气模型 × 每个音色模型，留前 3 个（V5 的候选里还有没训练的官方底模
+       base-g…：LoRA 有没有帮助没人测过，由实测定）；
     3. 最后 3 × 3 组 + 你原来的模型按「一模一样」生成时的方式比：每句 2 条参考录音 × 每条 4 个，生成时的打分挑一个，
        再拿它和你的真实录音比；四项评分（中英夹在一起 / 纯中文 / 纯英文 / 综合总评分）排名，读错字分开把关。
     之后：按第 1 名重新校准语速、用你的录音校准排序权重、试听参考录音，都存进 models.json 的 identical。
@@ -1452,8 +1454,8 @@ def select_deep(cfg: Dict[str, Any], project: Project, backend: Backend, progres
     _save_report(project, sel, results, rk)
     if first["ckpt"] is not None:
         backend.use_checkpoint(first["ckpt"])
-    sel._p(1.0, f"最佳模型：{first['id']}" + (f"（综合总评分 {first['pct']:.1f}%）" if first.get("pct") is not None else ""),
-           log_it=True)
+    sel._p(1.0, f"最佳模型：{_model_name(first)}"
+           + (f"（综合总评分 {first['pct']:.1f}%）" if first.get("pct") is not None else ""), log_it=True)
     for line in selection["lines"]:
         log.info("  " + line)
     return info
@@ -1480,7 +1482,8 @@ def _save_report(project: Project, sel: "_DeepSelect", results: List[Dict[str, A
 
         rows = []
         for r in rk["order"]:
-            rows.append({"id": r["id"], "previous": r["previous"], "four": r["four"], "cer": r["cer"], "total": r["total"],
+            rows.append({"id": r["id"], "previous": r["previous"], "base": r.get("base", False), "four": r["four"],
+                         "cer": r["cer"], "total": r["total"],
                          "items": {k: {kk: v.get(kk) for kk in ("S", "pct", "cer", "group", "w", "kind", "failed", "ratio")}
                                    for k, v in r["per_item"].items()}})
         sel.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -1514,6 +1517,16 @@ def audition_references(cfg: Dict[str, Any], project: Project, backend: Backend,
     return sel.audition(ckpt, 0.0, 1.0, "试听参考录音、校准打分")
 
 
+def _model_name(r: Dict[str, Any]) -> str:
+    """挑选结果里一个模型给老师看的名字：编号，后面括号里写它是什么（你原来的模型 / V5 底模，音色没有训练）。"""
+    name = str(r.get("id"))
+    if r.get("previous"):
+        name += "（你原来的模型）"
+    if r.get("label"):
+        name += f"（{r['label']}）"
+    return name
+
+
 def deep_summary_lines(selection: Dict[str, Any]) -> List[str]:
     """挑选结果给老师看的几行（只写实测的数）：前 5 名的四项评分和错字率、分不出来 / 各有长处、为什么不能排第一、
     按句子种类校准的说明、综合总评分的比例、英文的提示、语速、排序权重、试听参考录音、分数偏乐观的提醒。"""
@@ -1523,13 +1536,16 @@ def deep_summary_lines(selection: Dict[str, Any]) -> List[str]:
     nv, nt = int(selection.get("val_items") or 0), int(selection.get("test_items") or 0)
     lines = [f"挑选结果（实测，{nv + nt} 句：没参加训练的录音 {nv} 句、检查用的句子 {nt} 句）："]
     for k, r in enumerate(res[:5], 1):
-        name = str(r.get("id")) + ("（你原来的模型）" if r.get("previous") else "")
+        name = _model_name(r)
         cer = r.get("cer")
         text = f"第 {k} 名 {name}：{LG.four_scores_text(r.get('four'))}；"
         text += f"错字率 {100 * float(cer):.1f}%" if cer is not None else f"错字率{LG.NOT_MEASURED}"
         if r.get("failed"):
             text += f"；有 {int(r['failed'])} 句没能生成（按最差算）"
         lines.append(text)
+    if res and res[0].get("base"):
+        lines.append(f"第 1 名 {res[0].get('id')} 的音色模型是没有训练的 V5 官方底模，语气模型是你练好的："
+                     "这次实测，练过的音色模型都排在它后面，所以生成时就用这一组。")
     if not selection.get("four_ok"):
         lines.append("「像你本人」的四项评分这次没测出来（没有按你的录音校准好的声纹模型），名次按综合分"
                      "（声纹相似度、读错字、长短、音调）排。")

@@ -94,8 +94,21 @@ VOCODER = {
     "v5dev": "GPT_SoVITS/pretrained_models/gsv-v5-pretrained/vocoder.pth",
     "v5turbo": "GPT_SoVITS/pretrained_models/gsv-v5-pretrained/vocoder.pth",
 }
-#: 「一模一样」挑选时，V4 / V5 的音色 LoRA 从第几轮起都试（官方默认只练 2 轮，「训太多=作死」）
-LORA_SELECT_FROM = 2
+#: 「一模一样」挑选时，V4 / V5 的音色 LoRA 从第几轮起都试（官方默认只练 2 轮，「训太多=作死」）。
+#: V5 从第 1 轮起：官方 wiki 说「基于 v5 版本的少量样本微调暂未进行研究和实验」，练几轮最好没人测过，交给实测
+LORA_SELECT_FROM: Dict[str, int] = {"v4": 2, "v5dev": 1, "v5turbo": 1}
+#: 「一模一样」挑选时，这几个版本还把官方底模（音色不练）+ 你练好的语气模型当成一个候选：V5 不训练时的相似度
+#: 官方实测最高（0.805），LoRA 到底有没有帮助没人测过，所以让没参加训练的录音来定
+BASE_SELECT_VERSIONS = ("v5dev", "v5turbo")
+#: 挑选结果里怎么称呼这个候选（编号是 base-g<语气轮数>）
+BASE_LABEL = "V5 底模，音色没有训练"
+
+
+def lora_select_from(version: str) -> int:
+    """「一模一样」挑选时，这个版本的音色 LoRA 从第几轮起都试。"""
+    return int(LORA_SELECT_FROM.get(str(version), 2))
+
+
 #: 扩散路线（V4 / V5）：音色用 LoRA 微调（官方 webui.py 的 v3v4set：s2_train_v3_lora.py、没有 s2D、每批 显存 // 8 条）
 LORA_VERSIONS = ("v4", "v5dev", "v5turbo")
 #: 用另一套声码器合成的版本（官方 TTS.py 的 using_vocoder_synthesis）：只用第一条参考录音，辅助参考不起作用
@@ -1195,7 +1208,10 @@ def _plan_deep(v: Dict[str, Any]) -> Dict[str, Any]:
         en = v.get("en_lines")
         parts.append("中文和英文都参加训练" + (f"（素材里有 {en} 句夹着英文）" if en else ""))
     n_val, n_test = v.get("n_val"), v.get("n_test")
-    which = (f"音色第 {LORA_SELECT_FROM} 轮、语气第 4 轮以后存下的每个版本" if lora else "第 4 轮以后存下的每个版本")
+    which = (f"音色第 {lora_select_from(lora['version'])} 轮、语气第 4 轮以后存下的每个版本" if lora
+             else "第 4 轮以后存下的每个版本")
+    if lora and lora["version"] in BASE_SELECT_VERSIONS:
+        which += "，还有音色没有训练的 V5 底模"
     if n_val and n_test:
         parts.append(f"训练完用你没参加训练的 {n_val} 句录音和 {n_test} 句检查用的句子，把{which}都试一遍，挑最像你的")
     elif n_val:
@@ -3530,6 +3546,12 @@ class GPTSoVITSBackend(Backend):
                     if cand.exists():
                         return cand
             return None
+        # 挑选选中了官方音色底模（V5 底模，音色没有训练）：到当前整合包的底模文件夹里找
+        joined = "/".join(parts)
+        for rel in PRETRAINED_SOVITS.values():
+            if joined == rel or joined.endswith("/" + rel):
+                cand = self.p(rel)
+                return cand if cand.exists() else None
         # 原来在哪个版本的文件夹里，先到同名的文件夹里找（各版本的文件名可能一样）
         dirs = self._weight_dirs("sovits") + self._weight_dirs("gpt")
         if len(parts) >= 2 and parts[-2] in dirs:
@@ -3611,28 +3633,44 @@ class GPTSoVITSBackend(Backend):
         tcfg = self.bcfg.get("train", {}) or {}
         ks = max_sovits or max(1, _to_int(tcfg.get("select_sovits"), SELECT_SOVITS))
         kg = max_gpt or max(1, _to_int(tcfg.get("select_gpt"), SELECT_GPT))
-        # 音色模型按版本分开挑（各版本练的轮数不一样）；V4 / V5 的 LoRA 练得少，从第 LORA_SELECT_FROM 轮起都试
+        # 音色模型按版本分开挑（各版本练的轮数不一样）；V4 / V5 的 LoRA 练得少，从 lora_select_from 那一轮起都试
         by_ver: Dict[str, List[Path]] = {}
         for w in dict.fromkeys(sovits):
             by_ver.setdefault(self._weight_version(w), []).append(w)
-        pick_s: List[Tuple[str, Path]] = []
+        pick_s: List[Tuple[str, Path, bool]] = []
         for ver in sorted(by_ver, key=lambda v: (v != self.main_version, v)):
             ws = sorted(by_ver[ver], key=_epoch)
             if every:
-                start = LORA_SELECT_FROM if is_lora_version(ver) else 4
+                start = lora_select_from(ver) if is_lora_version(ver) else 4
                 chosen = [w for w in ws if _epoch(w) >= start] or ws[-1:]
+                # V5：官方底模（音色不练）+ 你练好的语气模型也参加比较（LoRA 有没有帮助，由实测定）
+                base = self._base_sovits(ver)
+                if base is not None:
+                    pick_s.append((ver, base, True))
             else:
                 chosen = _spread(ws, ks)
-            pick_s += [(ver, w) for w in chosen]
+            pick_s += [(ver, w, False) for w in chosen]
         pick_g = ([w for w in gpt if _epoch(w) >= 4] or gpt[-1:]) if every else _spread(gpt, kg)
         many = len(by_ver) > 1
         out = []
-        for ver, s in pick_s:
+        for ver, s, is_base in pick_s:
             for g in pick_g:
-                cid = f"s{_epoch(s)}-g{_epoch(g)}"
-                out.append({"id": f"{ver}-{cid}" if many else cid, "sovits": str(s), "gpt": str(g),
-                            "sovits_epoch": _epoch(s), "gpt_epoch": _epoch(g), "version": ver})
+                cid = f"base-g{_epoch(g)}" if is_base else f"s{_epoch(s)}-g{_epoch(g)}"
+                c = {"id": f"{ver}-{cid}" if many else cid, "sovits": str(s), "gpt": str(g),
+                     "sovits_epoch": 0 if is_base else _epoch(s), "gpt_epoch": _epoch(g), "version": ver}
+                if is_base:
+                    c.update(base=True, label=BASE_LABEL)
+                out.append(c)
         return out
+
+    def _base_sovits(self, version: str) -> Optional[Path]:
+        """「一模一样」挑选时一起比较的官方音色底模（只有 BASE_SELECT_VERSIONS 里的版本；用别处的服务、文件不在时没有）。
+        真实的 api_v2 换模型（/set_sovits_weights）和启动时一样走 TTS.init_vits_weights：官方 process_ckpt.py 按文件开头的
+        MD5 认出这是 v5dev / v5turbo 的底模（不是 LoRA），直接加载整个模型。"""
+        if version not in BASE_SELECT_VERSIONS or self.root is None or self.external_url:
+            return None
+        path = self.p(PRETRAINED_SOVITS[version])
+        return path if path.is_file() else None
 
     # ================================================================ 推理服务
     def _current_weights(self) -> Dict[str, str]:

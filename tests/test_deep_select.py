@@ -123,7 +123,8 @@ def _project(tmp_path, n_val=8, name="深度挑选", mixed_freq=BASE_F, n_train=
 
 class FakeQualityBackend:
     """假的 GPT-SoVITS：声音的音高 = 200 Hz + 偏差，偏差按（音色模型轮数, 语气模型轮数）定（默认最佳是 s8-g6）；
-    长短 = ratio × 按字数算的长度。记下每次请求、每次换模型、在哪个线程里生成。"""
+    长短 = ratio × 按字数算的长度。记下每次请求、每次换模型、在哪个线程里生成。
+    base=True：和真的 V5 一样，候选里还有官方底模（音色没有训练，轮数算 0）+ 每个语气模型，编号 base-g<轮>。"""
 
     name = "gptsovits"
     display_name = "测试"
@@ -133,7 +134,7 @@ class FakeQualityBackend:
     release_gpu_callback = None
 
     def __init__(self, project, sovits=(4, 6, 8, 10), gpt=(4, 5, 6, 7), quality=None, ratio=1.0, fail=(),
-                 prev=None, n_test=2, final=4):
+                 prev=None, n_test=2, final=4, base=False):
         self.project = project
         self.bcfg = {"train": {"select_test_texts": n_test, "select_screen_seeds": 2, "select_final_candidates": final}}
         wdir = project.root / "fakeweights"
@@ -143,6 +144,11 @@ class FakeQualityBackend:
         for p in list(self.sov.values()) + list(self.gpt.values()):
             if not Path(p).exists():  # 模型文件没变（再挑一次时文件的大小、修改时间都一样）
                 Path(p).write_bytes(b"x" * 64)
+        self.base = None
+        if base:
+            self.base = str(wdir / "s2Gv5dev.pth")
+            if not Path(self.base).exists():
+                Path(self.base).write_bytes(b"b" * 64)
         self.quality = quality or (lambda s, g: 2.0 * abs(s - 8) + 3.0 * abs(g - 6))
         self.ratio = ratio
         self.fail = set(fail)
@@ -163,6 +169,11 @@ class FakeQualityBackend:
     def checkpoints(self, all=False):  # noqa: A002
         out = [{"id": f"s{s}-g{g}", "sovits": sp, "gpt": gp, "sovits_epoch": s, "gpt_epoch": g}
                for s, sp in sorted(self.sov.items()) for g, gp in sorted(self.gpt.items())]
+        if self.base is not None:
+            from voicetwin.backends.gptsovits import BASE_LABEL
+
+            out = [{"id": f"base-g{g}", "sovits": self.base, "gpt": gp, "sovits_epoch": 0, "gpt_epoch": g,
+                    "base": True, "label": BASE_LABEL} for g, gp in sorted(self.gpt.items())] + out
         if self.prev is not None:
             out.append({k: v for k, v in self.prev.items() if not k.startswith("_")})
         return out
@@ -384,6 +395,46 @@ def test_previous_selected_stays_selected_when_it_ranks_first(tmp_path, fast):
     assert "第 1 名 prev-s24-g20（你原来的模型）" in info["selection"]["lines"][1]
     wf._previous_model_result(project, "gptsovits", info)
     assert info["previous_note"] == "新模型实测没有比原来的好，继续用原来的模型。"
+
+
+def test_v5_base_candidate_is_measured_and_can_win(tmp_path, fast):
+    """V5：没训练的官方底模（音色不练）+ 练好的语气模型也参加比较；实测它最像时就选它，挑选结果里用中文写明它是什么。"""
+    from voicetwin.backends.gptsovits import BASE_LABEL
+
+    cfg, project = _project(tmp_path)
+    b = FakeQualityBackend(project, base=True,
+                           quality=lambda s, g: (0.0 if s == 0 else 2.0 + 2.0 * abs(s - 8)) + 3.0 * abs(g - 6))
+    info = _run(cfg, project, b)
+    s = info["selection"]
+    # 第一步固定的音色模型还是练过的、训练一半的那个（不拿底模当它）
+    assert [r["id"] for r in s["stages"]["A"]][0] == "s6-g6" and all(r["id"].startswith("s6-") for r in s["stages"]["A"])
+    # 第二步：底模和每个练过的音色模型一起比，底模最好
+    assert [r["id"] for r in s["stages"]["B"]][0] == "base-g6" and len(s["stages"]["B"]) == 5
+    assert s["best"] == "base-g6" and s["ranking"][0] == "base-g6"
+    top = s["results"][0]
+    assert top["base"] is True and top["label"] == BASE_LABEL and top["four"]["composite"]["status"] == "ok"
+    sel_ck = project.load_models()["gptsovits"]["selected"]
+    assert sel_ck["sovits"] == b.base and sel_ck["gpt"] == b.gpt[6] and sel_ck["base"] is True
+    assert b.loads[-1] == (b.base, b.gpt[6])     # 生成时换上的是底模 + 练好的语气模型
+    assert s["lines"][1].startswith(f"第 1 名 base-g6（{BASE_LABEL}）：")
+    assert ("第 1 名 base-g6 的音色模型是没有训练的 V5 官方底模，语气模型是你练好的：这次实测，练过的音色模型都排在它后面，"
+            "所以生成时就用这一组。") in s["lines"]
+
+
+def test_v5_base_candidate_that_loses_is_still_in_the_results(tmp_path, fast):
+    from voicetwin.backends.gptsovits import BASE_LABEL
+
+    cfg, project = _project(tmp_path)
+    b = FakeQualityBackend(project, base=True,
+                           quality=lambda s, g: (1.0 if s == 0 else 2.0 * abs(s - 8)) + 3.0 * abs(g - 6))
+    info = _run(cfg, project, b)
+    s = info["selection"]
+    assert s["best"] == "s8-g6" and [r["id"] for r in s["stages"]["B"]][:2] == ["s8-g6", "base-g6"]
+    base_rows = [r for r in s["results"] if r.get("base")]
+    assert base_rows and all(r["id"].startswith("base-g") and r["label"] == BASE_LABEL for r in base_rows)
+    assert any(ln.startswith(f"第 2 名 base-g6（{BASE_LABEL}）：") for ln in s["lines"])
+    assert not any("没有训练的 V5 官方底模" in ln for ln in s["lines"])
+    assert project.load_models()["gptsovits"]["selected"]["sovits"] == b.sov[8]
 
 
 # ============================================================================ 排序权重的校准

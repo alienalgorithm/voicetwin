@@ -6,7 +6,9 @@
   3. 训练：和老师用的默认设置一样，只练 V5（v5dev 的 LoRA，官方 s2_train_v3_lora.py）+ GPT，练完自动挑；
   4. 生成一段讲稿（快速档）；
   5. 「一次请求同时生成好几个版本」在 V5 上能不能用：同一句话同时生成 3 个，能不能按数字静音切开、
-     每个版本和单独生成的长度差多少、用时多少（和一个一个生成对照）。
+     每个版本和单独生成的长度差多少、用时多少（和一个一个生成对照）；
+  6. 「一模一样」挑选的新候选「V5 底模（音色没有训练）+ 练好的语气模型」：真的 api_v2 能不能换上官方底模
+     （/set_sovits_weights → TTS.init_vits_weights）、能不能生成出 48 kHz 的声音。
 
 用法：python run_real_v5.py --gsv <整合包解压的文件夹> --out <结果文件夹> [--work <工作文件夹>]
 """
@@ -251,6 +253,31 @@ def main() -> int:
             b.stop()
 
     step("同时生成好几个版本（V5）", batch_test)
+
+    def base_model():
+        project = wf.open_project(cfg, voice, must_exist=True)
+        b = get_backend("gptsovits", cfg, project)
+        base = [c for c in b.checkpoints(all=True) if c.get("base")]
+        if not base:
+            raise RuntimeError("「一模一样」挑选的候选里没有 V5 底模")
+        ck = base[-1]   # 最后一轮的语气模型
+        ref = project.load_references()[0]
+        req = SynthRequest(text="我们来看第二段，作者举了两个例子来支持自己的看法。", lang="zh",
+                           ref_audio=project.abspath(ref["path"]), ref_text=ref["text"], ref_lang=ref.get("lang", "zh"),
+                           seed=7, speed=1.0)
+        b.start()
+        try:
+            b.use_checkpoint(ck)   # 真的 api_v2 换不上会回 400，这里就报错
+            wav = b.synthesize(req, out / "V5底模_练好的语气.wav")
+            info = wav_info(Path(wav))
+            if info["sr"] != 48000 or info["seconds"] < 1.0:
+                raise RuntimeError(f"用 V5 底模生成的声音不对：{info}")
+            return {"ckpt": {k: ck.get(k) for k in ("id", "sovits", "gpt", "label")},
+                    "detected": g.detect_sovits_version(ck["sovits"]), **info}
+        finally:
+            b.stop()
+
+    step("V5 底模（音色没有训练）+ 练好的语气模型：换上、生成", base_model)
     res["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
     save()
     lines = ["# 真实 V5 实测结果（GitHub Actions，只有处理器）", "", f"开始 {res['started']}，结束 {res['finished']}", "",

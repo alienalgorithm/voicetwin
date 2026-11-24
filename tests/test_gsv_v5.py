@@ -249,3 +249,79 @@ def test_v5_lora_still_oom_with_gradient_checkpointing_gives_the_clear_error(pre
     assert sum("梯度检查点" in m for m in rec.msgs) == 1          # 只多试一次
     assert explain(ei.value).key == "gpu_oom"
     assert str(ei.value).startswith("「训练音色（v5dev）」这一步出错了：显卡内存（显存）不够")
+
+
+# ---------------------------------------------------------------------------- 「一模一样」挑选：V5 底模和 LoRA 第 1 轮也参加比较
+def _v5_weights(tmp_path, version="v5dev", sovits=(1, 2, 3), gpt=(4, 5), **extra):
+    """仿真整合包 + 一个声音，models.json 里记着练好的音色 LoRA（开头 07 = v5dev）和语气模型。"""
+    from voicetwin.project import Project
+
+    root = build_fake_root(tmp_path / f"GSV-{version}")
+    cfg = make_cfg(tmp_path / "ws", backend="gptsovits", backends={"gptsovits": {
+        "root": str(root), "python": sys.executable, "version": version, **extra}})
+    project = Project(cfg, f"底模候选{version}")
+    project.root.mkdir(parents=True, exist_ok=True)
+    b = get_backend("gptsovits", cfg, project)
+    sdir, gdir = root / f"SoVITS_weights_{version}", root / f"GPT_weights_{version}"
+    sdir.mkdir()
+    gdir.mkdir()
+    head = {"v5dev": b"07", "v5turbo": b"08", "v4": b"04"}[version]
+    sov = [sdir / f"{b.exp_name}_e{e}_s{10 * e}_l32.pth" for e in sovits]
+    gp = [gdir / f"{b.exp_name}-e{e}.ckpt" for e in gpt]
+    for p in sov:
+        p.write_bytes(head + b"x" * 2000)
+    for p in gp:
+        p.write_bytes(b"x" * 2000)
+    project.update_models("gptsovits", {"sovits": [str(p) for p in sov], "gpt": [str(p) for p in gp]})
+    return root, project, b, sov, gp
+
+
+def test_v5_identical_selection_also_tries_the_untrained_base_and_lora_epoch_1(tmp_path):
+    root, project, b, sov, gp = _v5_weights(tmp_path)
+    base = str((root / g.PRETRAINED_SOVITS["v5dev"]).resolve())
+    ck = b.checkpoints(all=True)
+    # LoRA 第 1 轮也试（官方：V5 少量样本微调还没研究过，练几轮最好由实测定）
+    assert {c["sovits_epoch"] for c in ck if not c.get("base")} == {1, 2, 3}
+    bc = [c for c in ck if c.get("base")]
+    assert [c["id"] for c in bc] == ["base-g4", "base-g5"]
+    assert all(c["sovits"] == base and c["sovits_epoch"] == 0 and c["label"] == g.BASE_LABEL == "V5 底模，音色没有训练"
+               for c in bc)
+    assert [c["gpt"] for c in bc] == [str(p) for p in gp]      # 语气模型是她练好的，不是底模
+    assert len(ck) == 4 * 2 and len({c["id"] for c in ck}) == len(ck)
+    # 读出来是 v5dev 的底模（不是 LoRA）：官方 process_ckpt.py 也是按这个 MD5 认、整个加载
+    # （仿真的底模文件不是真的，所以只核对对照表里有它）
+    assert g.SOVITS_HASH_VERSION["c4ce1f839a0d271e41963f9fb16ade76"] == "v5dev"
+    # 标准的挑法不变：不加底模
+    assert not any(c.get("base") for c in b.checkpoints())
+    # 「一模一样」的训练计划照实说会比较哪些
+    lora = g.plan_lora("v5dev", 7.96, 6.8, n_clips=984)
+    summary = g.plan_training(984, 32.8, 7.96, 6.8, mode="identical", n_val=20, lora=lora)["summary"]
+    assert "把音色第 1 轮、语气第 4 轮以后存下的每个版本，还有音色没有训练的 V5 底模都试一遍，挑最像你的" in summary
+
+
+def test_v5_selected_base_is_found_after_the_package_moves(tmp_path):
+    """挑出来的是底模：整合包挪了地方（models.json 里还是旧位置）也到新整合包的底模文件夹里找，不当成「找不到训练好的模型」。"""
+    root, project, b, sov, gp = _v5_weights(tmp_path)
+    base = (root / g.PRETRAINED_SOVITS["v5dev"]).resolve()
+    for old in ("D:\\旧的位置\\GPT-SoVITS-v5\\GPT_SoVITS\\pretrained_models\\gsv-v5-pretrained\\s2Gv5dev.pth",
+                "/old/place/GPT-SoVITS/GPT_SoVITS/pretrained_models/gsv-v5-pretrained/s2Gv5dev.pth"):
+        assert b._locate_weight(old) == base
+    project.update_models("gptsovits", {"selected": {
+        "id": "base-g5", "sovits": "D:\\旧的位置\\GPT-SoVITS-v5\\GPT_SoVITS\\pretrained_models\\gsv-v5-pretrained\\s2Gv5dev.pth",
+        "gpt": str(gp[-1]), "base": True}})
+    w = b._current_weights()
+    assert (w["sovits"], w["gpt"], w["id"]) == (str(base), str(gp[-1]), "base-g5")
+    assert b.missing_model_note() == ""
+
+
+def test_base_candidate_only_for_v5(tmp_path):
+    """V4 不变：LoRA 还是从第 2 轮起试，没有底模候选；用别处的 GPT-SoVITS 服务时也不加（读不到那边的文件）。"""
+    assert (g.lora_select_from("v4"), g.lora_select_from("v5dev"), g.lora_select_from("v5turbo")) == (2, 1, 1)
+    _, _, b4, _, _ = _v5_weights(tmp_path / "v4", version="v4")
+    ck = b4.checkpoints(all=True)
+    assert {c["sovits_epoch"] for c in ck} == {2, 3} and not any(c.get("base") for c in ck)
+    _, _, bx, _, _ = _v5_weights(tmp_path / "ext", api_url="http://127.0.0.1:9")
+    assert not any(c.get("base") for c in bx.checkpoints(all=True))
+    lora4 = g.plan_lora("v4", 7.96, 6.8, n_clips=984)
+    s4 = g.plan_training(984, 32.8, 7.96, 6.8, mode="identical", n_val=20, lora=lora4)["summary"]
+    assert "音色第 2 轮、语气第 4 轮以后存下的每个版本都试一遍" in s4 and "底模" not in s4
