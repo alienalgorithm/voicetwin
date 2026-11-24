@@ -91,7 +91,11 @@ with sync_playwright() as p:
         m = re.search(r"实际参加训练：音色 (\d+) 条、语气 (\d+) 条（一共 (\d+) 条）", text)
         ok("每条素材都参加了训练（音色、语气都是）", m and m.group(1) == m.group(2) == m.group(3),
            m.group(0) if m else "页面上没有「实际参加训练」那句")
-        ok("训练没有报错", "❌" not in text, (re.search(r"❌[^\n]*", text) or [""])[0])
+        # GitHub 的机器没有显卡：顶上「❌ 显卡没有正常工作」的提示是对的，不算训练出错
+        bad = [x for x in re.findall(r"❌[^\n]*", text) if "显卡没有正常工作" not in x]
+        ok("训练没有报错", not bad, bad[:3])
+        m = re.search(r"模型：[^\n]*", text)
+        ok("训练好以后右上角的模型型号是 v5dev", m and "v5dev" in m.group(0), m.group(0) if m else "没找到")
         shot(pg, "4_训练完成")
 
         # ③ 生成讲课音频（默认「一模一样」）
