@@ -1,0 +1,11 @@
+2026-11-24 12:22:33,948 | INFO | voicetwin.prepare | 找到 1 个视频/录音
+2026-11-24 12:22:33,948 | INFO | voicetwin.prepare | [第 1/1 个文件] 从视频里提取声音：001.1.1.1.-.wav（174 MB）
+2026-11-24 12:22:34,555 | INFO | voicetwin.prepare | [第 1/1 个文件] 降噪、统一音量
+2026-11-24 12:22:36,938 | INFO | voicetwin.enhance |   估计信噪比 23.7 dB，进行轻度降噪（强度 0.6）
+2026-11-24 12:22:48,328 | INFO | voicetwin.prepare | [第 1/1 个文件] 切成小段……
+2026-11-24 12:22:49,900 | INFO | voicetwin.prepare |   切出 126 段
+2026-11-24 12:22:49,907 | INFO | voicetwin.prepare | 加载识别模型（第一次使用会先自动下载，约 3 GB，可能要 10~30 分钟，之后就快了）（如果下载模型很慢或失败，可以先设置环境变量 HF_ENDPOINT=https://hf-mirror.com 再运行）
+2026-11-24 12:22:49,958 | INFO | voicetwin.asr | 加载识别模型 faster-whisper/large-v3（cpu, int8）……首次使用会自动下载
+2026-11-24 12:23:12,822 | INFO | voicetwin.prepare | 开始识别每段话的文字（共 126 段）
+2026-11-24 12:23:30,318 | INFO | voicetwin.prepare | 识别 1/126：名词性冲剧是三大冲剧里面最难最复杂的一个
+2026-11-24 12:28:52,781 | INFO | voicetwin.prepare | 识别 21/126：但是如果我们现在能有这么一个方法，用这个
