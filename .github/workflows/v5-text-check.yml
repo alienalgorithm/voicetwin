@@ -1,0 +1,109 @@
+name: v5-text-check
+
+# 用官方 V5 整合包（RTX 50 系列版）里真的文字处理程序，把老师的母本 core_corpus.tsv（1209 句）每一句变成音素：
+# 训练时（官方 1-get-text.py、VoiceTwin 的 get_text_mixed.py，都真的跑）、生成时（VoiceTwin 发给 api_v2 的样子，
+# TextPreprocessor.preprocess，text_lang 是 zh，也比较 all_zh / auto），英文词、标点、数字各变成了什么，训练和生成哪里不一样，
+# 英文读音预检（gsv_english.py）说的读法和改的效果对不对。
+# 只解出文字处理要用的：代码、G2PW、chinese-roberta（BERT）、fast_langdetect、nltk 数据；底模、语音识别、人声分离都不解。
+# 整合包里的 Windows Python（runtime/Lib）不用，换成 Linux 的 Python 3.12，各个库的版本和整合包一样（tests/constraints-gsv-v5.txt）。
+# 结果提交到 research/V5极致/文字处理实测/结果/（结果.md、结果.json、逐句.csv）。
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - ".github/workflows/v5-text-check.yml"
+      - "research/V5极致/文字处理实测/run_text_check.py"
+      - "voicetwin/data/lexicon/core_corpus.tsv"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v5-text-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  text:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      PKG: GPT-SoVITS-v5-20261005nvidia50x0.7z
+      SHA: 27b269fc1c53823dc9d404ada83f4444b300e455011db9861ec72e01b6fc5d5e
+      OUT: research/V5极致/文字处理实测/结果
+      SCRIPT: research/V5极致/文字处理实测/run_text_check.py
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Self-test of the comparison and report code (no package needed)
+        run: python "$SCRIPT" --selftest
+      - name: Free disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+          sudo mkdir -p /mnt/w && sudo chown "$USER" /mnt/w
+          df -h / /mnt
+      - name: Download and unpack the official V5 package (text processing only)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full >/dev/null
+          cd /mnt/w
+          curl -fL --retry 5 -o "$PKG" "https://huggingface.co/lj1995/GPT-SoVITS-windows-package/resolve/main/$PKG?download=true"
+          echo "$SHA  $PKG" | sha256sum -c
+          # 不解：Windows 的 Python 库、人声分离、语音识别，和文字处理用不到的底模（音色、语气、声码器、hubert）
+          7z x -y -o/mnt/w/g "$PKG" -xr!Lib -xr!uvr5 -xr!asr \
+            -xr!gsv-v5-pretrained -xr!gsv-v4-pretrained -xr!v2Pro -xr!gsv-v2final-pretrained \
+            -xr!s2Gv3.pth -xr!s1v3.ckpt -xr!s2G488k.pth -xr!s2D488k.pth "-xr!s1bert25hz-*.ckpt" \
+            "-xr!models--nvidia--bigvgan_v2_24khz_100band_256x" -xr!chinese-hubert-base >/dev/null
+          rm -f "$PKG"
+          G=$(ls -d /mnt/w/g/GPT-SoVITS-*)
+          # 文字处理一定要有的：缺了就停下（不然量出来的不是整合包的结果）
+          for p in GPT_SoVITS/text/G2PWModel/g2pW.onnx GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large \
+                   GPT_SoVITS/pretrained_models/fast_langdetect GPT_SoVITS/text/cmudict.rep runtime/nltk_data \
+                   GPT_SoVITS/TTS_infer_pack/TextPreprocessor.py GPT_SoVITS/prepare_datasets/1-get-text.py; do
+            [ -e "$G/$p" ] || { echo "整合包里没有 $p"; exit 1; }
+          done
+          ls "$G" "$G/GPT_SoVITS/pretrained_models"
+          echo "GSV=$G" >> "$GITHUB_ENV"
+          echo "NLTK_DATA=$G/runtime/nltk_data" >> "$GITHUB_ENV"
+          du -sh "$G"; df -h /mnt
+      - name: Install (Linux, CPU; versions as in the V5 package)
+        run: |
+          python -m pip install -U pip wheel
+          python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          # 和 gsv-v5-real.yml 一样：整合包的 requirements.txt，去掉日文 / 韩文 / 粤语 / 语音识别这些用不到、又要现场编译的；
+          # 显卡版 onnxruntime 换成普通版（opencc 不能去掉：G2PW 要用它）
+          grep -viE '^(--no-binary|pyopenjtalk|python_mecab_ko|g2pk2|ko_pron|ToJyutping|funasr|modelscope|onnxruntime)' \
+            "$GSV/requirements.txt" | sed -E 's/[[:space:]]*([<>=!~;].*)?$//' | grep -v '^$' > /tmp/req.txt
+          printf 'onnxruntime\nmatplotlib\nresampy\n' >> /tmp/req.txt
+          cat /tmp/req.txt
+          python -m pip install -c tests/constraints-gsv-v5.txt -r /tmp/req.txt
+          python -c "import torch, transformers, g2p_en, nltk; print(torch.__version__, transformers.__version__)"
+          python research/gsv_v4_v5/真实V5实测/import_check.py "$GSV"
+      - name: Measure every sentence with the real V5 text processing
+        run: |
+          python "$SCRIPT" --gsv "$GSV" --repo "$GITHUB_WORKSPACE" --out "$OUT" --work /mnt/w/tc
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p "$OUT/日志"
+          cp /mnt/w/tc/*.log "$OUT/日志/" 2>/dev/null || true
+          find "$OUT/日志" -type f -size +2M -delete || true
+          ls -la "$OUT" "$OUT/日志" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v5-text-check
+          path: ${{ env.OUT }}
+      - name: Commit results
+        if: always()
+        run: |
+          [ -d "$OUT" ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$OUT"
+          git commit -m "记录：V5 文字处理实测结果（母本每一句的音素，GitHub 自动运行）" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep $((i * 5))
+          done
