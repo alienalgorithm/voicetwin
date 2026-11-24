@@ -28,7 +28,7 @@ log = get_logger("sv")
 ProgressFn = Callable[[float, str], None]
 
 RELEASE_TAG = "sv-models-1"
-RELEASE_BASE = f"https://github.com/AlienCodes/literate-enigma/releases/download/{RELEASE_TAG}/"
+RELEASE_BASE = f"https://github.com/alienalgorithm/voicetwin/releases/download/{RELEASE_TAG}/"
 SHERPA_BASE = "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/"
 SHERPA_HF = "https://hf-mirror.com/csukuangfj/speaker-embedding-models/resolve/main/"
 SILERO_URL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx"

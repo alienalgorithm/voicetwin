@@ -27,7 +27,7 @@ INCLUDE = ["voicetwin", "docs", "install_windows.bat", "install_windows.ps1", "p
 #: 不再更新、和现在的界面对不上的老文档：不打包（说明只维护《快速上手》）
 STALE_DOCS = {"Windows详细使用教程.md"}
 TOP = "VoiceTwin"
-REPO_URL = "https://github.com/AlienCodes/literate-enigma"
+REPO_URL = "https://github.com/alienalgorithm/voicetwin"
 
 
 def project_version() -> str:

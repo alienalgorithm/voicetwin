@@ -8,7 +8,7 @@
 
 > ## 👉 第一次用？只看这个：[**快速上手（10 分钟看完）**](快速上手.md)
 >
-> 1. 下载程序：[**Releases 页面 → VoiceTwin-Windows-v….zip**](https://github.com/AlienCodes/literate-enigma/releases/latest)
+> 1. 下载程序：[**Releases 页面 → VoiceTwin-Windows-v….zip**](https://github.com/alienalgorithm/voicetwin/releases/latest)
 > 2. 照着 [**快速上手**](快速上手.md) 做：安装 → 训练你的声音 → 粘贴讲稿生成音频（也有 [7 页 PDF 版](docs/快速上手.pdf)，带截图）
 >
 > 说明只维护这一份《快速上手》（老的长教程 docs/Windows详细使用教程.md 停在 v18.1 以前，不再更新，和现在的界面不一样）。
@@ -87,7 +87,7 @@ VoiceTwin 把目前最好的开源技术组合起来，逐项处理：
 
 ### 第 2 步：下载 VoiceTwin
 
-打开 [Releases 页面](https://github.com/AlienCodes/literate-enigma/releases/latest)，在 Assets 里下载 `VoiceTwin-Windows-v….zip`，
+打开 [Releases 页面](https://github.com/alienalgorithm/voicetwin/releases/latest)，在 Assets 里下载 `VoiceTwin-Windows-v….zip`，
 右键"全部解压缩"到 `D:\`，得到 `D:\VoiceTwin`。（也可以点本页面绿色的 **Code → Download ZIP**，或者 `git clone`。）
 
 ### 第 3 步：运行安装脚本
