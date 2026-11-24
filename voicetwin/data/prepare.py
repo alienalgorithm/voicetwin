@@ -6,7 +6,10 @@
 from __future__ import annotations
 
 import errno
+import re
 import time
+import unicodedata
+from collections import Counter
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -21,7 +24,8 @@ from voicetwin.style.prosody import rate_stats
 from voicetwin.utils.audio import clip_ratio, clipped_fraction, estimate_snr, load_audio, save_audio
 from voicetwin.utils.ffmpeg import extract_audio
 from voicetwin.utils.log import get_logger, setup_logging
-from voicetwin.utils.textutil import detect_lang, en_words, ends_sentence, safe_name, short_hash, syllable_count
+from voicetwin.utils.textutil import (count_cjk, detect_lang, en_words, ends_sentence, safe_name, short_hash,
+                                      syllable_count)
 
 log = get_logger("prepare")
 
@@ -471,16 +475,100 @@ def _save_npy(path: Path, arr: np.ndarray) -> None:
     atomic.finish(tmp, path)
 
 
+def _plain(text: Any) -> str:
+    """比较用的写法：去掉标点和空格，全角半角统一，英文不分大小写。"""
+    return re.sub(r"[\W_]+", "", unicodedata.normalize("NFKC", str(text or ""))).lower()
+
+
+def _units(text: str) -> int:
+    """几个字 / 词：每个汉字算 1 个，每个英文单词算 1 个（和「母本优先」数的一样）。"""
+    return count_cjk(text) + len(en_words(text))
+
+
+def _teacher_text(r: Dict[str, Any], text: str) -> bool:
+    """老师自己定下的文字：改过、保存了（和最初识别的不一样；改回原来识别的字不算。没有 orig_text 的是 v18 改的，
+    那时只有文字真的改了才记 text_edited，也算），或者对这句文字点过「这句没错」。"""
+    if r.get("text_edited") and ("orig_text" not in r or text != str(r.get("orig_text") or "")):
+        return True
+    ok = r.get("suspect_ok")
+    return bool(ok) and str(ok) == text
+
+
+class _MotherCheck:
+    """这一句的文字和老师的母本一致吗。母本第一次用到时才读（没有要丢的片段就不读）。
+
+    母本 = 程序自带的、老师逐句修缮过的讲课文字 + 老师上传的母本。上传的句子和校对表里某一句（现在的、保存的、
+    最初识别的样子）一模一样时不算：那就是这一句自己（比如下载的「改好的文字」），一句话不能拿来证明它自己没错，
+    和「📝 文字校正」的规矩一样。
+    一致 = 去掉标点、空格以后，和母本里完整的一句一模一样（至少 MIN_TOKENS 个字 / 词），或者是母本里某一句中间
+    连着的一段（至少 PART_MIN 个字 / 词：「我们来看一下」这种常说的短话哪里都有，证明不了）。"""
+
+    def __init__(self, project: Project, records: List[Dict[str, Any]]):
+        self.project, self.records = project, records
+        self.lines: Optional[Set[str]] = None
+        self.joined = ""
+        self.min_whole, self.min_part = 4, 10
+
+    def _load(self) -> None:
+        from voicetwin.data import review as _review
+        from voicetwin.data import transcript_fix as tf
+        from voicetwin.data.mother_first import MIN_TOKENS, PART_MIN
+
+        self.min_whole, self.min_part = MIN_TOKENS, PART_MIN
+        lines = [x for _rid, x in tf.builtin_mother()]
+        uploaded = [x for _name, fl in tf.load_transcript_files(self.project) for _rid, x, _n in fl]
+        if uploaded:
+            draft = _review.load_draft(self.project)
+            selves: Set[str] = set()
+            for r in self.records:
+                cur = _review.current_values(r, draft.get(r.get("id")))["text"]
+                for x in (cur, r.get("text"), _review.original_text(r)):
+                    if x:
+                        selves.add(tf._norm_line(str(x)))
+            lines += [x for x in uploaded if tf._norm_line(x) not in selves]
+        plains = [p for p in (_plain(x) for x in lines) if p]
+        self.lines = set(plains)
+        self.joined = "\n".join(plains)
+
+    def __call__(self, text: str) -> bool:
+        if self.lines is None:
+            try:
+                self._load()
+            except Exception as exc:  # noqa: BLE001 - 母本读不了：只是少一种「确认过」，不能让准备素材 / 保存失败
+                log.warning(f"读母本时出错（{exc}），这次不按母本判断哪些文字是对的")
+                self.lines = set()
+        p = _plain(text)
+        if not p:
+            return False
+        n = _units(text)
+        if p in self.lines:
+            return n >= self.min_whole
+        return n >= self.min_part and p in self.joined
+
+
 def apply_filters(project: Project, records: List[Dict[str, Any]], pcfg: Dict[str, Any], cfg: Dict[str, Any],
                   progress: Optional[ProgressFn] = None) -> None:
     fcfg = pcfg.get("filter", {}) or {}
     min_d, max_d = float(pcfg.get("min_duration", 2.0)), float(pcfg.get("max_duration", 12.0))
+    mother = _MotherCheck(project, records)
+    rescued: Dict[str, int] = {}  # 老师确认过 / 和母本一致、所以没有按这个原因丢掉的段数（写进日志）
 
     def auto_reason(r: Dict[str, Any]) -> str:
         text = r.get("text", "")
         if not text or syllable_count(text) < 2:
             return "没有识别出文字"
-        if looks_hallucinated(text):
+        sure: List[bool] = []
+
+        def confirmed(reason: str) -> bool:
+            """文字是老师确认过的（改过保存了、点过「这句没错」），或者和她的母本一致：识别引擎的把握、
+            「点赞 / 转发」这类词表说的都是「识别出来的字可能不对」，对这样的文字不算数。"""
+            if not sure:
+                sure.append(_teacher_text(r, str(text)) or mother(str(text)))
+            if sure[0]:
+                rescued[reason] = rescued.get(reason, 0) + 1
+            return sure[0]
+
+        if looks_hallucinated(text) and not confirmed("疑似识别错误"):
             return "疑似识别错误"
         if r.get("lang") not in ("zh", "en"):
             return "语言不是中文/英文"
@@ -493,14 +581,14 @@ def apply_filters(project: Project, records: List[Dict[str, Any]], pcfg: Dict[st
         clipped = max(float(r.get("clip_ratio") or 0), float(r.get("clip_src") or 0))
         if clipped > float(fcfg.get("max_clip_ratio", 0.002)):
             return "有爆音"
-        # 老师改过、保存了的文字：识别引擎的把握（置信度、像不像语音）说的是原来识别出来的字，不再算数——不然改对了也一直
-        # 不用来训练，表格里灰色、还不写原因。改回原来识别的字时照旧算。没有 orig_text 的是 v18 改的（那时还不记最初识别的
-        # 文字，只有文字真的改了才记 text_edited）：也算改过
-        human = bool(r.get("text_edited")) and ("orig_text" not in r or str(text) != str(r.get("orig_text") or ""))
-        asr = {} if human else (r.get("asr") or {})
-        if asr.get("avg_logprob") is not None and asr["avg_logprob"] < float(fcfg.get("min_avg_logprob", -1.0)):
+        # 识别引擎的把握（置信度、像不像语音）说的是识别出来的字对不对。老师改过保存了、点过「这句没错」、和母本一致的
+        # 文字，这个不再算数——不然对的句子也一直不用来训练（confirmed）。改回原来识别的字时照旧算
+        asr = r.get("asr") or {}
+        if (asr.get("avg_logprob") is not None and asr["avg_logprob"] < float(fcfg.get("min_avg_logprob", -1.0))
+                and not confirmed("识别置信度低")):
             return "识别置信度低"
-        if asr.get("no_speech_prob") is not None and asr["no_speech_prob"] > float(fcfg.get("max_no_speech_prob", 0.6)):
+        if (asr.get("no_speech_prob") is not None and asr["no_speech_prob"] > float(fcfg.get("max_no_speech_prob", 0.6))
+                and not confirmed("可能不是语音")):
             return "可能不是语音"
         if not r.get("rate"):
             return "没有有效语音"
@@ -508,6 +596,9 @@ def apply_filters(project: Project, records: List[Dict[str, Any]], pcfg: Dict[st
 
     for r in records:
         r["drop_reason"] = auto_reason(r)
+    if rescued:
+        log.info("文字是你确认过的（改过保存了、点过「这句没错」）或者和母本一致，所以没有按下面的原因去掉："
+                 + "，".join(f"{k} {v} 段" for k, v in rescued.items()))
 
     # 语速离群：多半是文字和音频对不上
     for lang in ("zh", "en"):
@@ -801,6 +892,9 @@ def prepare(project: Project, inputs: Iterable[str], cfg: Dict[str, Any], progre
     if csv_locked:
         summary["warnings"].insert(0, "transcripts.csv 正被 Excel / WPS 打开，这次没能更新它（素材已经准备好了，网页上的校对表"
                                       "是最新的）。关掉 Excel 以后在网页上点一次「保存修改」就会更新")
+    log.info("每种去掉的原因（按句子种类、按文件分开数），以及哪些文件自动降噪过：")
+    for ln in summary.get("drop_report") or []:
+        log.info(f"  {ln}")
     summary["elapsed_min"] = round((time.time() - t0) / 60.0, 1)
     summary["files_total"] = len(files)
     summary["files_new"] = n_new - len(skipped_files)
@@ -862,6 +956,7 @@ def summarize(project: Project, records: List[Dict[str, Any]], refs: List[Dict[s
                             "模型仍能说英文，但整句英文的口音/语气不一定像你；有英文课录音的话请一起加入。")
         else:
             warnings.append("素材里没有英文。模型仍能说英文，但口音/语气不一定像你；有英文课录音的话请一起加入。")
+    groups = drop_groups(project, records)
     return {
         "voice": project.voice,
         "clips_total": len(records),
@@ -870,8 +965,90 @@ def summarize(project: Project, records: List[Dict[str, Any]], refs: List[Dict[s
         "minutes_by_lang": {k: round(v / 60.0, 1) for k, v in by_lang.items()},
         "val_clips": sum(1 for r in kept if r.get("split") == "val"),
         "dropped": reasons,
+        **groups,
         "references": [{"no": i, "id": r["id"], "lang": r["lang"], "kind": r["kind"], "text": r["text"]}
                        for i, r in enumerate(refs, 1)],
         "warnings": warnings,
         "transcripts_csv": str(project.csv_path),
     }
+
+
+def _text_kind(text: Any) -> str:
+    """这一句是哪一种：中英混合 / 纯中文 / 纯英文 / 没有文字（只有数字、符号的也算没有文字）。"""
+    t = str(text or "")
+    cjk, en = count_cjk(t), len(en_words(t))
+    if cjk and en:
+        return "中英混合"
+    if cjk:
+        return "纯中文"
+    return "纯英文" if en else "没有文字"
+
+
+def _reason_text(dropped: Dict[str, int]) -> str:
+    return "、".join(f"{k} {v} 段" for k, v in sorted(dropped.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
+def drop_groups(project: Project, records: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """每种去掉的原因分开数：按句子（中英混合 / 纯中文 / 纯英文 / 没有文字）、按来源文件；再列出哪些文件自动降噪过
+    （sources.json 里的 denoised）。用来看是不是丢了太多好素材、丢在哪里（V5 统一计划 A2）。
+
+    返回 {"dropped_by_kind": {种类: {"total", "kept", "dropped": {原因: 段数}}},
+          "dropped_by_file": {文件名: {"total", "kept", "dropped", "denoised"}},
+          "denoised_files": [文件名], "drop_report": [给人看的中文，一行一条]}"""
+    sources = project.read_json(project.sources_path, {}) or {}
+    sources = sources if isinstance(sources, dict) else {}
+
+    def file_name(sid: str, rec: Optional[Dict[str, Any]] = None) -> str:
+        info = sources.get(sid) if isinstance(sources.get(sid), dict) else {}
+        path = str((rec or {}).get("source_file") or info.get("file") or "")
+        return Path(path).name if path else (sid or "（不知道是哪个文件）")
+
+    # 同一个名字的两个文件（不同文件夹里的「第1课.mp4」）后面加上编号，分开数
+    names: Dict[str, str] = {}
+    for r in records:
+        sid = str(r.get("source") or "")
+        names.setdefault(sid, file_name(sid, r))
+    for sid, info in sources.items():
+        if isinstance(info, dict) and info.get("denoised"):
+            names.setdefault(str(sid), file_name(str(sid)))
+    seen = Counter(names.values())
+    dup = {n for n, c in seen.items() if c > 1}
+    label = {sid: (f"{n}（{sid}）" if n in dup else n) for sid, n in names.items()}
+    denoised_sids = {str(sid) for sid, info in sources.items() if isinstance(info, dict) and info.get("denoised")}
+
+    def add(groups: Dict[str, Dict[str, Any]], key: str, r: Dict[str, Any]) -> None:
+        g = groups.setdefault(key, {"total": 0, "kept": 0, "dropped": {}})
+        g["total"] += 1
+        if r.get("keep"):
+            g["kept"] += 1
+        else:
+            reason = r.get("drop_reason") or "手动删除"
+            g["dropped"][reason] = g["dropped"].get(reason, 0) + 1
+
+    by_kind: Dict[str, Dict[str, Any]] = {}
+    by_file: Dict[str, Dict[str, Any]] = {}
+    for r in records:
+        add(by_kind, _text_kind(r.get("text")), r)
+        add(by_file, label[str(r.get("source") or "")], r)
+    for sid in denoised_sids:
+        by_file.setdefault(label[sid], {"total": 0, "kept": 0, "dropped": {}})
+    for sid, name in label.items():
+        if name in by_file:
+            by_file[name]["denoised"] = sid in denoised_sids
+    order = ("纯中文", "中英混合", "纯英文", "没有文字")
+    by_kind = {k: by_kind[k] for k in order if k in by_kind}
+    by_file = dict(sorted(by_file.items()))
+    denoised = sorted(label[sid] for sid in denoised_sids)
+
+    def line(head: str, g: Dict[str, Any]) -> str:
+        out = f"{head}：一共 {g['total']} 段，用来训练 {g['kept']} 段"
+        n_drop = g["total"] - g["kept"]
+        return out + (f"，去掉 {n_drop} 段（{_reason_text(g['dropped'])}）" if n_drop else "，一段都没去掉")
+
+    report = [line(f"{k}的句子", g) for k, g in by_kind.items()]
+    report += [line(f"文件「{k}」", g) + ("；这个文件自动降噪过" if g.get("denoised") else "") for k, g in by_file.items()]
+    if denoised:
+        report.append(f"自动降噪过的文件（{len(denoised)} 个）：" + "、".join(f"「{n}」" for n in denoised))
+    else:
+        report.append("没有文件被自动降噪")
+    return {"dropped_by_kind": by_kind, "dropped_by_file": by_file, "denoised_files": denoised, "drop_report": report}
