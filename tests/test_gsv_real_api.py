@@ -194,9 +194,9 @@ def test_real_api_accepts_cfg_rate(prepared, tmp_path, quick, api_src):
         assert sf.info(str(b.synthesize(say("我们接着往下讲。", cfg_rate=0), tmp_path / "b.wav"))).frames > 0
         got = run_req().get("cfg_rate")
         assert (got == 0.0 and type(got) is float) if known else got is None
-        # 同时生成好几个版本：一次请求，cfg_rate 跟着发
+        # 要好几个版本：V5 一个一个生成（11-24 真实实测：同时生成切不开），每一个请求都带着 cfg_rate
         out = b.synthesize_many(say("我们今天学习关系代词。", cfg_rate=0.7), 2, tmp_path / "many")
-        assert len(out) == 2 and run_req()["batch_size"] == 2
+        assert len(out) == 2 and run_req()["batch_size"] == 1 and b.last_many["mode"] == "single"
         assert run_req().get("cfg_rate") == (0.7 if known else None)
         # 设置改回 auto：不发，TTS.run 拿到的是 None（官方默认 v5dev 1.30）
         b.bcfg = dict(b.bcfg, infer=dict(b.bcfg.get("infer") or {}, cfg_rate="auto"))
