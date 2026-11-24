@@ -161,6 +161,52 @@ def test_real_api_start_switch_synthesize_stop(prepared, tmp_path, quick, api_sr
     _assert_clean_api_log(p2, expected=("CUDA out of memory",))
 
 
+@pytest.mark.parametrize("api_src", [REAL_API_V2, REAL_API_V2_2025], ids=["v5", "20250606v2pro"])
+def test_real_api_accepts_cfg_rate(prepared, tmp_path, quick, api_src):
+    """cfg_rate 的字段名和真实 api_v2 的一模一样：V5 整合包的 api_v2 收下以后原样交给 TTS.run（发 0 就是 0，
+    设置是 auto 时不发，TTS.run 拿到的是 None = 官方默认）。旧的 api_v2（2025-06）没有这个字段，发了也不报错。"""
+    cfg, project, _ = prepared
+    root = build_fake_root(tmp_path / "GPT-SoVITS", real_api=api_src)
+    gcfg = make_cfg(project.root.parent, backends={"gptsovits": {
+        "root": str(root), "python": sys.executable, "port": _port(), "startup_timeout": 60,
+        "infer": {"cfg_rate": 1.6}}})
+    p2 = wf.open_project(gcfg, project.voice, must_exist=True)
+    b = get_backend("gptsovits", gcfg, p2)
+    ref, ref_text, ref_lang = _ref(p2)
+    v5 = tmp_path / "v5_e4_s100_l32.pth"
+    v5.write_bytes(b"07" + b"x" * 4000)  # 模型文件开头的版本标记 07 = v5dev LoRA
+    known = api_src == REAL_API_V2
+
+    def run_req():
+        return [c for c in _calls(root) if c["kind"] == "run"][-1]["req"]
+
+    def say(text, **kw):
+        return SynthRequest(text=text, lang="zh", ref_audio=ref, ref_text=ref_text, ref_lang=ref_lang, seed=7, **kw)
+
+    try:
+        b.start()
+        b.use_checkpoint({"id": "v5", "gpt": str(root / "GPT_SoVITS/pretrained_models/s1v3.ckpt"), "sovits": str(v5)})
+        assert b._batch_version() == "v5dev"
+        # 设置里的 1.6
+        assert sf.info(str(b.synthesize(say("大家好，今天我们讲第一课。"), tmp_path / "a.wav"))).frames > 0
+        assert run_req().get("cfg_rate") == (1.6 if known else None) and ("cfg_rate" in run_req()) is known
+        # 这次请求单独给的 0（不做 CFG）：0 也要原样传到
+        assert sf.info(str(b.synthesize(say("我们接着往下讲。", cfg_rate=0), tmp_path / "b.wav"))).frames > 0
+        got = run_req().get("cfg_rate")
+        assert (got == 0.0 and type(got) is float) if known else got is None
+        # 同时生成好几个版本：一次请求，cfg_rate 跟着发
+        out = b.synthesize_many(say("我们今天学习关系代词。", cfg_rate=0.7), 2, tmp_path / "many")
+        assert len(out) == 2 and run_req()["batch_size"] == 2
+        assert run_req().get("cfg_rate") == (0.7 if known else None)
+        # 设置改回 auto：不发，TTS.run 拿到的是 None（官方默认 v5dev 1.30）
+        b.bcfg = dict(b.bcfg, infer=dict(b.bcfg.get("infer") or {}, cfg_rate="auto"))
+        assert sf.info(str(b.synthesize(say("还能接着用。"), tmp_path / "c.wav"))).frames > 0
+        assert run_req().get("cfg_rate") is None and ("cfg_rate" in run_req()) is known
+    finally:
+        b.stop()
+    _assert_clean_api_log(p2)
+
+
 def test_real_api_bare_get_tts_is_a_trap(prepared, tmp_path, quick):
     """记下真实 api_v2 的行为：不带参数的 GET /tts 回 500（所以绝对不能用它判断引擎好了没有），
     GET /control 不带 command 回 400 而且什么也不做。"""

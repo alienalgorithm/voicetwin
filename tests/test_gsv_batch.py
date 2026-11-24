@@ -217,6 +217,57 @@ def test_single_request_payload_is_unchanged(prepared, tmp_path):
     assert (many["batch_size"], many["fragment_interval"], many["speed_factor"]) == (4, 0.5, 1.0001)
 
 
+def test_cfg_rate_is_sent_only_when_set(prepared, tmp_path):
+    """cfg_rate（V3 / V4 / V5）：设置是 auto 时不发（引擎用官方默认 v5dev 1.30，请求和缓存键一个字节都不变）；
+    写了数字才发，0 也照发（不做 CFG）；这次请求单独给的值优先（挑选时每个候选可以不一样）；v2 系列的模型不发。"""
+    import dataclasses
+
+    b = _bare_backend(prepared, tmp_path)
+    ref = tmp_path / "ref.wav"
+    req = SynthRequest("你好。", "zh", ref, "参考", "zh", seed=7)
+    b._batch_version = lambda: "v5dev"
+    base = b._payload(req)
+    id0 = b.model_id()
+    assert "cfg_rate" not in base
+
+    def with_cfg(value):
+        b.bcfg = dict(b.bcfg, infer=dict(b.bcfg.get("infer") or {}, cfg_rate=value))
+
+    for value in ("auto", "", None, "自动", "none", "abc", -1, float("nan"), True):
+        with_cfg(value)
+        assert b._payload(req) == base and b.model_id() == id0, value
+    with_cfg(1.6)
+    got = b._payload(req)
+    assert {k for k in got if got.get(k) != base.get(k)} == {"cfg_rate"}
+    assert got["cfg_rate"] == 1.6 and type(got["cfg_rate"]) is float
+    assert b.model_id() == id0 + "-cfg1.6"  # 生成的声音不一样了：以前生成的缓存不能再用
+    for value in (0, "0", 0.0):
+        with_cfg(value)
+        assert b._payload(req)["cfg_rate"] == 0.0 and type(b._payload(req)["cfg_rate"]) is float
+    # 这次请求单独给的值优先；单独给的值不对时按设置
+    with_cfg(1.6)
+    assert b._payload(dataclasses.replace(req, cfg_rate=0.7))["cfg_rate"] == 0.7
+    assert b._payload(dataclasses.replace(req, cfg_rate=0))["cfg_rate"] == 0.0
+    assert b._payload(dataclasses.replace(req, cfg_rate=-1))["cfg_rate"] == 1.6
+    many = b._payload(dataclasses.replace(req, cfg_rate=0.7), batch=3, interval=0.5, speed=BATCH_SPEED)
+    assert many["cfg_rate"] == 0.7 and many["batch_size"] == 3
+    with_cfg("auto")
+    assert b._payload(dataclasses.replace(req, cfg_rate=1.3))["cfg_rate"] == 1.3
+    # 只有 V3 / V4 / V5 发（按正在用的模型文件读出来的版本）
+    for ver, sent in (("v3", True), ("v4", True), ("v5turbo", True), ("v2ProPlus", False), ("v2Pro", False), ("v2", False)):
+        b._batch_version = lambda ver=ver: ver
+        assert ("cfg_rate" in b._payload(dataclasses.replace(req, cfg_rate=1.3))) is sent, ver
+
+    def broken():
+        raise OSError("读不了")
+
+    b._batch_version = broken  # 读不出模型文件的版本：按设置里的版本
+    b.version = "v2ProPlus"
+    assert "cfg_rate" not in b._payload(dataclasses.replace(req, cfg_rate=1.3))
+    b.version = "v5dev"
+    assert b._payload(dataclasses.replace(req, cfg_rate=1.3))["cfg_rate"] == 1.3
+
+
 def test_oom_flag_only_looks_at_this_reason():
     """只看这一次的原因：记录里以前的显存不够，不能让别的错误也被当成显存不够。"""
     assert _answer_error("GPT-SoVITS 合成失败：RuntimeError: CUDA out of memory.", "RuntimeError: CUDA out of memory.").oom

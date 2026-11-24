@@ -82,6 +82,9 @@ class SynthRequest:
     top_k: Optional[int] = None
     top_p: Optional[float] = None
     extra: Dict[str, Any] = field(default_factory=dict)
+    #: 只有 GPT-SoVITS 的 V3 / V4 / V5 用：这一次的 cfg_rate（越大越往参考录音那边拉，0 = 不做 CFG，按代码算约快一倍）。
+    #: None = 按设置里的 infer.cfg_rate（auto 就不发，引擎用官方默认：v5dev 1.30）。挑选时可以给每个候选单独设一个值
+    cfg_rate: Optional[float] = None
 
 
 class TrainStepError(RuntimeError):

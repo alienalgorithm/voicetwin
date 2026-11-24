@@ -717,6 +717,20 @@ def _pos_float(value: Any) -> Optional[float]:
     return v if math.isfinite(v) and v > 0 else None
 
 
+def _cfg_value(value: Any) -> Optional[float]:
+    """infer.cfg_rate 的值：auto / 空 / 不是数字 / 负数 → None（不发，引擎按版本用官方默认，v5dev 1.30）。
+    和 _is_auto 不一样，0 是有效值：不做 CFG（每步少算一遍），要照发。"""
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, str) and value.strip().lower() in ("", "auto", "自动", "none"):
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) and v >= 0 else None
+
+
 def _dpo_choice(value: Any) -> Optional[bool]:
     """DPO 开关：None 表示自动。"""
     if value is None:
@@ -3595,7 +3609,10 @@ class GPTSoVITSBackend(Backend):
             except (OSError, ValueError):
                 return ""
 
-        return f"gsv-{self.version}-{w['id']}-{short_hash(w['sovits'], w['gpt'], sig(w['sovits']), sig(w['gpt']), n=6)}"
+        mid = f"gsv-{self.version}-{w['id']}-{short_hash(w['sovits'], w['gpt'], sig(w['sovits']), sig(w['gpt']), n=6)}"
+        # 设置里写了 cfg_rate（不是 auto）：生成的声音不一样了，不能用以前生成的缓存。auto 时一个字节都不变
+        cfg = _cfg_value((self.bcfg.get("infer", {}) or {}).get("cfg_rate", "auto"))
+        return mid if cfg is None else f"{mid}-cfg{cfg:g}"
 
     def _session(self):
         if self._http is None:
@@ -3933,7 +3950,26 @@ class GPTSoVITSBackend(Backend):
         steps = icfg.get("sample_steps", "auto")
         if not _is_auto(steps) and _to_int(steps, 0) > 0:
             out["sample_steps"] = _to_int(steps, 32)
+        # cfg_rate（V3 / V4 / V5 的扩散模型：越大越往参考录音那边拉；api_v2 的字段名就叫 cfg_rate）：
+        # 这次请求单独给了值就用它，没给就按设置；auto 不发，引擎按版本用官方默认（v5dev 1.30），声音和以前一样。
+        # v2 系列没有这一步，不发。
+        cfg = self._cfg_rate(req)
+        if cfg is not None:
+            out["cfg_rate"] = cfg
         return out
+
+    def _cfg_rate(self, req: Optional[SynthRequest] = None) -> Optional[float]:
+        """这次要发的 cfg_rate；不发时返回 None（auto，或者正在用的模型不是 V3 / V4 / V5）。"""
+        cfg = _cfg_value(req.cfg_rate) if req is not None else None
+        if cfg is None:
+            cfg = _cfg_value((self.bcfg.get("infer", {}) or {}).get("cfg_rate", "auto"))
+        if cfg is None:
+            return None
+        try:
+            ver = self._batch_version()
+        except Exception:  # noqa: BLE001  读不出模型文件的版本：按设置里的版本
+            ver = str(self.version)
+        return cfg if ver in VOCODER_VERSIONS else None
 
     def synthesize(self, req: SynthRequest, out_path: Path) -> Path:
         if not self._alive():
