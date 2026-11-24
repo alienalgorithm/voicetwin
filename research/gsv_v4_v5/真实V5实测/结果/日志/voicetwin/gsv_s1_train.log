@@ -1,5 +1,5 @@
 
-===== 2026-11-24 11:31:09 训练语气和节奏 =====
+===== 2026-11-24 15:02:08 训练语气和节奏 =====
 命令：/opt/hostedtoolcache/Python/3.12.16/x64/bin/python3.12 -s GPT_SoVITS/s1_train.py --config_file /mnt/w/vt/workspace/实测声音/models/gptsovits/tmp_s1.yaml
 目录：/mnt/w/g/GPT-SoVITS-v5-20261006nvidia50x0
 Seed set to 1234
@@ -37,14 +37,14 @@ Modules in train mode: 257
 Modules in eval mode: 0
 Total FLOPs: 0
 `Trainer.fit` stopped: `max_epochs=2` reached.
-Epoch 1/1  ━━━━━━━━━━━━━━━━ 126/126 0:01:33 • 0:00:00 1.25it/s v_num: 0.000
+Epoch 1/1  ━━━━━━━━━━━━━━━━ 126/126 0:02:40 • 0:00:00 0.74it/s v_num: 0.000
                                                                total_loss_step:
-                                                               259.421 lr_step:
+                                                               260.609 lr_step:
                                                                0.002
                                                                top_3_acc_step:
                                                                0.862
                                                                total_loss_epoch:
-                                                               272.030 lr_epoch:
+                                                               272.067 lr_epoch:
                                                                0.002
                                                                top_3_acc_epoch:
                                                                0.726
