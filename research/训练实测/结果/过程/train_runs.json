@@ -105,12 +105,57 @@
   "epochs_after": {
    "lora": 5,
    "gpt": 0
+  }
+ },
+ {
+  "job": "train-3",
+  "variant": "default",
+  "started": "2026-11-25 06:18:11",
+  "job_started": "2026-11-25 06:04:37",
+  "budget_min": 300.0,
+  "restore": {
+   "kind": "state",
+   "files": 4883,
+   "seconds": 12.4,
+   "made": "2026-11-25 06:03:19"
+  },
+  "plan": "训练计划：「一模一样」训练——没有检测到能用的 N 卡 → 音色（v5dev）每批 1 条（你指定的）、语气每批 4 条（你指定的）（仍然按「一模一样」训练，但用处理器会非常慢）；音色 v5dev（官方的 LoRA 练法）8 轮、每轮存一个；语气 GPT 20 轮、每轮存一个；中文和英文都参加训练（素材里有 691 句夹着英文）；训练完用你没参加训练的 20 句录音和 24 句检查用的句子，把音色第 1 轮、语气第 4 轮以后存下的每个版本，还有音色没有训练的 V5 底模都试一遍，挑最像你的；不开 DPO（官方实验功能，显存也不够；需要的话可以在高级设置里手动打开）。",
+  "plan_state": "continue",
+  "plan_note": "素材没变：接着上次没做完的训练往下练。",
+  "planned_epochs": {
+   "lora": 8,
+   "gpt": 20
+  },
+  "batch": {
+   "lora": 1,
+   "gpt": 4
+  },
+  "epochs_before": {
+   "lora": 5,
+   "gpt": 0
+  },
+  "result": "stopped",
+  "why_stopped": "这台机器的时间到了（没练完的这一轮下次从最后存的那一轮接着练）",
+  "saves": [
+   {
+    "stage": "lora",
+    "epoch": 6,
+    "saved_at": 1795596522.3,
+    "epoch_seconds": 9001.2,
+    "from_stage_start": true
+   }
+  ],
+  "finished": "2026-11-25 11:04:53",
+  "seconds": 17201.5,
+  "epochs_after": {
+   "lora": 6,
+   "gpt": 0
   },
   "pack": {
    "kind": "state",
-   "files": 4883,
-   "bytes": 6212014080,
-   "seconds": 27.0,
+   "files": 4886,
+   "bytes": 6287779840,
+   "seconds": 20.5,
    "parts": 4
   }
  }

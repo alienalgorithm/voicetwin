@@ -1,7 +1,7 @@
 {
  "variant": "default",
  "variant_note": "和老师的 8 GB 显卡上程序的默认练法一样：音色 V5 LoRA 每批 1 条、8 轮；语气 GPT 每批 4 条、20 轮（处理器上是全精度，程序会把填的每批数量减半，所以填 8；只练 V5 时「每批数量」也会用在音色 LoRA 上，所以 LoRA 明确写 1 条）",
- "made": "2026-11-25 06:04:28",
+ "made": "2026-11-25 11:05:49",
  "prep": {
   "counts": {
    "total": 1221,
@@ -255,6 +255,24 @@
     },
     "started": "2026-11-25 02:26:51",
     "finished": "2026-11-25 06:03:18",
+    "vt_timing": null,
+    "error": null
+   },
+   {
+    "job": "train-3",
+    "result": "stopped",
+    "why_stopped": "这台机器的时间到了（没练完的这一轮下次从最后存的那一轮接着练）",
+    "seconds": 17201.5,
+    "epochs_before": {
+     "lora": 5,
+     "gpt": 0
+    },
+    "epochs_after": {
+     "lora": 6,
+     "gpt": 0
+    },
+    "started": "2026-11-25 06:18:11",
+    "finished": "2026-11-25 11:04:53",
     "vt_timing": null,
     "error": null
    }
