@@ -150,13 +150,6 @@
   "epochs_after": {
    "lora": 6,
    "gpt": 0
-  },
-  "pack": {
-   "kind": "state",
-   "files": 4886,
-   "bytes": 6287779840,
-   "seconds": 20.5,
-   "parts": 4
   }
  }
 ]
