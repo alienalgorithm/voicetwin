@@ -213,3 +213,27 @@
 2026-11-25 01:39:04,822 | INFO | voicetwin.backend |   训练音色：第 2/8 轮（60%）
 2026-11-25 02:14:16,068 | INFO | voicetwin.backend |   训练音色：第 2/8 轮完成
 2026-11-25 02:14:23,826 | INFO | voicetwin.backend | 正在停止「训练音色（v5dev）」……
+2026-11-25 02:27:16,186 | INFO | voicetwin.workflow | 这次训练用校对表里保存好的文字：1198 条训练、20 条当「考试题」；其中 1198 条是你改过文字的，按改好的文字训练
+2026-11-25 02:27:16,189 | INFO | voicetwin.backend | 检查显卡、整理训练素材（大约半分钟）……
+2026-11-25 02:27:16,230 | INFO | voicetwin.gptsovits | 实验名 vt_6c65d5；GPT-SoVITS 版本 v5dev（目前公开的最新版本）
+2026-11-25 02:27:16,230 | INFO | voicetwin.backend | 训练素材 1198 条，共 148.3 分钟
+2026-11-25 02:27:17,207 | WARNING | voicetwin.gptsovits | 没有检测到可用的 NVIDIA 显卡，训练会非常慢（CPU 训练可能需要数天）
+2026-11-25 02:27:17,260 | INFO | voicetwin.backend | 训练计划：「一模一样」训练——没有检测到能用的 N 卡 → 音色（v5dev）每批 1 条（你指定的）、语气每批 4 条（你指定的）（仍然按「一模一样」训练，但用处理器会非常慢）；音色 v5dev（官方的 LoRA 练法）8 轮、每轮存一个；语气 GPT 20 轮、每轮存一个；中文和英文都参加训练（素材里有 691 句夹着英文）；训练完用你没参加训练的 20 句录音和 24 句检查用的句子，把音色第 1 轮、语气第 4 轮以后存下的每个版本，还有音色没有训练的 V5 底模都试一遍，挑最像你的；不开 DPO（官方实验功能，显存也不够；需要的话可以在高级设置里手动打开）。
+2026-11-25 02:27:17,260 | INFO | voicetwin.gptsovits |   · 显卡用全精度训练（is_half: false），每批数量减半
+2026-11-25 02:27:17,260 | INFO | voicetwin.backend | 素材没变：接着上次没做完的训练往下练。
+2026-11-25 02:27:17,341 | INFO | voicetwin.backend | 提取声音特征（比较慢，素材多时要十几分钟）
+2026-11-25 02:27:17,342 | INFO | voicetwin.backend | ▶ 提取声音特征（详细日志：gsv_1b_hubert.log）
+2026-11-25 02:27:19,346 | INFO | voicetwin.backend |   提取声音特征 1198/1198
+2026-11-25 02:27:22,208 | INFO | voicetwin.backend | 训练音色（v5dev，LoRA 微调），共 8 轮……
+2026-11-25 02:27:22,209 | INFO | voicetwin.backend | ▶ 训练音色（v5dev）（详细日志：gsv_s2_train_v5dev.log）
+2026-11-25 02:27:47,565 | INFO | voicetwin.backend |   训练音色：第 3/8 轮（0%）
+2026-11-25 02:55:46,152 | INFO | voicetwin.backend |   训练音色：第 3/8 轮（40%）
+2026-11-25 03:37:37,451 | WARNING | voicetwin.gptsovits | 没有检测到能用的 N 卡：仍然按「一模一样」训练，但用处理器会非常慢。按第一轮的实际速度估算，音色训练练完大约还要 5.9 小时；着急的话可以改选「标准」。
+2026-11-25 03:37:37,451 | INFO | voicetwin.backend |   训练音色：第 3/8 轮完成
+2026-11-25 03:38:00,417 | INFO | voicetwin.backend |   训练音色：第 4/8 轮（1%）
+2026-11-25 03:52:59,622 | INFO | voicetwin.backend |   训练音色：第 4/8 轮（21%）
+2026-11-25 04:50:31,976 | INFO | voicetwin.backend |   训练音色：第 4/8 轮完成
+2026-11-25 04:51:00,964 | INFO | voicetwin.backend |   训练音色：第 5/8 轮（1%）
+2026-11-25 05:49:51,789 | INFO | voicetwin.backend |   训练音色：第 5/8 轮（81%）
+2026-11-25 06:03:14,996 | INFO | voicetwin.backend |   训练音色：第 5/8 轮完成
+2026-11-25 06:03:18,449 | INFO | voicetwin.backend | 正在停止「训练音色（v5dev）」……
