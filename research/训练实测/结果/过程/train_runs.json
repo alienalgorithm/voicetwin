@@ -2,14 +2,14 @@
  {
   "job": "train-1",
   "variant": "default",
-  "started": "2026-11-24 16:49:53",
-  "job_started": "2026-11-24 16:38:08",
+  "started": "2026-11-24 23:01:37",
+  "job_started": "2026-11-24 22:46:10",
   "budget_min": 300.0,
   "restore": {
    "kind": "prep",
    "files": 1261,
-   "seconds": 1.5,
-   "made": "2026-11-24 16:37:30"
+   "seconds": 1.7,
+   "made": "2026-11-24 22:45:40"
   },
   "plan": "训练计划：「一模一样」训练——没有检测到能用的 N 卡 → 音色（v5dev）每批 1 条（你指定的）、语气每批 4 条（你指定的）（仍然按「一模一样」训练，但用处理器会非常慢）；音色 v5dev（官方的 LoRA 练法）8 轮、每轮存一个；语气 GPT 20 轮、每轮存一个；中文和英文都参加训练（素材里有 691 句夹着英文）；训练完用你没参加训练的 20 句录音和 24 句检查用的句子，把音色第 1 轮、语气第 4 轮以后存下的每个版本，还有音色没有训练的 V5 底模都试一遍，挑最像你的；不开 DPO（官方实验功能，显存也不够；需要的话可以在高级设置里手动打开）。",
   "plan_state": "fresh",
@@ -27,27 +27,34 @@
    "gpt": 0
   },
   "result": "stopped",
-  "why_stopped": "刚存完一轮；音色每轮实测大约 94 分钟，这台机器剩下 82 分钟，练不完下一轮",
+  "why_stopped": "刚存完一轮；音色每轮实测大约 85 分钟，这台机器剩下 92 分钟，练不完下一轮",
   "saves": [
    {
     "stage": "lora",
     "epoch": 1,
-    "saved_at": 1795545701.0,
-    "epoch_seconds": 5592.3,
+    "saved_at": 1795567682.7,
+    "epoch_seconds": 5026.0,
     "from_stage_start": true
    },
    {
     "stage": "lora",
     "epoch": 2,
-    "saved_at": 1795551329.4,
-    "epoch_seconds": 5628.5
+    "saved_at": 1795572856.0,
+    "epoch_seconds": 5173.4
    }
   ],
-  "finished": "2026-11-24 20:15:39",
-  "seconds": 12346.5,
+  "finished": "2026-11-25 02:14:24",
+  "seconds": 11567.0,
   "epochs_after": {
    "lora": 2,
    "gpt": 0
+  },
+  "pack": {
+   "kind": "state",
+   "files": 4878,
+   "bytes": 5985054720,
+   "seconds": 36.8,
+   "parts": 4
   }
  }
 ]
